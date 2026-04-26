@@ -1,0 +1,31 @@
+{
+  "name": "session-bridge-local",
+  "owner": {
+    "name": "Paul Cebulla",
+    "url": "https://github.com/snflsknfkldnfs"
+  },
+  "plugins": [
+    {
+      "name": "session-bridge",
+      "source": {
+        "source": "directory",
+        "path": "./plugin"
+      },
+      "description": "Cross-Cowork-Session Advisor/Worker coordination via shared filesystem (polling-based, schema-driven, ADR_0029).",
+      "version": "0.1.0",
+      "author": {
+        "name": "Paul Cebulla"
+      },
+      "homepage": "https://github.com/snflsknfkldnfs/session-bridge",
+      "category": "tooling",
+      "tags": [
+        "cowork",
+        "session-coordination",
+        "advisor-worker",
+        "cross-session",
+        "polling-bridge",
+        "plugin-development"
+      ]
+    }
+  ]
+}
