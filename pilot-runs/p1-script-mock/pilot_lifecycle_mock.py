@@ -28,7 +28,7 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PLUGIN_ROOT = SCRIPT_DIR.parent.parent / "plugin"
+PLUGIN_ROOT = SCRIPT_DIR.parent.parent  # Repo-Root (post-Restructure)
 SCHEMAS_DIR = PLUGIN_ROOT / "schemas"
 
 

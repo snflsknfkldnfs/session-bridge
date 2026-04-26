@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PLUGIN_ROOT = SCRIPT_DIR.parent.parent / "plugin"
+PLUGIN_ROOT = SCRIPT_DIR.parent.parent  # Repo-Root (post-Restructure)
 SHARED = SCRIPT_DIR / "shared"
 BRIDGE = SHARED / "bridge"
 HANDOVER_DIR = BRIDGE / "handover"
