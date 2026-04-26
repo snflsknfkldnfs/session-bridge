@@ -1,0 +1,154 @@
+# session-bridge — Phase-2-Backlog
+
+**Status:** Phase 1 (v0.1.0 MVP) abgeschlossen 2026-04-26.
+Phase 2 wird **nur aktiviert bei Real-Use-Case-Pull** (siehe §Trigger).
+
+**Phase-1-Closure-Marker:**
+- ADR_0029 LOCKED
+- Validator: `claude plugin validate` PASS
+- Self-Test: `tests/smoke_self_test.py` 12/12 PASS
+- Pilot P1 Script-Mock: 20/20 PASS
+- Pilot P2 Subagent-Pair: 19/19 PASS
+- META_PROZESSE-Korpus-Mining: `docs/pattern-mining/META_PROZESSE_INVENTORY_v2.md` (32 Bausteine, 11 Cluster)
+
+---
+
+## Tier 1 — Direct-Match aus META_PROZESSE-Mining
+
+### PB-001 Bilanz-Schema für `bridge/bilanz_<pair_id>.md`
+
+**Driver:** ADR_0029 §5.6 erwähnt Bilanz-Datei in close-Phase, aber kein Schema spezifiziert.
+
+**Quelle:** META_PROZESSE_INVENTORY_v2.md KB-32 — Nachdokumentation 5-Stufen-Standard (`Nachdokumentation_UE_Standard.md`):
+- Datensammlung → Professionelle Strukturierung → Reflexion (✅⚠️→) → Sequenz-Integration → Versionierung
+- Pflicht-Sektionen: Metadaten / Tatsächlicher Verlauf / Erreichte Ergebnisse / Reflexion / Sequenz-Anschluss
+- Anti-Pattern: Idealisierung statt rekonstruktiver Ehrlichkeit
+
+**Phase-2-Spec:** `plugin/schemas/bilanz_v1.json` mit Pflicht-Frontmatter:
+```yaml
+pair_id, total_rounds, phase_sequence, decision_log_summary,
+wallclock_drift_avg, lessons_learned[], successful_patterns[],
+challenges[], anti_patterns_detected[]
+```
+Plus Body-Sektionen: §1 Tatsächlicher Verlauf / §2 Reflexion ✅⚠️→ / §3 Cross-Pair-Transfer-Hinweise.
+
+**Aufwand-Schätzung:** ~2h Self-Edit (Schema + Smoke-Test + ADR §5.6 Referenz-Patch).
+
+---
+
+### PB-002 Anti-Endless-Loop / Reflection-Action-Ratio-Threshold
+
+**Driver:** ADR_0029 spezifiziert max 3 CAS-Retries, aber kein Schutz gegen iterate↔execute-Pingpong oder counter↔re-sync-Endlos-Schleifen.
+
+**Quelle:** META_PROZESSE_INVENTORY_v2.md KB-02 PATA-3-Systemische-Reflexion-Regel:
+- "Reflection-Action-Ratio < 20%" als Anti-Paralysis-Threshold
+- Infinite-Regress-Protection mit explizitem Stopp wenn Reflexions-Anteil > 20% übersteigt
+
+**Phase-2-Spec:** Bridge berechnet pro Pair Verhältnis `count(rounds[type ∈ {counter, re-sync, status, question}]) / count(rounds[type ∈ {execute, verify, decision-lock, pre-flight, pre-patch}])`. Bei Ratio > 4:1 (= >80% Reflection): WARN-Marker in state.json + advisor-Skill triggert "Lifecycle-Health-Alert" in nächstem Handover.
+
+**Aufwand-Schätzung:** ~3h Self-Edit (State-Schema-Erweiterung + bridge-status-Command-Output + Skill-Body-Patch).
+
+---
+
+### PB-003 Pre-Decision-Verification in `decision-lock`-Round
+
+**Driver:** ADR_0029 §4.2 hat decision-lock-Round mit `decided_by: user` Pflicht im Frontmatter, aber keine Pflicht-Pre-Decision-Klärungs-Sektion.
+
+**Quelle:** META_PROZESSE_INVENTORY_v2.md KB-07 Bewertungsrichtung-Verification (`CRITICAL_Bewertungsrichtung_Verification_Protocol.md`):
+- Vor jeder fundamentalen Transformation: Explizite User-Klärung
+- Niemals automatische Annahmen über fundamentale Bewertungs-Direktionen
+- Plus KB-10 Reverse-Questioning-Bank: max 2 Klärungsfragen, binäre Entscheidungen bevorzugen
+
+**Phase-2-Spec:** `decision-lock`-Handover hat zusätzliches Pflicht-Frontmatter-Feld:
+```yaml
+pre_decision_verification:
+  - question: "<konkrete binäre Frage>"
+    answer: "<user-Antwort>"
+    timestamp: <ISO-8601>
+```
+Mind. 1 Eintrag, max 2. Schema-allOf-Pflicht für type=decision-lock.
+
+**Aufwand-Schätzung:** ~2h Self-Edit (Handover-Schema + bridge-handover-Command-Logik + bridge-advisor-Skill-Update).
+
+---
+
+## Tier 2 — Adaptable / Phase-2-Erweiterung (deferred)
+
+### PB-004 Auto-Trigger-Hooks (pre-tool-use für `[BRIDGE-CRITICAL]`-Tag)
+
+**Driver:** ADR_0029 §8.5 Deferred. Korpus-Bestätigung KB-01 PATA-PATA Pre-Action-Zwangscheck.
+
+**Phase-2-Spec:** Plugin-Hook im Plugin-Manifest, der bei Task-Description mit `[BRIDGE-CRITICAL]`-Marker pausiert + advisor-Konsultation erzwingt vor Execute.
+
+**Trigger-Bedingung:** mind. 2 reale Pairs durchlaufen + User meldet wiederholt Konflikt-Fälle wo Auto-Hook geholfen hätte.
+
+---
+
+### PB-005 N-Pair-Topologie (>2 Sessions)
+
+**Driver:** ADR_0029 §8.4 Deferred. Korpus-Quelle KB-27 Stakeholder-Integration-Mapping.
+
+**Phase-2-Spec:** State-Schema-Erweiterung von `roles.{advisor,worker}` zu `roles[]` Array mit role-types `advisor | worker | observer | mediator`. Konsens-Resolution über Voting-Mechanismus.
+
+**Trigger-Bedingung:** Real-Use-Case mit ≥3 parallelen Sessions auftaucht.
+
+---
+
+### PB-006 Cross-Pair-Memory-Aggregation
+
+**Driver:** ADR_0029 §9 OOS-Findings + Korpus KB-23 Selbstlernende Reflexion-Engine 4-Phasen-Pipeline.
+
+**Phase-2-Spec:** Beim `close` einer Pair: extrahiere Patterns (drift_factors, decision-log-Outcomes, blocker-resolutions), aggregiere in globalem `~/.session-bridge/memory/patterns.jsonl`. Künftige Pairs lesen + injizieren in advisor-Skill als Pattern-Hint.
+
+**Trigger-Bedingung:** ≥5 abgeschlossene Pairs als Korpus + Real-Pull für Pattern-Reuse.
+
+---
+
+### PB-007 Domain-Hint-Field im Topic
+
+**Driver:** Korpus KB-15+KB-16 Project-Description-Generator + Project-Routing.
+
+**Phase-2-Spec:** State-Schema `topic` wird ergänzt um optionales `domain_hint: programming | writing | analysis | review | migration | other`-Enum für advisor-Skill-Domain-Adaptation.
+
+**Trigger-Bedingung:** Real-Use über mehrere Domains hinweg.
+
+---
+
+### PB-008 4-Layer-Meta-Architecture-Erweiterung
+
+**Driver:** Korpus KB-11 4-Layer-Meta-Architecture (Meta⁴ Invisible Intelligence / Meta³ Routing / Meta² Memory / Meta¹ Standards).
+
+**Phase-2-Spec:** Bridge-MVP ist Meta¹-Layer (Schema-Standards). Erweitern zu Meta²-Memory (PB-006) + Meta³-Routing (auto-pair-recommendation basierend auf vergangenen Pairs).
+
+**Trigger-Bedingung:** Aggregations-Bibliothek (PB-006) + ≥10 Pairs als Lernmaterial.
+
+---
+
+## Activation-Trigger für Phase 2
+
+Phase-2-Entwicklung startet **nicht** bei Spec-Reife oder Roadmap-Plan, sondern **nur** wenn folgende Real-Use-Indikatoren auftreten:
+
+| Indikator | Trigger-Schwelle |
+|---|---|
+| Real-User-Pilot durchlaufen | ≥1 vollständiger 6-Round-Lifecycle mit zwei aktiven Cowork-Sessions |
+| Wiederholte User-Anfrage nach session-bridge | ≥2 unabhängige Cross-Session-Beratungen über Bridge initialisiert |
+| Konkrete Lücke aus Real-Use | User berichtet konkretes Bridge-Failure das Phase-2-Item adressiert |
+| Marketplace-Submit-Vorbereitung | Plan, session-bridge öffentlich zu distribuieren |
+
+**Anti-Trigger:** Spec-Wachstum ohne empirische Falsifikation = Memory `feedback_ebenen_testrun_vs_infra.md` Anti-Pattern. Phase-2 ohne Real-Pull verboten.
+
+---
+
+## Phase-2-Methodik (wenn aktiviert)
+
+1. **Re-Lock ADR_0029** mit Schema-Bump v1.0.0 → v1.1.0 (Minor-Bump per §13.1) bei jedem Tier-1-Item.
+2. **Pflicht-Migration-Skript** für State-Files mit altem schema_version.
+3. **Self-Test-Erweiterung** in `tests/smoke_self_test.py` für jedes neue Schema-Feature.
+4. **Real-Pilot-Re-Run** nach jedem Tier-1-Item zur Falsifikation.
+5. **Memory-Update** `project_session_bridge_state.md` nach jedem Item-Closure.
+
+---
+
+**Snapshot-Date:** 2026-04-26.
+**Phase-1-Closed:** 2026-04-26 (39/39 Tests + Validator PASS + Korpus-Mining v2 LOCKED).
+**Phase-2-Active:** ❌ (warte auf Real-Use-Pull).

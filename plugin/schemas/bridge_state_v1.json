@@ -1,0 +1,191 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/snflsknfkldnfs/session-bridge/schemas/bridge_state_v1.json",
+  "title": "Bridge State v1.0.0",
+  "description": "Shared state file for session-bridge pair coordination. ADR_0029 §4.1.",
+  "type": "object",
+  "required": [
+    "pair_id",
+    "schema_version",
+    "created_at",
+    "updated_at",
+    "phase",
+    "roles",
+    "topic",
+    "current_round",
+    "rounds",
+    "open_blockers",
+    "decision_log",
+    "status_observations",
+    "file_ownership",
+    "shared_artifacts",
+    "wallclock_estimates"
+  ],
+  "properties": {
+    "pair_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "UUIDv4"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "phase": {
+      "enum": ["init", "scope-lock", "iterate", "execute", "verify", "close"]
+    },
+    "roles": {
+      "type": "object",
+      "required": ["advisor", "worker"],
+      "properties": {
+        "advisor": {
+          "type": "object",
+          "required": ["session_id", "active_since"],
+          "properties": {
+            "session_id": {"type": "string"},
+            "expertise_source": {"type": "string"},
+            "active_since": {"type": "string", "format": "date-time"}
+          },
+          "additionalProperties": false
+        },
+        "worker": {
+          "type": "object",
+          "required": ["session_id", "active_since"],
+          "properties": {
+            "session_id": {"type": "string"},
+            "current_focus": {"type": "string"},
+            "phase": {"type": "string"},
+            "active_since": {"type": "string", "format": "date-time"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "topic": {"type": "string", "minLength": 1},
+    "current_round": {"type": "integer", "minimum": 0},
+    "rounds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "type", "initiator", "artifact_path", "timestamp"],
+        "properties": {
+          "round": {"type": "integer", "minimum": 0},
+          "type": {
+            "enum": [
+              "initial-advice",
+              "counter",
+              "re-sync",
+              "decision-lock",
+              "pre-patch",
+              "pre-flight",
+              "execute",
+              "verify",
+              "status",
+              "question"
+            ]
+          },
+          "initiator": {"enum": ["advisor", "worker"]},
+          "artifact_path": {"type": "string", "minLength": 1},
+          "timestamp": {"type": "string", "format": "date-time"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "open_blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "summary", "raised_by", "raised_in_round", "severity"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^B-[0-9]+$"},
+          "summary": {"type": "string"},
+          "raised_by": {"enum": ["advisor", "worker"]},
+          "raised_in_round": {"type": "integer", "minimum": 0},
+          "severity": {"enum": ["low", "medium", "high", "critical"]},
+          "resolution_needed_before": {
+            "enum": ["scope-lock", "iterate", "execute", "verify", "close"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "decision_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "decision", "rationale", "decided_by"],
+        "properties": {
+          "round": {"type": "integer", "minimum": 0},
+          "decision": {"type": "string"},
+          "rationale": {"type": "string"},
+          "decided_by": {"enum": ["user", "consensus"]},
+          "alternatives_considered": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "status_observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "observed_by", "fact", "verified_against"],
+        "properties": {
+          "round": {"type": "integer", "minimum": 0},
+          "observed_by": {"enum": ["advisor", "worker"]},
+          "fact": {"type": "string"},
+          "verified_against": {
+            "enum": ["memory", "capability-probe", "filesystem", "transcript", "none"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "file_ownership": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": ["advisor", "worker", "shared-readonly"]
+      }
+    },
+    "shared_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "purpose", "lifecycle_state"],
+        "properties": {
+          "path": {"type": "string"},
+          "purpose": {"type": "string"},
+          "lifecycle_state": {"enum": ["active", "archived", "superseded"]},
+          "last_referenced_in_round": {"type": "integer", "minimum": 0}
+        },
+        "additionalProperties": false
+      }
+    },
+    "wallclock_estimates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "estimated_min"],
+        "properties": {
+          "round": {"type": "integer", "minimum": 0},
+          "estimated_min": {"type": "integer", "minimum": 0},
+          "actual_min": {"type": ["integer", "null"], "minimum": 0},
+          "drift_factor": {"type": ["number", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "rollback_plan_path": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

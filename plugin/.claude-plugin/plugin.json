@@ -1,0 +1,29 @@
+{
+  "name": "session-bridge",
+  "version": "0.1.0",
+  "description": "Cross-Session Advisor/Worker coordination via shared filesystem (polling-based, ADR_0029).",
+  "author": {
+    "name": "session-bridge-Plugin-Project",
+    "url": "https://github.com/snflsknfkldnfs/session-bridge"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/snflsknfkldnfs/session-bridge",
+  "keywords": [
+    "cowork",
+    "session-coordination",
+    "advisor-worker",
+    "cross-session",
+    "polling-bridge"
+  ],
+  "skills": [
+    "./skills/bridge-advisor",
+    "./skills/bridge-worker"
+  ],
+  "commands": [
+    "./commands/bridge-init.md",
+    "./commands/bridge-attach.md",
+    "./commands/bridge-handover.md",
+    "./commands/bridge-status.md",
+    "./commands/bridge-close.md"
+  ]
+}

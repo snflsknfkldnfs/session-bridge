@@ -1,0 +1,559 @@
+# ADR 0029 — Session-Bridge-Pattern
+
+**Status:** LOCKED (2026-04-26 nach Self-Review-Pass A1-A9 PASS)
+**Datum:** 2026-04-26
+**Autor:** session-bridge-Plugin-Project
+**Korpus-Quelle:** `../pattern-mining/CORPUS_ANALYSIS.md`
+**Schema-Version:** 1.0.0
+
+---
+
+## 1. Context
+
+Cowork-Mode unterstützt parallele Sessions, aber kein natives Pattern für strukturierte Zusammenarbeit zwischen zwei Sessions. In der Praxis (siehe Korpus-Analyse: WiB7c Plugin-Migration über 3 Tage, 27 Beratungs-Artefakte) wurde wiederholt das Pattern **Advisor-Session berät Worker-Session via User-mediierte Übergaben** rekonstruiert. Diese Rekonstruktion war fragil:
+
+- 9 empirisch dokumentierte Failure-Modes (FM-1..FM-9 in CORPUS_ANALYSIS).
+- Pro Pairing wurden Schema, Lifecycle, Rollback-Plan, Akzeptanz-Kriterien neu erfunden.
+- Beratungs-Artefakte akkumulierten ohne Lifecycle-Marker (FM-9 Beratungs-Drift).
+
+`session_info`-MCP existiert (read_transcript, list_sessions) und bietet die Infrastruktur, ist aber kein Plugin-Pattern. `agent-teams`-Plugin existiert für parent→child-Spawning, deckt aber keinen Peer-to-Peer-Use-Case zweier User-Cowork-Sessions ab.
+
+Diese ADR definiert ein **wiederverwendbares Pattern + Plugin-Implementierung** zur Koordination zweier paralleler Cowork-Sessions im **Advisor/Worker-Modell** mit **Polling-basierter** Übergabe via Shared-Filesystem.
+
+---
+
+## 2. Drivers
+
+| ID | Driver | FM-Mapping | Quelle |
+|---|---|---|---|
+| D1 | Status-Verifikation pflichtig (Pre-Round-Status-Re-Check) | FM-1, FM-7 | CORPUS_ANALYSIS §3 |
+| D2 | Faktencheck-Tiebreaker (Memory + Capability-Probe als Verifikations-Quelle) | FM-3 | CORPUS_ANALYSIS §3 |
+| D3 | File-Ownership-Pre-Lock (verhindert Edit-Konflikte) | FM-4 | CORPUS_ANALYSIS §3 |
+| D4 | Wall-Clock-Empirie (Schätzung+Drift-Logging) | FM-2 | CORPUS_ANALYSIS §3 |
+| D5 | Artefakt-Lifecycle (active/archived/superseded) | FM-9 | CORPUS_ANALYSIS §3 |
+| D6 | Rollback-Vorab-Spezifikation pflichtig | strukturell (Runbook-Pattern) | CORPUS_ANALYSIS §2.2 |
+| D7 | Round-Typisierung (encoded round-types statt Freitext) | strukturell | CORPUS_ANALYSIS §2.3 |
+| D8 | Strict-Separation Advisor vs Worker auf Identitäts-Ebene | FM-6 | CORPUS_ANALYSIS §3 |
+| D9 | Cleanup-Enforcement bei Memory-/Artefakt-Migration (Pflicht-Schritt im close, nicht optional) | FM-5 | CORPUS_ANALYSIS §3 |
+| D10 | Shared-Filesystem-Authority statt computer://-URIs (Pfad-Auflösung über Cowork-Mount) | FM-8 | CORPUS_ANALYSIS §3 |
+
+---
+
+## 3. Decision
+
+**Wir bauen ein Plugin `session-bridge` mit folgendem Modell:**
+
+### 3.1 Rollen-Modell
+
+Genau **zwei Rollen** im MVP:
+
+- **`advisor`** — Cowork-Session mit dominanter Expertise / Beobachter-Position. Liest Worker-Transcript via `session_info`, produziert strukturierte Handover-Artefakte mit Empfehlungen / Patches / Counter-Beratung.
+- **`worker`** — Cowork-Session mit operativer Verantwortung. Führt Plan aus, schreibt Status-Snapshots in shared State, fragt nach Beratung.
+
+**User** ist nicht Bridge-Teilnehmer, sondern **Round-Trigger** (jede Round wird durch User-Prompt in einer der beiden Sessions getriggert; kein Auto-Tick).
+
+### 3.2 Kommunikations-Modell
+
+**Polling via Shared-Filesystem.** Kein IPC, kein Push.
+
+- Beide Sessions haben Lese/Schreib-Zugriff auf einen gemeinsamen Cowork-Project-Pfad: `<shared-project>/bridge/`.
+- `bridge/state.json` ist Single-Source-of-Truth für Pair-State.
+- `bridge/handover/<round>-<from>-<to>.md` sind unveränderliche Handover-Artefakte.
+
+### 3.3 Round-Modell
+
+10 encoded Round-Typen (siehe §4.2): 8 procedural (initial-advice, counter, re-sync, decision-lock, pre-patch, pre-flight, execute, verify) + 2 utility (status, question). Rounds sind streng aufsteigend nummeriert. Jede Round produziert genau **eine** Handover-Datei. Round-Numbering ist atomic increment via state.json (siehe §13 Concurrency).
+
+### 3.4 Lifecycle
+
+```
+init → scope-lock → iterate (rounds) → execute → verify → close
+                          ^   |
+                          | counter / re-sync
+                          +-----+
+```
+
+Phase-Übergänge sind in `state.json` getrackt. Phase-Rückwärts ist erlaubt nur bei `iterate` ↔ `execute` (Re-Sync nach Counter).
+
+---
+
+## 4. Schema-Spezifikation
+
+### 4.1 State-Schema (`bridge/state.json`)
+
+JSON-Schema-Datei: `plugin/schemas/bridge_state_v1.json`. Pflicht-Felder:
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "pair_id", "schema_version", "created_at", "updated_at",
+    "roles", "topic", "phase", "current_round", "rounds",
+    "open_blockers", "decision_log", "status_observations",
+    "file_ownership", "shared_artifacts", "wallclock_estimates"
+  ],
+  "properties": {
+    "pair_id": {"type": "string", "format": "uuid"},
+    "schema_version": {"const": "1.0"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "phase": {
+      "enum": ["init", "scope-lock", "iterate", "execute", "verify", "close"]
+    },
+    "roles": {
+      "type": "object",
+      "required": ["advisor", "worker"],
+      "properties": {
+        "advisor": {
+          "type": "object",
+          "required": ["session_id", "active_since"],
+          "properties": {
+            "session_id": {"type": "string"},
+            "expertise_source": {"type": "string"},
+            "active_since": {"type": "string", "format": "date-time"}
+          }
+        },
+        "worker": {
+          "type": "object",
+          "required": ["session_id", "active_since"],
+          "properties": {
+            "session_id": {"type": "string"},
+            "current_focus": {"type": "string"},
+            "phase": {"type": "string"},
+            "active_since": {"type": "string", "format": "date-time"}
+          }
+        }
+      }
+    },
+    "topic": {"type": "string"},
+    "current_round": {"type": "integer", "minimum": 0},
+    "rounds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "type", "initiator", "artifact_path", "timestamp"],
+        "properties": {
+          "round": {"type": "integer"},
+          "type": {
+            "enum": [
+              "initial-advice", "counter", "re-sync",
+              "decision-lock", "pre-patch", "pre-flight",
+              "execute", "verify", "status", "question"
+            ]
+          },
+          "initiator": {"enum": ["advisor", "worker"]},
+          "artifact_path": {"type": "string"},
+          "timestamp": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "open_blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "summary", "raised_by", "raised_in_round", "severity"],
+        "properties": {
+          "id": {"type": "string"},
+          "summary": {"type": "string"},
+          "raised_by": {"enum": ["advisor", "worker"]},
+          "raised_in_round": {"type": "integer"},
+          "severity": {"enum": ["low", "medium", "high", "critical"]},
+          "resolution_needed_before": {
+            "enum": ["scope-lock", "iterate", "execute", "verify", "close"]
+          }
+        }
+      }
+    },
+    "decision_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "decision", "rationale", "decided_by"],
+        "properties": {
+          "round": {"type": "integer"},
+          "decision": {"type": "string"},
+          "rationale": {"type": "string"},
+          "decided_by": {"enum": ["user", "consensus"]},
+          "alternatives_considered": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "status_observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "observed_by", "fact", "verified_against"],
+        "properties": {
+          "round": {"type": "integer"},
+          "observed_by": {"enum": ["advisor", "worker"]},
+          "fact": {"type": "string"},
+          "verified_against": {
+            "enum": ["memory", "capability-probe", "filesystem", "transcript", "none"]
+          }
+        }
+      }
+    },
+    "file_ownership": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": ["advisor", "worker", "shared-readonly"]
+      }
+    },
+    "shared_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "purpose", "lifecycle_state"],
+        "properties": {
+          "path": {"type": "string"},
+          "purpose": {"type": "string"},
+          "lifecycle_state": {
+            "enum": ["active", "archived", "superseded"]
+          },
+          "last_referenced_in_round": {"type": "integer"}
+        }
+      }
+    },
+    "wallclock_estimates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["round", "estimated_min"],
+        "properties": {
+          "round": {"type": "integer"},
+          "estimated_min": {"type": "integer"},
+          "actual_min": {"type": ["integer", "null"]},
+          "drift_factor": {"type": ["number", "null"]}
+        }
+      }
+    },
+    "rollback_plan_path": {"type": ["string", "null"]}
+  }
+}
+```
+
+### 4.2 Round-Type-Spezifikation
+
+| Type | Initiator (Author) | Wann | Output-Pflicht |
+|---|---|---|---|
+| `initial-advice` | advisor | Round 0 nach scope-lock | N Optionen mit Empfehlung |
+| `counter` | worker | wenn worker Falsifikation hat | Begründete Falsifikation |
+| `re-sync` | advisor | nach counter | Revidiertes Modell |
+| `decision-lock` | advisor *oder* worker | nach iterate-Konvergenz, encoded User-Decision via `decided_by: user` im Frontmatter | Entscheidung im decision_log |
+| `pre-patch` | advisor | vor execute | Konkrete Patches mit Aufwand-Schätzung |
+| `pre-flight` | worker | vor execute | Pre-Flight-Verifikations-Output |
+| `execute` | worker | execute-Phase | Step-Verify-Output |
+| `verify` | worker | verify-Phase | Smoke-Test-Output |
+| `status` | advisor *oder* worker | jederzeit | Status-Snapshot |
+| `question` | advisor *oder* worker | jederzeit | Frage mit Kontext |
+
+**Anmerkung:** User ist nie `initiator` einer Round (§3.1: User ist Round-Trigger, nicht Bridge-Teilnehmer). User-Entscheidungen werden encoded via `decided_by: user` im Frontmatter der `decision-lock`-Round.
+
+### 4.3 Handover-Schema (`bridge/handover/<round>-<from>-<to>.md`)
+
+YAML-Frontmatter (Pflicht-validiert) + Markdown-Body:
+
+```yaml
+---
+pair_id: <uuid>
+round: <integer>
+from: advisor|worker
+to: advisor|worker
+type: <round-type aus 4.2>
+timestamp: <ISO-8601>
+
+worker_phase: <string>          # PFLICHT (D1)
+worker_focus: <string>          # PFLICHT (D1)
+status_verified_at: <ISO-8601>  # PFLICHT (D1)
+
+references:                     # PFLICHT mind. 1 Eintrag (D2)
+  - type: transcript|memory|capability-probe|filesystem|shared-artifact
+    pointer: <string>
+    verified: true|false
+
+related_blockers: [B-1, B-2]
+related_decisions: [D-1]
+
+acceptance_criteria:            # PFLICHT bei type in {pre-patch, execute, verify} (D6)
+  - <string>
+
+rollback_triggers:              # PFLICHT bei type in {execute} (D6)
+  - condition: <string>
+    action: <string>
+
+wallclock_estimate_min: <integer>  # PFLICHT bei type in {pre-patch, execute} (D4)
+---
+
+# Body Sections (Empfehlung, nicht Pflicht-Schema)
+
+## Zusammenfassung
+## Konkrete Empfehlung / Frage / Status
+## Wall-Clock-Schätzung mit Bottleneck-Marker
+## Cross-Refs
+```
+
+JSON-Schema-Datei: `plugin/schemas/handover_frontmatter_v1.json`.
+
+---
+
+## 5. Lifecycle-Operationen
+
+### 5.1 `init`
+
+Auslöser: User-Prompt `/bridge-init` in einer Session (Initiator-Session).
+
+Ablauf:
+1. Initiator-Session generiert `pair_id` (UUID).
+2. Schreibt `bridge/state.json` mit `phase=init`, eigene Rolle gefüllt, andere Rolle als Placeholder.
+3. Initiator-Session präsentiert User folgende Info: "Pair-ID: X. Andere Session muss `/bridge-attach <pair_id>` ausführen."
+4. Bei `/bridge-attach`-Aufruf in zweiter Session: ergänzt eigene Rolle, setzt `phase=scope-lock`.
+
+### 5.2 `scope-lock`
+
+Auslöser: Phase-Übergang nach `init`.
+
+Ablauf:
+1. Beide Sessions schreiben Status-Snapshot via `/bridge-handover --type=status`.
+2. Advisor schreibt erste handover-Datei vom Typ `initial-advice` mit IN/OUT-Scope-Vorschlag + Acceptance-Kriterien.
+3. Phase wechselt zu `iterate`.
+
+### 5.3 `iterate`
+
+Round-Loop bis `decision-lock`.
+
+Pflicht pro Round:
+- Status-Snapshot validiert (FM-1)
+- references[] ≥ 1 (FM-3)
+- ggf. acceptance_criteria, ggf. rollback_triggers
+
+### 5.4 `execute`
+
+Auslöser: nach `decision-lock` mit anschließendem `pre-patch` + `pre-flight`.
+
+Ablauf:
+1. Worker führt Pre-Flight aus, dokumentiert in handover type=`pre-flight`.
+2. Bei FAIL: zurück zu `iterate`.
+3. Bei PASS: Worker führt Plan-Schritte aus, dokumentiert pro Schritt in handover type=`execute`.
+
+### 5.5 `verify`
+
+Smoke-Test + Akzeptanz-Verifikation. Worker schreibt handover type=`verify` mit Test-Output.
+
+### 5.6 `close`
+
+Auslöser: User-Prompt `/bridge-close <pair_id> --bilanz=<path>`.
+
+Ablauf:
+1. Setzt `phase=close`, schreibt Bilanz-Datei in `bridge/bilanz_<pair_id>.md`.
+2. Markiert alle `shared_artifacts` als `archived` falls nicht explizit `active`.
+3. Aktualisiert `wallclock_estimates[].actual_min` + `drift_factor` für jede Round (post-hoc-Kalibrierung, D4).
+
+---
+
+## 6. Conflict-Resolution
+
+### 6.1 Status-Konflikt
+
+**Symptom:** Advisor's Annahme über Worker-Phase weicht von Worker-Status-Snapshot ab.
+
+**Resolution:**
+1. Worker's eigener Status-Snapshot ist authoritativ wenn `verified_against` ∈ {`filesystem`, `capability-probe`}.
+2. Advisor's Annahme via `transcript`-Verification ist nachrangig.
+3. Memory-Refs sind Tiebreaker NUR wenn explizit referenziert UND Datum < 7 Tage.
+
+### 6.2 Decision-Konflikt
+
+**Symptom:** Advisor empfiehlt X, Worker führt Y aus ohne Counter-Round.
+
+**Resolution:** Bridge erzwingt `counter`-Round vor `execute`. Worker darf nicht direkt von `iterate` zu `execute` ohne `decision-lock` mit User-Bestätigung.
+
+### 6.3 File-Ownership-Konflikt
+
+**Symptom:** Beide Sessions edit gleicher File.
+
+**Resolution:** `file_ownership`-Map in state.json ist Pre-Lock. Bei Konflikt: Pre-Tool-Use-Hook (Phase 2 Plugin-Erweiterung, NICHT MVP) blockiert.
+
+### 6.4 Wall-Clock-Drift
+
+**Symptom:** Estimate vs Actual driftet.
+
+**Resolution:** `drift_factor` wird in `close` geloggt. Bridge-Plugin liest historische `drift_factor`-Werte als Selbst-Kalibrierung (Phase 2 Feature).
+
+---
+
+## 7. Constraints
+
+| ID | Constraint | Begründung |
+|---|---|---|
+| C1 | Polling-Only | Plattform-Limitation: kein IPC zwischen Cowork-Sessions |
+| C2 | Read-Only-Cross-Session | `session_info` MCP API |
+| C3 | Shared-Filesystem-Pflicht | Beide Sessions müssen mind. einen gemeinsamen Project-Mount haben |
+| C4 | User-Mediated-Rounds | Sessions reagieren nur auf User-Input oder eigene Tool-Loops |
+| C5 | Memory-Reference-Authority bedingt | Memory ist Tiebreaker nur wenn explizit + frisch |
+| C6 | Status-Snapshot-Required pro Handover | FM-1 Strukturelle Verhinderung |
+| C7 | Wall-Clock-Cost-Model bekannt | Self-Edit ~1-5min, Subagent ~25-50min FEST, User variabel |
+
+---
+
+## 8. Alternatives Considered
+
+### 8.1 `agent-teams`-Plugin nutzen
+
+**Verworfen.** `agent-teams` orchestriert parent→child-Spawning innerhalb einer Session. Zwei User-Cowork-Sessions sind Peers, keine Parent-Child-Relation. Tools sind unterschiedlich (parent kann nicht Worker's Tools dispatchen).
+
+### 8.2 Manuelle Coordination ohne Plugin
+
+**Verworfen.** Empirisch fragil — siehe 9 Failure-Modes im Korpus. Pro Pairing müssen Schema, Lifecycle, Rollback neu erfunden werden.
+
+### 8.3 Push-basierte Bridge via Webhooks
+
+**Verworfen.** Plattform unterstützt keinen Push zwischen Cowork-Sessions. Webhook-Server außerhalb Cowork wäre zusätzliche Infrastruktur, gegen Plugin-Self-Contained-Prinzip.
+
+### 8.4 N-Pair-Topologie (>2 Sessions)
+
+**Deferred.** Topologisch komplexer (Konsens-Probleme bei N≥3). MVP fokussiert 2-Pair.
+
+### 8.5 Auto-Trigger-Hooks
+
+**Deferred.** Pre-Tool-Use-Hooks für `[BRIDGE-CRITICAL]`-Tag erhöht Komplexität. MVP ist polling-only mit User-mediierten Rounds.
+
+---
+
+## 9. Consequences
+
+### 9.1 Positiv
+
+- Wiederverwendbares Pattern für N zukünftige Pairings.
+- Strukturelle Verhinderung von 9 empirisch dokumentierten Failure-Modes.
+- Lifecycle-Tracking verhindert Beratungs-Drift.
+- Wall-Clock-Drift-Logging ermöglicht Selbst-Kalibrierung der Schätz-Heuristik.
+
+### 9.2 Negativ
+
+- Polling-Latenz: User muss in beiden Sessions aktiv prompten.
+- Schema-Lock-Risiko: Schema-Drift bei zukünftigen Round-Typen erfordert breaking-change-Migration.
+- Plattform-Bindung: Bricht wenn `session_info`-MCP API ändert.
+
+### 9.3 Operational
+
+- Plugin-Repo: `~/session-bridge/` (eigenes Repo, nicht in domain-spezifischem Plugin).
+- Plugin-Manifest: separates Plugin, kein Dependency auf andere Plugins.
+- Distribution: post-MVP via lokales Plugin-Install, später ggf. Marketplace.
+
+---
+
+## 10. Acceptance-Kriterien
+
+### 10.1 ADR-Lock-Akzeptanz (Phase 3)
+
+| # | Kriterium | Verifikation |
+|---|---|---|
+| A1 | State-Schema im ADR §4.1 inline vollständig | Manuelle Inspektion + jsonschema-Syntax-Check |
+| A2 | Handover-Frontmatter-Schema im ADR §4.3 inline vollständig | Manuelle Inspektion |
+| A3 | 10 Round-Typen encoded (8 procedural + 2 utility) | Enum-Konsistenz §3.3 ↔ §4.2 ↔ State-Schema |
+| A4 | 9 Failure-Modes mit Driver-Mapping (D1-D10) | FM-Mapping in §2 Drivers nachweisbar |
+| A5 | Lifecycle 6 Phasen + Übergänge spezifiziert | §5 vollständig |
+| A6 | Conflict-Resolution für 4 Konflikt-Typen | §6 vollständig |
+| A7 | Constraints C1-C7 explizit | §7 vollständig |
+| A8 | ≥5 Alternativen mit Begründung (verworfen ODER deferred) | §8 vollständig |
+| A9 | Concurrency-Mechanismus + Schema-Versionierung spezifiziert | §13 vollständig |
+
+### 10.2 Plugin-MVP-Akzeptanz (Phase 4)
+
+| # | Kriterium | Verifikation |
+|---|---|---|
+| M1 | `plugin/schemas/bridge_state_v1.json` existiert + jsonschema-validate | Validator-Lauf |
+| M2 | `plugin/schemas/handover_frontmatter_v1.json` existiert + jsonschema-validate | Validator-Lauf |
+| M3 | Skills `bridge-advisor` + `bridge-worker` lauffähig | Smoke-Test in Phase 5 |
+| M4 | Commands `/bridge-init`, `/bridge-attach`, `/bridge-handover`, `/bridge-status`, `/bridge-close` lauffähig | Smoke-Test in Phase 5 |
+| M5 | `claude plugin validate` PASS | Validator-Lauf |
+| M6 | Synthetischer Pilot Round 0..6 PASS | Phase 5 Pilot-Test |
+
+---
+
+## 11. Open Questions
+
+| OQ-ID | Frage | Klärung |
+|---|---|---|
+| OQ-1 | Wie wird `pair_id` zwischen Sessions kommuniziert? | User kopiert manuell aus `/bridge-init`-Output zu `/bridge-attach`. Auto-Discovery via Filesystem-Scan wäre Phase-2-Erweiterung. |
+| OQ-2 | Was passiert bei `session_info`-MCP-Ausfall? | Bridge degraded: handover ohne transcript-Verifikation; alle `references[].verified=false`; advisor-Quality reduziert auf User-mediated-Snapshots. |
+| OQ-3 | `pair_id`-Kollision bei neuem Pair? | UUIDv4-Kollisions-Wahrscheinlichkeit negligible. Bei dennoch eintretender Kollision: state.json hat `created_at` als Tiebreaker. |
+| OQ-5 | Soll `close` automatisch Memory-Persist auslösen? | Deferred. MVP: User triggert separat via `consolidate-memory`. |
+| OQ-6 | Wie wird `bridge/`-Subdirectory zwischen Sessions geteilt wenn beide auf verschiedene Cowork-Projects mounten? | C3 erzwingt mind. einen gemeinsamen Mount. Plugin-Convention: `bridge/` lebt im **gemeinsam mountbaren** Project. Default-Konvention: `<gemeinsam-mountbarer-pfad>/bridge/`. `/bridge-init` validiert Existenz dieses Pfads vor State-File-Anlage. |
+
+---
+
+## 12. References
+
+- CORPUS_ANALYSIS: `../pattern-mining/CORPUS_ANALYSIS.md`
+- Prior-Art `agent-teams`: Peer-Plugin, anderes Modell
+- `session_info`-MCP: read-Backbone
+- Auto-Memory `feedback_self_edit_fallback.md`: Wall-Clock-Cost-Model (C7)
+- Auto-Memory `feedback_git_host_mcp.md`: Filesystem-Authority-Pattern (D10)
+
+---
+
+## 13. Schema-Versioning & Concurrency
+
+### 13.1 Schema-Versioning
+
+State-Schema und Handover-Schema tragen explizit `schema_version` Feld. Aktuell `1.0`.
+
+**Bump-Regeln:**
+
+- **Patch-Bump (1.0 → 1.0.1):** Backwards-kompatible Erweiterung (neue optionale Felder). Keine Migration nötig.
+- **Minor-Bump (1.0 → 1.1):** Neue Pflicht-Felder mit Default. Auto-Migration via `core/migrate_state_v1_0_to_v1_1.py`.
+- **Major-Bump (1.0 → 2.0):** Breaking Change (Feld entfernt, Enum-Wert entfernt). Pflicht-Migration-Skript + Deprecation-Phase ≥30 Tage. Pair-Closing ist Pflicht vor Major-Bump.
+
+**Migration-Pflicht:** Plugin liefert Migration-Skripte für jeden Minor/Major-Bump. State-Files mit veraltetem `schema_version` werden vor Lese-Zugriff migriert (in-place via temp-File + atomic-rename).
+
+### 13.2 Concurrency-Mechanismus
+
+**Atomic-Write-Pattern (alle Schreib-Operationen auf state.json):**
+
+```
+1. Read state.json → state_dict
+2. Validate state_dict gegen schema (jsonschema)
+3. Mutate state_dict (lokal in-memory)
+4. Write state.json.tmp.<uuid> mit neuem state_dict
+5. Atomic rename state.json.tmp.<uuid> → state.json
+```
+
+**Optimistic-Locking via `updated_at`-Field:**
+
+```
+1. read_at = read state.json["updated_at"]
+2. mutate
+3. compare-and-swap: rename nur wenn current state.json["updated_at"] == read_at
+4. Bei CAS-Failure: re-read + re-mutate (max 3 retries)
+```
+
+**Round-Counter-Atomicity:**
+
+`current_round` wird ausschließlich beim Append zu `rounds[]`-Array atomar inkrementiert. Plugin-Code-Pflicht: NIE `current_round` ohne entsprechenden `rounds[]`-Append schreiben.
+
+**Handover-File-Naming:**
+
+Format: `<round>-<from>-<to>-<short-uuid>.md` wo `short-uuid` 8 Zeichen UUID4. Eindeutigkeit: garantiert auch bei race-Conditions zwischen zwei Sessions (sehr seltener Edge-Case bei gleichzeitigem Schreiben).
+
+### 13.3 Failure-Recovery
+
+**Crash während Write:**
+
+- `state.json.tmp.<uuid>` bleibt liegen → Plugin-Init prüft + räumt auf.
+- `state.json` ist atomic (rename ist POSIX-atomic auf gleichem Filesystem).
+
+**Session stirbt mid-Round:**
+
+- handover-File ist `complete` falls atomic-rename gelungen, sonst inkomplett liegengelassen.
+- Plugin-Init prüft handover/-Dir gegen rounds[]-Array; orphane handover-Files werden in `bridge/orphans/` archiviert.
+
+**Diverging State (zwei Sessions schrieben parallel ohne CAS):**
+
+- Bei CAS-Failure ist Recovery automatisch (re-read + re-mutate).
+- Bei manueller Korruption: `bridge/state.json.bak.<timestamp>` wird vor jedem Write angelegt (Pre-Atomic-Write-Step).
+
+---
+
+**Lock-Status:** LOCKED. A1-A9 PASS verifiziert 2026-04-26. Phase 4 (MVP-Plugin-Scaffold) freigegeben. Schema-Bumps ab hier nur via §13.1-Bump-Regeln.

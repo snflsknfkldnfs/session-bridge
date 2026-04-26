@@ -1,0 +1,23 @@
+# Pilot-Run-Artefakte (regenerierbar via pilot_lifecycle_mock.py + setup_initial_state.py)
+pilot-runs/*/shared/
+pilot-runs/*/.bridge/
+
+# v1-Inventory (fehlerhafter Vorgänger-Output, ersetzt durch v2)
+docs/pattern-mining/META_PROZESSE_FULL_INVENTORY.md
+
+# Python-Caches
+__pycache__/
+*.pyc
+*.pyo
+
+# State-File-Backups + Temp-Files (atomic-write-Artefakte)
+**/state.json.tmp.*
+**/state.json.bak.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

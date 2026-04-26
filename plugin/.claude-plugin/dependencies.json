@@ -1,0 +1,33 @@
+{
+  "_comment": "External-Dependencies-Spec für session-bridge. ADR_0028-Pattern. Plugin-Validator akzeptiert keine custom Keys in plugin.json, daher als separate Datei. Wird von bridge-init Pre-Flight + Setup-Tools gelesen.",
+  "schema_version": "1.0.0",
+  "requiredMcpServers": [
+    {
+      "name": "session_info",
+      "purpose": "read_transcript / list_sessions — Backbone für advisor-Side Status-Verifikation",
+      "fallback": "Bridge degraded zu rein User-mediated handovers (references[].verified=false)"
+    }
+  ],
+  "optionalMcpServers": [
+    {
+      "name": "scheduled-tasks",
+      "purpose": "Phase-2-Erweiterung: Auto-Refresh-Polling der advisor-Side"
+    }
+  ],
+  "useCaseMcpServers": [],
+  "webFetchFallbackSources": [],
+  "requiredCliTools": [
+    {
+      "name": "python3",
+      "purpose": "jsonschema-Validate + Self-Test smoke_self_test.py",
+      "version_min": "3.8"
+    }
+  ],
+  "requiredPythonPackages": [
+    {
+      "name": "jsonschema",
+      "purpose": "State + Handover-Frontmatter Schema-Validate",
+      "graceful_degrade": "Heuristik-Fallback bei ImportError, degraded_mode=True im Output"
+    }
+  ]
+}
