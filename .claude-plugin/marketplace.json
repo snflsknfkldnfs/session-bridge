@@ -1,5 +1,8 @@
 {
   "name": "session-bridge-local",
+  "metadata": {
+    "description": "Local marketplace for the session-bridge plugin (Cross-Cowork-Session Advisor/Worker coordination)."
+  },
   "owner": {
     "name": "Paul Cebulla",
     "url": "https://github.com/snflsknfkldnfs"
