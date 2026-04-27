@@ -15,8 +15,31 @@ Diese Session ist `advisor` in einem session-bridge Pair. Sie hat Expertise / Be
 
 1. `bridge/state.json` existiert und diese Session ist als `roles.advisor.session_id` eingetragen.
 2. session_info MCP verfügbar (sonst degraded mode).
+3. Falls `state.roles.advisor.expertise_profile` gesetzt (ADR_0030, schema v1.1.0): Profile-Verzeichnis existiert + alle `required_files` lesbar. Bei FAIL: WARN + degraded-mode (advisor agiert generic, references[].verified=false markieren).
 
 ## Pflicht-Workflow pro Handover
+
+### Schritt 0 — Profile-Loading (ADR_0030 §3.4, nur wenn expertise_profile gesetzt)
+
+```python
+# Pseudocode
+profile_path = state["roles"]["advisor"].get("expertise_profile")
+if profile_path:
+    profile = load_profile(profile_path)
+    # profile = {
+    #   "frontmatter": {profile_name, methodology_pillars, sources, pflicht_workflows, linkage_to_bridge_rounds, ...},
+    #   "diagnostic_frames": [...],   # aus diagnostic-frames.md
+    #   "anti_patterns": [...],        # aus anti-patterns.md
+    #   "question_bank": {...}         # aus question-bank.md
+    # }
+    profile_workflow_modifier = profile["frontmatter"]["linkage_to_bridge_rounds"].get(round_type, "")
+    pflicht_workflows = profile["frontmatter"]["pflicht_workflows"]
+else:
+    profile = None
+    pflicht_workflows = []
+```
+
+Bei Profile-Load-FAIL: WARN, set `degraded_mode = True`, weiter ohne Profile.
 
 ### Schritt 1 — Status-Snapshot validieren (D1, FM-1, FM-7)
 
@@ -42,6 +65,7 @@ Mindestens 1 reference ist Pflicht. Bevorzugte Reihenfolge:
 3. `capability-probe` (für faktische Behauptungen wie "tool X installed")
 4. `memory` (Tiebreaker, NUR wenn explizit + jünger als 7 Tage)
 5. `shared-artifact` (cross-Pair-Referenz)
+6. `expertise-profile` (NEU v1.1.0, ADR_0030): Frame/Anti-Pattern/Quote aus geladenem Profile als methodische Referenz. Format: `pointer: "<profile_path>:<file>:<frame_id>"`, z.B. `"expertise-profiles/process-consulting:diagnostic-frames.md:vorderbuhne-hinterbuhne"`
 
 ### Schritt 3 — Handover-File schreiben (Atomic-Write D5)
 
@@ -87,6 +111,9 @@ Bei CAS-Failure: max 3 Retries, dann ABBRUCH + Nutzer informieren.
 - **NICHT** Pattern aus anderem Pair ungeprüft übertragen (FM-7) — Status-Verifikation pflichtig
 - **NICHT** acceptance_criteria oder rollback_triggers überspringen wenn Round-Type es fordert (Schema-allOf-Pflicht)
 - **NICHT** state.json schreiben ohne CAS — sonst Race-Condition mit Worker-Session
+- **NICHT** Profile-Workflows skippen wenn expertise_profile gesetzt (ADR_0030 §3.4 — Pflicht-Loading bei jedem Trigger)
+- **NICHT** Profile mid-Pair switchen — Profile ist init-time-gepinnt (ADR_0030 §3.4, C1)
+- **NICHT** Profile-Inhalt wörtlich in Handover kopieren — Eigenformulierung mit profile-Reference (Lizenzrecht-Constraint, ADR_0030 §5 C2)
 
 ## Output-Konvention
 

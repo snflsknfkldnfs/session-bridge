@@ -51,7 +51,7 @@ def synth_valid_state() -> dict:
     """Minimal-but-valid state.json fixture."""
     return {
         "pair_id": make_pair_id(),
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "created_at": now_iso(),
         "updated_at": now_iso(),
         "phase": "iterate",
@@ -59,6 +59,8 @@ def synth_valid_state() -> dict:
             "advisor": {
                 "session_id": "local_advisor_test",
                 "expertise_source": "smoke-test-fixture",
+                "expertise_profile": None,
+                "profile_version": None,
                 "active_since": now_iso(),
             },
             "worker": {
@@ -290,6 +292,39 @@ def main(verbose: bool = False) -> int:
         results.record("T10 negative pair_id pattern", True)
     except Exception as e:
         results.record("T10 negative pair_id pattern", False, f"unexpected: {e}")
+
+    # Test 11 (v1.1.0 ADR_0030): expertise_profile-Field als Pfad-String akzeptiert
+    try:
+        state = synth_valid_state()
+        state["roles"]["advisor"]["expertise_profile"] = "expertise-profiles/process-consulting"
+        state["roles"]["advisor"]["profile_version"] = "0.1.0"
+        jsonschema.validate(state, state_schema)
+        results.record("T11 v1.1.0 expertise_profile string-pfad valid", True)
+    except Exception as e:
+        results.record("T11 v1.1.0 expertise_profile string-pfad valid", False, str(e))
+
+    # Test 12 (v1.1.0 ADR_0030): schema_version 1.1.0 akzeptiert (Migration aus 1.0.0)
+    try:
+        state = synth_valid_state()
+        state["schema_version"] = "1.0.0"
+        # v1.0.0 darf keine expertise_profile haben (nicht required, aber pattern-konform)
+        state["roles"]["advisor"].pop("expertise_profile", None)
+        state["roles"]["advisor"].pop("profile_version", None)
+        jsonschema.validate(state, state_schema)
+        results.record("T12 v1.0.0 backward-compatible (Migration-Pfad)", True)
+    except Exception as e:
+        results.record("T12 v1.0.0 backward-compatible (Migration-Pfad)", False, str(e))
+
+    # Test 13 (v1.1.0 ADR_0030): schema_version invalid → FAIL
+    try:
+        state = synth_valid_state()
+        state["schema_version"] = "2.0.0"  # nicht im enum
+        jsonschema.validate(state, state_schema)
+        results.record("T13 negative schema_version enum", False, "expected ValidationError, got PASS")
+    except jsonschema.ValidationError:
+        results.record("T13 negative schema_version enum", True)
+    except Exception as e:
+        results.record("T13 negative schema_version enum", False, f"unexpected: {e}")
 
     if verbose:
         print("Passed:", results.passed)

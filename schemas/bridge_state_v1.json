@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/snflsknfkldnfs/session-bridge/schemas/bridge_state_v1.json",
-  "title": "Bridge State v1.0.0",
-  "description": "Shared state file for session-bridge pair coordination. ADR_0029 §4.1.",
+  "title": "Bridge State v1.1.0",
+  "description": "Shared state file for session-bridge pair coordination. ADR_0029 §4.1 + ADR_0030 (expertise_profile).",
   "type": "object",
   "required": [
     "pair_id",
@@ -28,7 +28,7 @@
       "description": "UUIDv4"
     },
     "schema_version": {
-      "const": "1.0.0"
+      "enum": ["1.0.0", "1.1.0"]
     },
     "created_at": {
       "type": "string",
@@ -51,6 +51,14 @@
           "properties": {
             "session_id": {"type": "string"},
             "expertise_source": {"type": "string"},
+            "expertise_profile": {
+              "type": ["string", "null"],
+              "description": "v1.1.0: Pfad zum Profile-Verzeichnis (relativ oder absolut). Null bei generic advisor. ADR_0030."
+            },
+            "profile_version": {
+              "type": ["string", "null"],
+              "description": "v1.1.0: Profile-Version gepinnt zum init-Zeitpunkt. ADR_0030 §3.4."
+            },
             "active_since": {"type": "string", "format": "date-time"}
           },
           "additionalProperties": false

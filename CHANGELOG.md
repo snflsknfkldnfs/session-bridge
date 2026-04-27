@@ -5,6 +5,37 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.2] — 2026-04-26 — Expertise-Profile-Layer (PB-014 Phase a)
+
+### Added
+
+- **ADR_0030 Expertise-Profile-Pattern** LOCKED — neue Schicht-1-Architektur über bridge-advisor. Plugin bleibt domain-agnostisch, Domain-Expertise als externe Resource.
+- **State-Schema v1.1.0** — `roles.advisor.expertise_profile` + `profile_version` als optionale Felder. Backward-compatible mit v1.0.0.
+- **bridge-init `--expertise-profile=<path>` Flag** — Profile wird init-time-gepinnt im state.json.
+- **Pre-Flight Punkt 5** — Profile-Validation (4 required_files + Frontmatter-Pflicht-Felder + supported profile_schema_version) vor state.json-Write.
+- **bridge-advisor Schritt 0 Profile-Loading-Workflow** — bei jedem Trigger Profile lesen, Pflicht-Workflows + Round-Linkage anwenden.
+- **References-Type `expertise-profile`** — methodische Referenzen aus Profile als Beleg-Quelle in Handovers.
+- **`expertise-profiles/_SCHEMA.md`** — Profile-Layout-Konvention dokumentiert.
+- **`expertise-profiles/_empty-test/`** — Empty-Profile-Fixture für Architektur-Smoke-Test.
+- **`expertise-profiles/curation-spec.md`** — 7-Stufen-Curation-Methodik mit Anti-Halluzinations- und Lizenzrecht-Constraints. Vorbereitung für PB-014 Phase b (process-consulting Profile).
+
+### Changed
+
+- Self-Test erweitert von 12 auf 15 Tests (T11 expertise_profile-Field, T12 v1.0.0 backward-compat, T13 schema_version-enum). Alle 15/15 PASS.
+- bridge-advisor Anti-Pattern-Section um 3 Profile-bezogene Regeln erweitert (Profile-Workflow-Skip, Mid-Pair-Switch-Verbot, Wörtliche-Zitat-Verbot).
+
+### Phase-2-Roadmap
+
+PB-014 Phase a (Architektur) abgeschlossen mit v0.1.2. **PB-014 Phase b** (process-consulting Profile-Curation, ~9-11 h) pending bei User-Pull-Trigger.
+
+### Verification
+
+- `claude plugin validate` PASS
+- Self-Test 15/15 PASS
+- ADR_0030 LOCKED (A1-A8 PASS)
+
+---
+
 ## [0.1.1] — 2026-04-26 — Real-User-Pilot Hotfix
 
 ### Added

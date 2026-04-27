@@ -1,6 +1,6 @@
 ---
 description: Initialisiert ein neues session-bridge Pair als Initiator-Session (rolle wählbar advisor|worker). Generiert pair_id (UUIDv4), legt bridge/state.json an, schreibt eigene Rolle mit pending-attach-Sentinel für die andere Rolle. Andere Session muss anschließend /bridge-attach <pair_id> ausführen — Plugin generiert dafür ready-to-paste-Prompt.
-argument-hint: --role=<advisor|worker> --topic="<string>" [--shared-path=<absolute-path>] [--expertise-source="<string>"] [--worker-focus="<string>"] [--worker-session-id=<string>]
+argument-hint: --role=<advisor|worker> --topic="<string>" [--shared-path=<absolute-path>] [--expertise-source="<string>"] [--expertise-profile=<path>] [--worker-focus="<string>"] [--worker-session-id=<string>]
 ---
 
 # /bridge-init
@@ -15,6 +15,7 @@ Initialisiert neuen Session-Bridge-Pair.
 | `--topic="<string>"` | ja | Bridge-Topic. **Bei missing → ABBRUCH + User-Question** (siehe §Argument-Resolution-Protokoll, Anti-Pattern: NICHT inferieren) |
 | `--shared-path=<absolute-path>` | nein | Pfad zum gemeinsam mountbaren Verzeichnis. **Default: NICHT eigenes Working-Dir** — User-Frage falls nicht gegeben (siehe §Argument-Resolution-Protokoll) |
 | `--expertise-source="<string>"` | nur wenn role=advisor | z.B. "escape-game-generator P.1+P.2" |
+| `--expertise-profile=<path>` | optional bei role=advisor | Pfad zu einem Expertise-Profile-Verzeichnis (siehe ADR_0030). Z.B. `expertise-profiles/process-consulting` (relativ ab Plugin-Repo) oder `private-notes/expertise-profiles/process-consulting` (relativ ab shared-path) oder absoluter Pfad. Schema v1.1.0 Field. |
 | `--worker-focus="<string>"` | nur wenn role=worker | z.B. "phase-1.6 implementation" |
 | `--worker-session-id=<string>` | empfohlen wenn role=advisor | Session-ID der Worker-Session (für Status-Verifikation via session_info MCP). Falls unbekannt: Skill listet via list_sessions + fragt User |
 
@@ -60,7 +61,7 @@ Empfohlen aber nicht hart-blockierend. Wenn missing:
 
 `worker.session_id` im state.json wird auf `pending-attach`-Sentinel gesetzt falls keine Worker-Session-ID bekannt — bridge-attach replaced das später.
 
-## Pre-Flight (PFLICHT, ATOMAR — alle 4 Punkte VOR state.json-Write)
+## Pre-Flight (PFLICHT, ATOMAR — alle 5 Punkte VOR state.json-Write)
 
 **Empirisch (Real-User-Pilot): Pre-Flight Punkt 4 wurde "deferred" — Spec-Bruch.** Pre-Flight ist atomar, kein Punkt darf deferred werden.
 
@@ -68,6 +69,13 @@ Empfohlen aber nicht hart-blockierend. Wenn missing:
 2. `<shared-path>/bridge/state.json` existiert NICHT (sonst Konflikt mit bestehendem Pair). **Bei FAIL → ABBRUCH** mit Hinweis auf existierende pair_id.
 3. `python3 -c "import jsonschema"` PASS oder `graceful_degrade=True` setzen (Heuristik-Fallback, references[].verified=false markieren).
 4. `mcp__session_info__list_sessions` callable. **NICHT deferrable.** Bei FAIL → degraded-mode mit explizitem User-Hinweis "advisor-Skill funktioniert eingeschränkt ohne session_info — references[].verified=false durchgängig".
+5. **Profile-Validation falls `--expertise-profile=<path>` gesetzt** (ADR_0030 §3.4):
+   - Profile-Verzeichnis existiert
+   - `<profile>/PROFILE.md` existiert + frontmatter parsebar
+   - Frontmatter hat Pflicht-Felder: `profile_name`, `profile_version`, `profile_schema_version`, `domain`, `methodology_pillars`, `sources`, `pflicht_workflows`, `linkage_to_bridge_rounds`, `required_files`
+   - Alle `required_files` aus Frontmatter existieren im Profile-Verzeichnis
+   - `profile_schema_version` ist supported (aktuell `1.0.0`)
+   - **Bei FAIL → ABBRUCH** mit Profile-Diagnose. Empfehlung: Profile-Pfad korrigieren oder ohne `--expertise-profile` initialisieren (generic advisor).
 
 **Bei FAIL eines Pre-Flight-Punkts: ABBRUCH + Diagnose. NIEMALS Pre-Flight teilweise überspringen.**
 
@@ -110,9 +118,13 @@ SENTINEL_PENDING = "pending-attach"
 now = now_iso()
 
 if role == "advisor":
+    # ADR_0030: Profile-Pin zur init-Zeit
+    profile_data = load_and_validate_profile(expertise_profile) if expertise_profile else None
     advisor_obj = {
         "session_id": this_session_id,
         "expertise_source": expertise_source,
+        "expertise_profile": expertise_profile if expertise_profile else None,
+        "profile_version": profile_data["frontmatter"]["profile_version"] if profile_data else None,
         "active_since": now
     }
     worker_obj = {
@@ -122,6 +134,8 @@ if role == "advisor":
 else:  # role == "worker"
     advisor_obj = {
         "session_id": SENTINEL_PENDING,
+        "expertise_profile": None,
+        "profile_version": None,
         "active_since": now
     }
     worker_obj = {
@@ -133,7 +147,7 @@ else:  # role == "worker"
 
 state = {
     "pair_id": pair_id,
-    "schema_version": "1.0.0",
+    "schema_version": "1.1.0",  # ADR_0030 Expertise-Profile-Layer
     "created_at": now,
     "updated_at": now,
     "phase": "init",
