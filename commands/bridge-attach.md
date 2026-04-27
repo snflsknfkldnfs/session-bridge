@@ -22,8 +22,9 @@ Attaches diese Session als zweite Rolle zu einem bestehenden Bridge-Pair.
 1. `<shared-path>/bridge/state.json` existiert
 2. State.pair_id == argument.pair_id
 3. State.phase == "init"
-4. State.roles[<role>] ist leer / not yet attached
+4. **State.roles[<role>].session_id == "pending-attach"** (Sentinel-Check, P-RP-08) — eigene Rolle ist Pending-Stub aus init-Phase, NICHT bereits attached
 5. State.roles[<other-role>].session_id != this_session_id (kein Self-Attach)
+6. State.roles[<other-role>].session_id != "pending-attach" (andere Rolle muss bereits gefüllt sein durch init)
 
 Bei FAIL: ABBRUCH + Diagnose.
 
@@ -34,10 +35,14 @@ Bei FAIL: ABBRUCH + Diagnose.
 state = read_state(shared_path)
 validate(state, bridge_state_v1_schema)
 
-# 2. Pre-Flight-Checks (siehe oben)
+# 2. Pre-Flight-Checks (siehe oben — pending-attach-Sentinel-Check P-RP-08)
 assert_preflight(state, pair_id, role)
 
-# 3. Eigene Rolle eintragen
+# 3. Eigene Rolle eintragen — REPLACE pending-attach-Sentinel mit echten Werten
+SENTINEL_PENDING = "pending-attach"
+assert state["roles"][role]["session_id"] == SENTINEL_PENDING, \
+    f"Pre-Flight 4 broken: erwartet pending-attach, gefunden {state['roles'][role]['session_id']}"
+
 state["roles"][role] = {
     "session_id": this_session_id,
     "active_since": now_iso(),
@@ -70,15 +75,18 @@ Anschließend (advisor-Session): erste initial-advice via
 
 ## Akzeptanz
 
-- State.roles[role].session_id == this_session_id
+- State.roles[role].session_id == this_session_id (NICHT mehr "pending-attach")
+- State.roles[<other-role>].session_id != "pending-attach" (Initiator hat echte Session-ID)
 - State.phase == "scope-lock"
-- Schema-Validate PASS
+- Schema-Validate PASS post-attach
 
 ## Anti-Pattern
 
-- NICHT mit gleicher session_id attachen (Self-Attach)
-- NICHT attachen wenn beide Rollen schon gefüllt
-- NICHT attachen wenn pair_id ≠ state.pair_id
+- NICHT mit gleicher session_id attachen (Self-Attach Pre-Flight 5)
+- NICHT attachen wenn beide Rollen schon gefüllt (kein pending-attach mehr → Pre-Flight 4 FAIL)
+- NICHT attachen wenn pair_id ≠ state.pair_id (Pre-Flight 2 FAIL)
+- NICHT bridge-attach in Initiator-Session aufrufen — diese Session hat ihre Rolle bereits via /bridge-init gesetzt
+- NICHT pending-attach-Sentinel-Replacement überspringen — sonst wird state.json ungültig (Sentinel als reale session_id-Antwort)
 
 ## Cross-Refs
 
