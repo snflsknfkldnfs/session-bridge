@@ -5,6 +5,37 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.2-phase-b] — 2026-04-27 — process-consulting Profile (PB-014 Phase b, private)
+
+### Added (private-notes/, NICHT im Plugin-Repo committed)
+
+- **process-consulting Profile** v0.1.0 in `private-notes/expertise-profiles/process-consulting/`:
+  - `PROFILE.md` (4 Methodik-Säulen, 3 Quellen, 4 Pflicht-Workflows, 8 Trigger-Phrasen, Frontmatter Pre-Flight 5/5 PASS)
+  - `diagnostic-frames.md` (10 Frames in 6 Cluster-Gruppen — Organisation-als-Form, Mitgliedschaft+Rollen, Macht/Führung, Spannung+Integration, Schauseite/Simulation, Personalisierung)
+  - `anti-patterns.md` (10 Anti-Patterns AP-01..10 mit Beobachtbarkeit + Begründung + Belege + Korrektiv)
+  - `question-bank.md` (47 Diagnose-Fragen, gruppiert nach Frames + Bridge-Round-Type)
+- **Curation-Workspace** `private-notes/process-consulting-curation/` mit Stufen 0-7 (Tag-Inventur 342 Files, 6 Cluster, 6 Subagent-Frame-Synthesen, Validation-Report)
+
+### Empirie
+
+- 6 Subagent-Calls (1 pro Cluster, sequentiell) — Wall-Clock 1.8-5.8 min pro Call (skaliert linear mit File-Count, ~3-5 sec/File)
+- Total Subagent-Wall-Clock: ~18 min für 199 File-Reads
+- 0 AMBIGUOUS-Findings, 10 Frames + 10 Anti-Patterns alle PASS
+- Hypothesen-Revision durchgeführt: F3.1 von Foucault-Linie zu Luhmann/Kühl-Systemtheorie umformuliert (Subagent-Befund)
+- 3 Lizenz-Issues paraphrasiert (S. 158/174/218, F4.2)
+
+### Quellen
+
+- Matthiesen/Muster/Laudenbach (2023): Die Humanisierung der Organisation. Vahlen
+- Kühl, S. (2020): Organisationen — Eine sehr kurze Einführung. Springer
+- Luhmann, N. (1964): Funktionen und Folgen formaler Organisation (zit. via Matthiesen + Kühl)
+
+### Pre-Publication-Pflicht (deferred)
+
+Profile bleibt in `private-notes/` (gitignored). Für öffentliche Distribution erforderlich: Lizenzrecht-Check + Cherry-Picking-Vollaudit + Empirie-Test in Real-User-Pair.
+
+---
+
 ## [0.1.2] — 2026-04-26 — Expertise-Profile-Layer (PB-014 Phase a)
 
 ### Added

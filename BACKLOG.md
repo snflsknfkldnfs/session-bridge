@@ -240,7 +240,38 @@ Phase-2-Entwicklung startet **nicht** bei Spec-Reife oder Roadmap-Plan, sondern 
 
 ---
 
-**Snapshot-Date:** 2026-04-26 (post v0.1.1 Hotfix).
+**Snapshot-Date:** 2026-04-27 (post PB-014 Phase a + b).
 **Phase-1-Closed:** 2026-04-26 (39/39 Tests + Validator PASS + Korpus-Mining v2 LOCKED).
 **v0.1.1 Hotfix-Closed:** 2026-04-26 (5 Real-User-Pilot-Patches, commit 5bb36a9).
-**Phase-2-Active:** ✅ aktiviert 2026-04-26 via Real-User-Pilot. 13 Tier-1-Items pending (8 META_PROZESSE-Mining + 5 Real-User-Pilot).
+**v0.1.2 Closed:** 2026-04-26 (PB-014 Phase a Expertise-Profile-Layer ADR_0030 LOCKED, commit fe5a2d5).
+**PB-014 Phase b Closed:** 2026-04-27 (process-consulting Profile in private-notes/, 10 Frames + 10 Anti-Patterns + 47 Diagnose-Fragen, Profile-Pre-Flight 5/5 PASS).
+**Phase-2-Active:** ✅ aktiviert 2026-04-26 via Real-User-Pilot. **PB-014 abgeschlossen** (Phase a Architektur + Phase b erstes Profile). 12 weitere Tier-1-Items pending (7 META_PROZESSE-Mining + 5 Real-User-Pilot).
+
+## PB-014 Phase b Closure-Marker (2026-04-27)
+
+- Quell-Korpus: 342 organisationssoziologische Zettel (Kühl 119 + Humanisierung 223)
+- Curation-Stufen 0-7 abgearbeitet, alle 8 Akzeptanz-Kriterien PASS (siehe `private-notes/process-consulting-curation/06_validation-report.md`)
+- 6 Subagent-Calls (sequentiell, je Cluster) für Frame-Synthese — total ~18 min Subagent-Wall-Clock
+- Profile-Files in `private-notes/expertise-profiles/process-consulting/` (PROFILE.md, diagnostic-frames.md, anti-patterns.md, question-bank.md)
+- Cherry-Picking-Stichprobe 5/10 PASS, Lizenz-Pre-Check OK (3 Belege paraphrasiert in Stufe 7)
+- Profile-Pre-Flight (bridge-init Schritt 5) Self-Test: 5/5 PASS
+
+## PB-014 Phase b deferred (Pre-Publication-Path)
+
+Vor öffentlicher Distribution des process-consulting-Profile:
+1. Lizenzrecht-Check (User-Aktion + ggf. juristische Beratung)
+2. Cherry-Picking-Vollaudit (alle 10 Frames stichprobenweise gegen Quell-Zettel)
+3. Empirie-Test in Real-User-Pair mit aktiviertem Profile
+4. Profile in `expertise-profiles/process-consulting/` (public-Repo) verschieben
+
+Aktuell: Profile bleibt in `private-notes/` (gitignored) — User-Decision-Pending für Public-Release.
+
+## Smoke-Test-Befunde aus 2026-04-27 (Tier-2-Backlog)
+
+| ID | Befund | Severity |
+|---|---|---|
+| **F-RP-12** | Pre-Flight Punkt 4 wurde "smoke-context" deferred trotz P-RP-03-Patch — Skill-Interpretation neigt weiter zu pragmatischem Skip | LOW |
+| **F-RP-13** | Sandbox-/tmp vs Host-/tmp shared-path-Mapping unklar — für 2-Session-Pair-Tests muss Path host-zugänglich sein | LOW |
+| **F-RP-14** | Session-ID-Marker "smoke-test-advisor-session" als Stub — Plugin sollte Smoke- vs Real-Mode-Distinction handhaben | LOW |
+
+Aufnahme als PB-019..021 in zukünftiger Hotfix-Welle (deferred bis User-Pull).
