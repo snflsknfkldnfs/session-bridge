@@ -1,15 +1,23 @@
-# session-bridge — Phase-2-Backlog
+# session-bridge — Backlog
 
-**Status:** Phase 1 (v0.1.0 MVP) abgeschlossen 2026-04-26.
-Phase 2 wird **nur aktiviert bei Real-Use-Case-Pull** (siehe §Trigger).
+**Status:**
+- Phase 1 (v0.1.0 MVP) abgeschlossen 2026-04-26
+- v0.1.1 Hotfix abgeschlossen 2026-04-26 (Real-User-Pilot-Patches P-RP-01..04 + P-RP-08)
+- Phase 2 **AKTIV** seit 2026-04-26 — Real-Use-Case-Pull erfüllt via EG_DEV_ADVISOR + UPP-Pair Pilot
 
-**Phase-1-Closure-Marker:**
+**v0.1.1 Hotfix-Closure-Marker (2026-04-26):**
+- 5 Patches appliziert: Schema-Konsistenz, Anti-Inferenz-Protokoll, Pre-Flight-Atomarität, Worker-Notification-Block, Sentinel-Replacement
+- Validator + Self-Test 12/12 PASS post-Patch
+- Commit `5bb36a9` auf main, gepusht zu github.com/snflsknfkldnfs/session-bridge
+- Empirie-Quellen: EG_DEV_ADVISOR-Session (5 Bugs), UPP-Pair (funktionierender Lifecycle bis Round 11, 2 zusätzliche LOW/MED-Befunde)
+
+**Phase-1-Closure-Marker (v0.1.0 MVP, 2026-04-26):**
 - ADR_0029 LOCKED
 - Validator: `claude plugin validate` PASS
 - Self-Test: `tests/smoke_self_test.py` 12/12 PASS
 - Pilot P1 Script-Mock: 20/20 PASS
 - Pilot P2 Subagent-Pair: 19/19 PASS
-- META_PROZESSE-Korpus-Mining: `docs/pattern-mining/META_PROZESSE_INVENTORY_v2.md` (32 Bausteine, 11 Cluster)
+- META_PROZESSE-Korpus-Mining: 32 Bausteine, 11 Cluster (private-notes/, gitignored)
 
 ---
 
@@ -124,6 +132,89 @@ Mind. 1 Eintrag, max 2. Schema-allOf-Pflicht für type=decision-lock.
 
 ---
 
+## Tier-1-Items aus Real-User-Pilot (2026-04-26) — neue Empirie
+
+### PB-009 Drift-Plausibility-Check für Wallclock-Estimates
+
+**Driver:** Real-User-Pilot UPP-Pair Round 9 — Worker meldete Drift 0.58 als ungewöhnlich. Advisor musste manuell verifizieren via Stichprobe + Heuristik-Re-Run. Plugin hat keinen Plausibilitäts-Check für Drift-Werte.
+
+**Quelle:** F-RP-10 (MEDIUM-Befund aus UPP-Empirie).
+
+**Phase-2-Spec:** bridge-handover-Command bei type=verify oder type=execute mit `actual_min`-Wert: Berechnet `drift_factor = actual_min / estimated_min`, prüft gegen Memory-historische Drift-Range pro Pair-Topic-Pattern. Bei Abweichung > 2×Std-Dev: WARN-Marker im Output + Empfehlung an User "Drift ungewöhnlich, manuelle Stichprobe empfohlen".
+
+**Aufwand-Schätzung:** ~3h Self-Edit (Schema-Erweiterung wallclock_estimates + Heuristik-Code in bridge-handover-Command + Self-Test).
+
+---
+
+### PB-010 Number-Konsistenz-Validation in Handover-Body-Listen
+
+**Driver:** Real-User-Pilot UPP-Pair Round 9 — Worker schrieb in Handover "4 atomar gelistet=8" (Tippfehler, real 8 Items). Plugin validiert Frontmatter-Schema, aber nicht Body-Konsistenz.
+
+**Quelle:** F-RP-11 (LOW-Befund aus UPP-Empirie).
+
+**Phase-2-Spec:** Optional-Validator-Hook in bridge-handover-Command: parse Body-Lists, count Items, vergleiche mit explizit genannten Zahlen ("X atomar"). Bei Diskrepanz: WARN.
+
+**Aufwand-Schätzung:** ~1.5h Self-Edit. Niedrige Prio (kosmetisch, kein Daten-Bug).
+
+---
+
+### PB-011 shared-path-Default-Heuristik mit Filesystem-Inspektion
+
+**Driver:** Real-User-Pilot — bridge-init `--shared-path` ist optional, aber Default "Working-Dir der eigenen Session" funktioniert nicht wenn Sessions in unterschiedlichen Cowork-Projects laufen.
+
+**Quelle:** F-RP-05 / P-RP-05 (deferred aus v0.1.1 Hotfix).
+
+**Phase-2-Spec:** Plugin-Helper-Tool `tools/find_shared_path.sh` — sucht via Mount-Point-Inspektion + session_info.list_sessions den größten gemeinsamen Pfad. Fallback auf User-Question wenn ambig.
+
+**Aufwand-Schätzung:** ~2h Self-Edit + Empirie-Test in 2-Project-Pilot.
+
+---
+
+### PB-012 tools/-Library für Atomic-Write + State-Mutation
+
+**Driver:** Real-User-Pilot — `write_atomic(...)` ist Pseudocode-Funktion in jedem Command separat. Code-Duplication-Risiko über N Commands.
+
+**Quelle:** F-RP-07 / P-RP-06 (deferred aus v0.1.1 Hotfix).
+
+**Phase-2-Spec:** `tools/bridge_state.py` als shared Python-Library mit:
+- `read_state(shared_path) -> dict`
+- `write_atomic_cas(shared_path, state, expected_updated_at) -> bool`
+- `validate_against_schema(state) -> list[errors]`
+- `pending_attach_replace(state, role, real_session_id, ...) -> dict`
+
+Skills/Commands rufen via `${CLAUDE_PLUGIN_ROOT}/tools/bridge_state.py` (subprocess oder Python-Import). Pseudocode in MD-Dateien wird zu echtem Library-Aufruf.
+
+**Aufwand-Schätzung:** ~5h Self-Edit (Library + 5 Commands refactoren + Self-Test extension).
+
+---
+
+### PB-013 /bridge-update-Command für post-Init-Korrekturen
+
+**Driver:** Real-User-Pilot — Topic-Mismatch wurde via direkter state.json-Edit durch Advisor-Skill korrigiert. Kein dedicated Command für post-Init-Updates (Topic, expertise-source, worker-focus).
+
+**Quelle:** F-RP-08 / P-RP-07 (deferred aus v0.1.1 Hotfix).
+
+**Phase-2-Spec:** `commands/bridge-update.md` mit Argumenten `--field=<topic|expertise-source|worker-focus> --value="<new>"`. Pre-Flight: phase ∈ {init, scope-lock, iterate} (nicht in execute/verify/close — würde Decision-Log brechen).
+
+**Aufwand-Schätzung:** ~2h Self-Edit.
+
+---
+
+## Tier-1-Activation-Reihenfolge (post-v0.1.1)
+
+Empfehlung basierend auf User-Pull-Wahrscheinlichkeit:
+
+1. **PB-012 tools/-Library** — Foundation für sauberen Code in PB-013/PB-009
+2. **PB-013 /bridge-update** — Adressiert konkrete Pain-Point aus EG_DEV_ADVISOR-Pilot
+3. **PB-001 Bilanz-Schema** — Plugin-Closure-UX-Verbesserung
+4. **PB-009 Drift-Plausibility** — Quality-of-Life für Advisor
+5. **PB-002 Anti-Endless-Loop** — defensiv, niedrige Prio
+6. **PB-003 Pre-Decision-Verification** — Edge-Case-Härtung
+7. **PB-011 shared-path-Heuristik** — UX, niedrige Prio
+8. **PB-010 Number-Konsistenz** — kosmetisch
+
+---
+
 ## Activation-Trigger für Phase 2
 
 Phase-2-Entwicklung startet **nicht** bei Spec-Reife oder Roadmap-Plan, sondern **nur** wenn folgende Real-Use-Indikatoren auftreten:
@@ -149,6 +240,7 @@ Phase-2-Entwicklung startet **nicht** bei Spec-Reife oder Roadmap-Plan, sondern 
 
 ---
 
-**Snapshot-Date:** 2026-04-26.
+**Snapshot-Date:** 2026-04-26 (post v0.1.1 Hotfix).
 **Phase-1-Closed:** 2026-04-26 (39/39 Tests + Validator PASS + Korpus-Mining v2 LOCKED).
-**Phase-2-Active:** ❌ (warte auf Real-Use-Pull).
+**v0.1.1 Hotfix-Closed:** 2026-04-26 (5 Real-User-Pilot-Patches, commit 5bb36a9).
+**Phase-2-Active:** ✅ aktiviert 2026-04-26 via Real-User-Pilot. 13 Tier-1-Items pending (8 META_PROZESSE-Mining + 5 Real-User-Pilot).
