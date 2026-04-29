@@ -3,7 +3,43 @@
 **Status:**
 - Phase 1 (v0.1.0 MVP) abgeschlossen 2026-04-26
 - v0.1.1 Hotfix abgeschlossen 2026-04-26 (Real-User-Pilot-Patches P-RP-01..04 + P-RP-08)
+- v0.1.2 Phase a (Expertise-Profile-Layer ADR_0030) abgeschlossen 2026-04-26
+- v0.1.2 Phase b (process-consulting Profile, private-notes/) abgeschlossen 2026-04-27
+- v0.1.3 (Plugin-Marketplace-Robustheit + F-RP-29-Disziplin) abgeschlossen 2026-04-29
 - Phase 2 **AKTIV** seit 2026-04-26 — Real-Use-Case-Pull erfüllt via EG_DEV_ADVISOR + UPP-Pair Pilot
+
+**v0.1.3 Closure-Marker (2026-04-29):**
+
+- 5 Mapping-Decisions aus Bridge-Pair p3-real-user gepatched (D-001..D-005)
+- 4 existing-Backlog-Items gepatched (F-RP-30, F-RP-31, F-RP-22 partial, F-RP-25)
+- Plus F-RP-19 (Visualization-Widget BEOBACHTUNG) als Doku-Affordance
+- Total: 11 Items, ~17-20h Self-Edit + 12 neue Self-Tests T14-T25
+- Schema-Bump v1.1.0 → v1.1.1
+- ADR_0030-Annex-Update: scope-lock-Phase mit Profile-Pin Spec-Default revidiert
+  (drift_factor 2.4 in p3-Pilot)
+- Bridge-Pair-Bilanz: `pilot-runs/p3-real-user/bridge/bilanz_8cbeaad0.md`
+- v0.1.3-Patch-Pipeline-Doku: `pilot-runs/p3-real-user/v0.1.3-patch-pipeline.md`
+
+**Phase-2 weiter aktiv** seit 2026-04-26. Tier-1-Items aus META_PROZESSE-Mining
+(PB-001..PB-013) bleiben pending bei User-Pull-Trigger.
+
+### Tier-2-Backlog-Befunde-Status (post-v0.1.3)
+
+| ID | Befund | Severity | Status v0.1.3 |
+|---|---|---|---|
+| F-RP-15 | Mount-Inkonsistenz | HIGH | RESOLVED (D-005 Sub-A) |
+| F-RP-23 | Sentinel-Bypass-Spec-Inkonsistenz | CRITICAL | RESOLVED (D-004) |
+| F-RP-29 | Plan-vs-Execution-Layer-Konfusion | CRITICAL | DISSENS-DOCUMENTED §3.4.2 (D-001) |
+| F-RP-30 | Worker-Skill-Role-Drift | CRITICAL | RESOLVED |
+| F-RP-31 | User-Lifecycle-Visibility | CRITICAL | RESOLVED |
+| F-RP-32 | Skill-Pre-Flight-Args | HIGH | RESOLVED (D-002) |
+| F-RP-33 | pre-allocated-Pattern | BEOBACHTUNG | Affordance-Documented (D-003) |
+| F-RP-34 | Konvergenz-Skip-Konvention | BEOBACHTUNG | Affordance-Documented (D-005 Sub-B) |
+| F-RP-22 | Conversational-Memory-Cache | HIGH | RESOLVED (Pre-Flight 2 PFLICHT-Tool-Call) |
+| F-RP-24 | Title-statt-Session-ID | HIGH | DEFERRED-V0.1.4 |
+| F-RP-25 | F-RP-XX-Placeholder-ID-Resolution | LOW | RESOLVED |
+| F-RP-26 | worker.phase-Konsistenz | BEOBACHTUNG | DEFERRED-V0.1.4 |
+| F-RP-19 | Visualization-Widget-UX | BEOBACHTUNG | DOCUMENTED (Phase A.3) |
 
 **v0.1.1 Hotfix-Closure-Marker (2026-04-26):**
 - 5 Patches appliziert: Schema-Konsistenz, Anti-Inferenz-Protokoll, Pre-Flight-Atomarität, Worker-Notification-Block, Sentinel-Replacement

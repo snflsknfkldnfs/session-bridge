@@ -326,6 +326,173 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T13 negative schema_version enum", False, f"unexpected: {e}")
 
+    # ----------------------------------------------------------------
+    # v0.1.3 Mapping-Decision-Tests T14-T22 (D-001..D-005 + F-RP-30..32)
+    # ----------------------------------------------------------------
+
+    # Test 14 (v1.1.1 NEU v0.1.3): schema_version 1.1.1 akzeptiert
+    try:
+        state = synth_valid_state()
+        state["schema_version"] = "1.1.1"
+        jsonschema.validate(state, state_schema)
+        results.record("T14 v1.1.1 schema_version valid", True)
+    except Exception as e:
+        results.record("T14 v1.1.1 schema_version valid", False, str(e))
+
+    # Test 15 (v1.1.1 NEU v0.1.3 / E.1): mapping_budget optional, top-level
+    try:
+        state = synth_valid_state()
+        state["schema_version"] = "1.1.1"
+        state["mapping_budget"] = {
+            "min": 14,
+            "max": 16,
+            "started_round": 12,
+            "soft_cap": True,
+            "rounds_per_befund": 2,
+            "klarstellungs_reserve": 2,
+            "triggers": {"T1": "convergence", "T2": "exhaustion"}
+        }
+        jsonschema.validate(state, state_schema)
+        results.record("T15 v1.1.1 mapping_budget optional", True)
+    except Exception as e:
+        results.record("T15 v1.1.1 mapping_budget optional", False, str(e))
+
+    # Test 16 (D-002 F-RP-32): bridge-attach Pre-Flight 5 — required-Args hard-enforce
+    # Negative-Spec-Check: attach-Skill requires --worker-focus when role=worker.
+    # Implementation-Test-Stub: simulated via Spec-Doc-Read-Heuristic.
+    try:
+        attach_spec_path = PLUGIN_ROOT / "commands" / "bridge-attach.md"
+        spec_text = attach_spec_path.read_text()
+        # Pre-Flight 5 hard-enforce-Marker muss vorhanden sein
+        assert "hard-enforce" in spec_text and "Pre-Flight" in spec_text
+        assert "--worker-focus" in spec_text and "--expertise-source" in spec_text
+        results.record("T16 D-002 bridge-attach Pre-Flight 5 hard-enforce spec", True)
+    except Exception as e:
+        results.record("T16 D-002 bridge-attach Pre-Flight 5 hard-enforce spec", False, str(e))
+
+    # Test 17 (D-002 F-RP-32): bridge-handover Pre-Flight 5 type=execute Pflicht-Args dokumentiert
+    try:
+        ho_spec_path = PLUGIN_ROOT / "commands" / "bridge-handover.md"
+        spec_text = ho_spec_path.read_text()
+        assert "hard-enforce" in spec_text
+        assert "type=execute" in spec_text and "--acceptance" in spec_text
+        assert "type=decision-lock" in spec_text and "--decided-by" in spec_text
+        results.record("T17 D-002 bridge-handover Pre-Flight 5 type-spezifisch hard-enforce", True)
+    except Exception as e:
+        results.record("T17 D-002 bridge-handover Pre-Flight 5 type-spezifisch hard-enforce", False, str(e))
+
+    # Test 17b (D-005 Sub-B / F-RP-34): Pre-Flight 6 convergence-skip-marker dokumentiert
+    try:
+        ho_spec_path = PLUGIN_ROOT / "commands" / "bridge-handover.md"
+        spec_text = ho_spec_path.read_text()
+        assert "convergence_criterion_skip" in spec_text
+        assert "konvergenz-skip-rationale" in spec_text
+        results.record("T17b D-005-B Pre-Flight 6 convergence-skip-marker", True)
+    except Exception as e:
+        results.record("T17b D-005-B Pre-Flight 6 convergence-skip-marker", False, str(e))
+
+    # Test 18 (F-RP-31): bridge-status output completeness — neue Felder dokumentiert
+    try:
+        status_spec_path = PLUGIN_ROOT / "commands" / "bridge-status.md"
+        spec_text = status_spec_path.read_text()
+        # Output muss Rolle, other-title, last activity, letzte 3 Rounds, nächste Aktion enthalten
+        assert "Diese Session" in spec_text
+        assert "Andere Session" in spec_text
+        assert "Last activity" in spec_text or "last_activity" in spec_text.lower()
+        assert "Letzte 3 Rounds" in spec_text
+        assert "Nächste erwartete Aktion" in spec_text
+        assert "Polling-Hint" in spec_text or "polling-hint" in spec_text.lower()
+        results.record("T18 F-RP-31 bridge-status output completeness", True)
+    except Exception as e:
+        results.record("T18 F-RP-31 bridge-status output completeness", False, str(e))
+
+    # Test 19 (D-004 F-RP-23): bridge-init writes Sentinel always
+    try:
+        init_spec_path = PLUGIN_ROOT / "commands" / "bridge-init.md"
+        spec_text = init_spec_path.read_text()
+        # Spec muss klarstellen dass --worker-session-id UX-Hint ist
+        assert "UX-Hint" in spec_text or "UX-hint" in spec_text
+        # Worker-obj-Code muss IMMER SENTINEL_PENDING setzen
+        assert "REVIDIERT v0.1.3" in spec_text
+        assert 'session_id": SENTINEL_PENDING' in spec_text
+        # bridge-attach Pre-Flight 4 strict
+        attach_spec_path = PLUGIN_ROOT / "commands" / "bridge-attach.md"
+        attach_text = attach_spec_path.read_text()
+        assert "REVIDIERT v0.1.3 strict" in attach_text or "strict" in attach_text
+        results.record("T19 D-004 Sentinel-Invariante v0.1.3", True)
+    except Exception as e:
+        results.record("T19 D-004 Sentinel-Invariante v0.1.3", False, str(e))
+
+    # Test 20 (F-RP-30): bridge-worker §Role-Boundary dokumentiert
+    try:
+        worker_skill_path = PLUGIN_ROOT / "skills" / "bridge-worker" / "SKILL.md"
+        spec_text = worker_skill_path.read_text()
+        assert "§Role-Boundary" in spec_text or "Role-Boundary" in spec_text
+        assert "AP-Diagnosen" in spec_text or "AP-Diagnose" in spec_text
+        assert "advisor-mode-Tags" in spec_text or "advisor-mode-tags" in spec_text
+        assert "[bridge-worker mode]" in spec_text
+        results.record("T20 F-RP-30 bridge-worker Role-Boundary + Mode-Marker", True)
+    except Exception as e:
+        results.record("T20 F-RP-30 bridge-worker Role-Boundary + Mode-Marker", False, str(e))
+
+    # Test 21 (D-001 Worker-Pos): re-sync sub-type marker dokumentiert
+    try:
+        ho_spec_path = PLUGIN_ROOT / "commands" / "bridge-handover.md"
+        spec_text = ho_spec_path.read_text()
+        assert "resync_sub_type" in spec_text
+        assert "plan-layer" in spec_text and "execution-layer" in spec_text and "hybrid" in spec_text
+        results.record("T21 D-001-W re-sync sub-type marker", True)
+    except Exception as e:
+        results.record("T21 D-001-W re-sync sub-type marker", False, str(e))
+
+    # Test 22 (D-005 Sub-A F-RP-15): bridge-init Pre-Flight 5b sandbox-mount + section
+    try:
+        init_spec_path = PLUGIN_ROOT / "commands" / "bridge-init.md"
+        spec_text = init_spec_path.read_text()
+        assert "sandbox-mount-prerequisite" in spec_text
+        assert "5.b" in spec_text or "5.b " in spec_text
+        assert "sandbox-mounted" in spec_text or "sandbox-erreichbar" in spec_text
+        results.record("T22 D-005-A bridge-init Pre-Flight 5b sandbox-mount", True)
+    except Exception as e:
+        results.record("T22 D-005-A bridge-init Pre-Flight 5b sandbox-mount", False, str(e))
+
+    # Test 23 (D-001 Advisor-Pos / F-RP-29): bridge-advisor Anti-Plan-Drift + bridge-handover Output-Marker
+    try:
+        advisor_skill_path = PLUGIN_ROOT / "skills" / "bridge-advisor" / "SKILL.md"
+        adv_text = advisor_skill_path.read_text()
+        assert "§Anti-Plan-Drift" in adv_text or "Anti-Plan-Drift" in adv_text
+        assert "User-Translation-Konvention" in adv_text or "[plan-layer | no-bridge-write]" in adv_text
+        assert "[bridge-advisor mode" in adv_text
+        ho_spec_path = PLUGIN_ROOT / "commands" / "bridge-handover.md"
+        ho_text = ho_spec_path.read_text()
+        assert "BRIDGE-WRITE COMPLETED" in ho_text
+        results.record("T23 D-001 Advisor-Pos Anti-Plan-Drift + Output-Marker", True)
+    except Exception as e:
+        results.record("T23 D-001 Advisor-Pos Anti-Plan-Drift + Output-Marker", False, str(e))
+
+    # Test 24 (D-003 F-RP-33): forward-pointer-rationale dokumentiert + Schema-Felder
+    try:
+        ho_spec_path = PLUGIN_ROOT / "commands" / "bridge-handover.md"
+        ho_text = ho_spec_path.read_text()
+        assert "forward-pointer-rationale" in ho_text
+        assert "pre-allocated" in ho_text
+        # Schema muss neue shared_artifacts Felder enthalten (status, round_allocated, round_active)
+        sa = state_schema["properties"]["shared_artifacts"]["items"]["properties"]
+        assert "status" in sa and "round_allocated" in sa and "round_active" in sa
+        results.record("T24 D-003 forward-pointer-rationale + Schema-Felder", True)
+    except Exception as e:
+        results.record("T24 D-003 forward-pointer-rationale + Schema-Felder", False, str(e))
+
+    # Test 25 (F-RP-22): Pre-Flight 2 filesystem-read documented
+    try:
+        init_spec_path = PLUGIN_ROOT / "commands" / "bridge-init.md"
+        spec_text = init_spec_path.read_text()
+        # F.1 Patch hat Pflicht-Tool-Call dokumentiert
+        assert "PFLICHT-Tool-Call" in spec_text or "Conversational-Memory" in spec_text
+        results.record("T25 F-RP-22 Pre-Flight 2 filesystem-read", True)
+    except Exception as e:
+        results.record("T25 F-RP-22 Pre-Flight 2 filesystem-read", False, str(e))
+
     if verbose:
         print("Passed:", results.passed)
 

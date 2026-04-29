@@ -16,6 +16,55 @@ Diese Session ist `worker` in einem session-bridge Pair. Sie hat operative Veran
 1. `bridge/state.json` existiert und diese Session ist als `roles.worker.session_id` eingetragen.
 2. Lese-Zugriff auf `bridge/handover/`-Verzeichnis.
 
+## Pflicht-Output-Header (NEU v0.1.3 / F-RP-31 Patch 4)
+
+Jeder bridge-worker Skill-Output beginnt mit:
+
+```
+[bridge-worker mode]
+```
+
+Dies erlaubt User klare Mode-Identifikation, verhindert Role-Drift-Confusion (siehe F-RP-30).
+
+## §Role-Boundary (NEU v0.1.3, CRITICAL / F-RP-30)
+
+bridge-worker Skill operiert STRIKT im Worker-Modus. Folgende Aktionen sind
+**advisor-exklusiv** und in worker-Skill-Output VERBOTEN:
+
+- **Profile-pflicht-workflows ausführen** (z.B. anti-pattern-check-pre-counter,
+  diagnose-frame-anwenden)
+- **AP-Diagnosen schreiben** (z.B. "AP-07 detected", "AP-08 Verdacht")
+- **Frame-Wahl-Argumentationen** (z.B. "F1.1 anwendbar weil...")
+- **Methoden-Veto bei User-Skill-Triggern** (z.B. "decision-lock kann nicht
+  jetzt erfolgen weil Profile-Methodik anders verlangt")
+
+Worker-Skill-Funktion: **operative Execution + Status-Bericht**. Bei User-
+Skill-Trigger → Pre-Flight + ausführen + State-Mutation + Status-Output.
+
+**Anti-Pattern (aus F-RP-30 Pilot-Empirie p3-real-user):**
+
+| Aktion | Erlaubt für Worker? |
+|---|---|
+| Body-Tags wie "AP-Check", "pflicht_workflow", "Frame-Wahl" | NEIN (advisor-mode-Drift) |
+| Hypothesen-Diagnostik (H1/H2/H3) bei Visibility-Gap | NEIN (advisor-mode) |
+| Decision-Lock-Veto mit pflicht_workflow-Begründung | NEIN (strict forbidden) |
+| Counter-Punkte mit Substanz-Boden + Frame | OK (Worker-Counter ist erlaubt) |
+| anti-pattern-check-pre-counter ausführen | NEIN (Profile-pflicht-workflow) |
+
+**Pre-Flight-Erweiterung (NEU v0.1.3):**
+
+Vor jedem bridge-worker Skill-Output: scan Body auf advisor-mode-Tags.
+Falls gefunden → WARN:
+
+```
+WARNING: bridge-worker Body enthält advisor-mode-Tags (<liste>).
+Worker-Boundary-Drift-Verdacht (F-RP-30). Überprüfe ob Body
+operativ-Worker-Inhalt oder advisor-mode-Inhalt.
+```
+
+WARN nicht hard-FAIL — Worker-Skill kann noch funktional sein, aber User
+bekommt Hinweis.
+
 ## Pflicht-Workflow pro Trigger
 
 ### Trigger-Variante A — Advisor-Pull (User: "advisor-pull" / "neue Empfehlung")
@@ -115,9 +164,23 @@ State.json updated: round=<N> phase=<phase>
 - Bei CAS-Failure 3x: ABBRUCH + Manual-Recovery-Hinweis
 - Bei Schema-Validate-FAIL der eigenen Frontmatter: ABBRUCH vor Persistierung
 
+## §ID-Resolution-Pre-Flight (NEU v0.1.3 / F-RP-25 Korrektiv)
+
+Vor Status/Counter-Handover-Generierung mit Friction-Befund-Markierungen:
+
+1. Wenn Body Friction-Befund-IDs erwähnt (`F-RP-XX`, `F-RP-YY` Placeholder):
+   → Read setup-friction-log.md (oder analoges Plugin-Friction-Tracking)
+   → ID-Lookup für aktuelle reale IDs
+2. Bei Match: Placeholder durch reale ID ersetzen
+3. Bei kein Match: User-Question "Friction-Befund `<XX>` nicht in friction-log
+   gefunden. Welche reale ID?"
+4. WARN-Mode (nicht hard-FAIL): Skill-Continuation erlaubt aber User-sichtbar
+
 ## Cross-Refs
 
 - ADR_0029 §3.1 Rollen-Modell
 - ADR_0029 §4.3 Handover-Schema
 - ADR_0029 §5.4 Execute-Phase
 - ADR_0029 §13 Concurrency
+- v0.1.3-Patch-Pipeline F-RP-30 §Role-Boundary CRITICAL
+- v0.1.3-Patch-Pipeline F-RP-31 Patch 4 Skill-Mode-Marker

@@ -263,3 +263,40 @@ Alle 8 erfüllt → ADR_0030 LOCKED.
 ---
 
 **Lock-Status:** LOCKED. A1-A8 PASS. Phase a Implementation freigegeben (PB-014.1..5).
+
+---
+
+## Annex A — scope-lock-Phase-Spec-Default-Revidierung (post-p3-real-user-Pilot, 2026-04-29)
+
+**Empirie aus Bridge-Pair p3-real-user (R0-R26):**
+
+| Phase | ADR_0029-Default-Erwartung | p3-Pilot-Empirie | drift_factor |
+|---|---|---|---|
+| init + scope-lock + decision-lock-negotiations (R0-R11) | 4-6 Rounds | 12 Rounds | 2.4 |
+| Mapping-Phase (R12-R26) | 14 Rounds (ad-hoc Spec) | 16 Rounds | 1.14 |
+
+**Befund:** scope-lock-Phase mit Profile-Pin braucht 2-3× mehr Rounds als
+ADR_0029-Default. Begründung:
+
+1. **Profile-Pflicht-Workflows aktiviert** — `dissens-management-pflicht-bei-konsens-druck`
+   produziert Counter-Sequenzen (R5→R6→R8→R9→R10)
+2. **Konvergenz-Kriterium-Institutionalisierung** — Pflicht-explizite-pro-Punkt-Antwort
+   verlangt mehrere Klarstellungs-Rounds
+3. **Method-Annex-Substanz** — Profile-Frame-Anwendbarkeit muss substantiv
+   geklärt werden (anwendbare vs un-anwendbare Frames)
+4. **Counter-Konvergenz-Cycles** — substantielle Counter (R6 vier C-Punkte)
+   produzieren 3-4 Re-Sync-Rounds bis Lock
+
+**Spec-Default-Revidierung für künftige Plugin-Dev-Pilots:**
+
+| scope-lock-Phase-Aspekt | Default v0.1.3+ |
+|---|---|
+| Rounds für init + scope-lock | 8-12 Rounds (statt 4-6) |
+| Mapping-Rounds-pro-Befund | 2 Rounds (Decision + Konvergenz) |
+| Klarstellungs-Reserve | 2 Rounds |
+| Total Pair-Lifecycle für 5-6 Mapping-Items | 24-28 Rounds |
+
+**Empfehlung:** ADR_0029 §5 Lifecycle-Sektion explizit auf Profile-Pin-Use-Cases
+erweitern. Spec-Default soll Profile-Pflicht-Workflow-Overhead reflektieren.
+
+**Annex-Lock:** 2026-04-29 als Teil v0.1.3 Patch-Welle.

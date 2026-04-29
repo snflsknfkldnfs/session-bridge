@@ -67,9 +67,25 @@ Empfohlen aber nicht hart-blockierend. Wenn missing:
 
 1. `<shared-path>/bridge/` ist beschreibbar (test: `mkdir -p <shared-path>/bridge && touch <shared-path>/bridge/.write-test && rm <shared-path>/bridge/.write-test`). **Bei FAIL → ABBRUCH** mit Diagnose "shared-path nicht beschreibbar via Sandbox. Fallback: Host-MCP osascript verwenden (siehe §Sandbox-vs-Host-MCP)".
 2. `<shared-path>/bridge/state.json` existiert NICHT (sonst Konflikt mit bestehendem Pair). **Bei FAIL → ABBRUCH** mit Hinweis auf existierende pair_id.
+
+   **PFLICHT-Tool-Call (NEU v0.1.3 / F-RP-22, NICHT Conversational-Memory):**
+   Bei JEDEM /bridge-init-Aufruf:
+   ```bash
+   mcp__workspace__bash 'test -f <shared-path>/bridge/state.json && echo EXISTS || echo MISSING'
+   ```
+   ODER (falls shared-path außerhalb sandbox):
+   ```applescript
+   mcp__Control_your_Mac__osascript 'do shell script "test -f <state.json> && echo EXISTS || echo MISSING"'
+   ```
+
+   Read-Result als Text-Output anzeigen ('filesystem read: state.json [exists|missing]').
+
+   **NIEMALS** auf Conversational-Memory verlassen ("habe state.json vor X Min selbst erstellt"). In-Session-Re-Init nach external-cleanup muss state als MISSING erkennen, nicht Cache.
 3. `python3 -c "import jsonschema"` PASS oder `graceful_degrade=True` setzen (Heuristik-Fallback, references[].verified=false markieren).
 4. `mcp__session_info__list_sessions` callable. **NICHT deferrable.** Bei FAIL → degraded-mode mit explizitem User-Hinweis "advisor-Skill funktioniert eingeschränkt ohne session_info — references[].verified=false durchgängig".
-5. **Profile-Validation falls `--expertise-profile=<path>` gesetzt** (ADR_0030 §3.4):
+5. **Profile-Validation falls `--expertise-profile=<path>` gesetzt** (ADR_0030 §3.4, ERWEITERT v0.1.3 für F-RP-15 / D-005 Sub-A):
+
+   5.a Profile-Pfad existiert auf Host (Read-Tool-Check):
    - Profile-Verzeichnis existiert
    - `<profile>/PROFILE.md` existiert + frontmatter parsebar
    - Frontmatter hat Pflicht-Felder: `profile_name`, `profile_version`, `profile_schema_version`, `domain`, `methodology_pillars`, `sources`, `pflicht_workflows`, `linkage_to_bridge_rounds`, `required_files`
@@ -77,7 +93,56 @@ Empfohlen aber nicht hart-blockierend. Wenn missing:
    - `profile_schema_version` ist supported (aktuell `1.0.0`)
    - **Bei FAIL → ABBRUCH** mit Profile-Diagnose. Empfehlung: Profile-Pfad korrigieren oder ohne `--expertise-profile` initialisieren (generic advisor).
 
+   5.b **Profile-Pfad sandbox-erreichbar (NEU v0.1.3 / D-005 Sub-A F-RP-15):**
+   - Test via `mcp__workspace__bash 'test -d <profile-path>'`
+   - Bei FAIL: WARN "Profile-Pfad nicht sandbox-mounted — Subprocess-Aufrufe werden scheitern. Add-Dir im Cowork-Project setzen oder Profile in Working-Dir verschieben."
+   - WARN nicht hard-FAIL: bridge-init kann fortgesetzt werden, aber Profile-Subprocess-Loading wird zur Laufzeit scheitern
+
+   5.c Profile-Frontmatter-Pflicht-Felder validieren — siehe 5.a.
+
 **Bei FAIL eines Pre-Flight-Punkts: ABBRUCH + Diagnose. NIEMALS Pre-Flight teilweise überspringen.**
+
+## §sandbox-mount-prerequisite (NEU v0.1.3 / F-RP-15 / D-005 Sub-A)
+
+Plugin-Use-Project Setup-Pflicht für `--expertise-profile`-Pfad:
+
+- Profile-Pfad muss entweder im Cowork-Project Working-Dir liegen
+  ODER als Add-Dir im Cowork-Project konfiguriert sein
+- Sonst: Subprocess-Aufrufe via workspace-bash auf Profile-Files scheitern
+  mit "No such file or directory" trotz Pre-Flight 5a PASS
+
+**Empirische Validierung (bridge-pair p3-real-user):**
+- Profile-Pfad: `/Users/paulad/session-bridge/private-notes/expertise-profiles/process-consulting/`
+- Erforderte Add-Dir in beiden Cowork-Projects (advisor + worker)
+- Workaround: jeweils Add-Dir setzen vor /bridge-init
+
+**Setup-Vorschlag für künftige Plugin-Dev-Pilots:**
+
+1. Cowork-Project erstellen mit Working-Dir
+2. Add-Dirs setzen (mind. shared-path, ggf. Profile-Pfad falls nicht in Working-Dir)
+3. /bridge-init aufrufen — Pre-Flight 5b prüft sandbox-Erreichbarkeit
+4. Bei WARN 5b: Add-Dir-Setup nachholen, Re-Init
+
+## §--worker-session-id (REVIDIERT v0.1.3 / D-004 F-RP-23 PATCH)
+
+`--worker-session-id` ist jetzt **UX-Hint für Worker-Notification-Block**,
+NICHT state-Pin.
+
+**Verhalten v0.1.3+:**
+- bridge-init schreibt IMMER `state.roles.worker.session_id = "pending-attach"` (Sentinel)
+- `--worker-session-id` (falls übergeben) wird NUR für Worker-Notification-Block-Generierung verwendet
+- bridge-attach Pre-Flight 4 bleibt strikt auf Sentinel-String
+
+**Migration für v0.1.2-Use-Cases:**
+- Bestehende `state.json` mit direktem session_id-Pin: bridge-attach FAIL
+- Workaround: state.json-Patch (session_id zurück auf "pending-attach")
+- Empfehlung: Re-Init in v0.1.3+
+
+**Begründung (D-004 R23-Position-Revidiert):**
+- Sentinel-Pfad-Invariante als Spec-Kontrakt
+- Plugin-Marketplace-Adoption-Argument konsistent mit D-002/D-005-A
+- p3-Pilot-Empirie als Cross-Reference behalten (Implementation-Bug-Verdacht
+  oder Version-Path-Diff in v0.1.2 Pre-Flight 4 Tolerance)
 
 ## Sandbox-vs-Host-MCP-Mechanismus
 
@@ -127,10 +192,12 @@ if role == "advisor":
         "profile_version": profile_data["frontmatter"]["profile_version"] if profile_data else None,
         "active_since": now
     }
+    # REVIDIERT v0.1.3 (D-004 F-RP-23): IMMER Sentinel, --worker-session-id ist UX-Hint
     worker_obj = {
-        "session_id": worker_session_id if worker_session_id else SENTINEL_PENDING,
+        "session_id": SENTINEL_PENDING,
         "active_since": now
     }
+    # worker_session_id (falls übergeben) → NUR für Notification-Block (Schritt 7), NICHT in state pinnen
 else:  # role == "worker"
     advisor_obj = {
         "session_id": SENTINEL_PENDING,
@@ -238,9 +305,28 @@ Bei role=worker: Block ist umgekehrt (Advisor muss attachen).
 - NICHT shared-path aus eigenem Working-Dir inferieren — User-Question (P-RP-02)
 - NICHT Worker-Notification-Block weglassen — sonst kann Worker nicht attachen (P-RP-04)
 
+## UX-Pattern: Visualization-Widget für Argument-Erfassung (NEU v0.1.3 / F-RP-19)
+
+Bei missing required-Args nutzt bridge-init `mcp__visualize__show_widget`
+mit elicitation-Form für strukturierte Eingabe. Pattern empfohlen für:
+
+- `--topic` (free text)
+- `--shared-path` (file path picker mit Default-Heuristik)
+- `--expertise-source` (free text)
+- `--expertise-profile` (dropdown mit Lookup auf `expertise-profiles/`-Verzeichnisse)
+- `--worker-session-id` (dropdown mit Lookup via session_info MCP)
+
+**Empirische Validierung:** bridge-pair p3-real-user R0 nutzte Visualization-Widget
+für Argument-Erfassung; Form-Vollständigkeit hat Pre-Flight 5 Profile-Validation
+ermöglicht.
+
+**Anti-Pattern:** missing required-Args ohne Elicitation-Form ist Modell-abhängig
+(siehe F-RP-32 hard-enforce-Patch in v0.1.3).
+
 ## Cross-Refs
 
 - ADR_0029 §5.1 Lifecycle init-Phase
 - ADR_0029 §13.2 Concurrency Atomic-Write
 - BACKLOG.md Phase-2 Activation-Trigger erfüllt 2026-04-26 via Real-User-Pilot
 - Empirisch validiert: Real-User-Pilot 2026-04-26 (EG_DEV_ADVISOR-Session, F-RP-01..04)
+- v0.1.3-Patch-Pipeline (`pilot-runs/p3-real-user/v0.1.3-patch-pipeline.md`) — UX-Pattern + Sentinel-Invariante (D-004)

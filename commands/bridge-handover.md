@@ -31,6 +31,142 @@ Schreibt einen Handover-Eintrag in `bridge/handover/<round>-<from>-<to>-<short-u
    - iterate: alles ausser execute, verify
    - execute: pre-flight, execute, status, question
    - verify: verify, status, question
+5. Type-spezifische Pflicht-Args-Validation (NEU v0.1.3, hard-enforce, F-RP-32 / D-002):
+   - type=execute: `--acceptance` + `--rollback` + `--wallclock-min` Pflicht
+   - type=decision-lock: `--decided-by` Pflicht
+   - type=pre-patch: `--acceptance` + `--wallclock-min` Pflicht
+   - type=execute / pre-patch: `--acceptance` muss valid JSON-Array sein
+   - Bei missing → ABBRUCH mit Type-spezifischer Diagnose: "Pre-Flight FAIL Punkt 5 — required-Arg `<name>` missing for type=`<type>`. Skill-Spec verlangt hard-enforce v0.1.3+ (F-RP-32). Bitte mit vollständigen Args erneut aufrufen."
+   - Re-Sync-Sub-Typ-Marker (nur bei type=re-sync): Body MUSS `resync_sub_type`-Marker enthalten (`plan-layer` | `execution-layer` | `hybrid`). Bei `execution-layer`/`hybrid`: ≥1 reference type=evidence Pflicht. Bei missing → WARN "Re-Sync-Sub-Typ-Konfusion-Verdacht (F-RP-29)".
+6. Konvergenz-Kriterium-Skip-Check (NEU v0.1.3 / D-005 Sub-B):
+   Wenn vorherige Round (N-1) Konvergenz-Kriterium definiert hat und diese Round (N) das Kriterium übersprungen hat:
+   - Body MUSS `status_observations[]` mit `type=convergence_criterion_skip` enthalten
+   - Bei missing → WARN "Konvergenz-Bypass ohne Markierung — AP-08-Verdacht"
+
+## §forward-pointer-rationale (Affordance-Documented, NEU v0.1.3 / D-003 F-RP-33)
+
+decision-lock-Round darf rationale-File pointer enthalten der zum
+Schreib-Zeitpunkt noch nicht existiert. Pflicht-Markierung im state.json:
+
+```yaml
+shared_artifacts:
+  - path: bridge/artifacts/<file>.md
+    owner: <role>
+    status: pre-allocated   # NICHT active
+    round_allocated: <N>    # decision-lock-Round
+    purpose: "<beschreibung>"
+```
+
+Folge-Round (typischerweise N+1) materialisiert File und setzt:
+
+```yaml
+status: active
+round_active: <N+1>
+```
+
+**Rationale:** entkoppelt formale decision-lock von substantieller
+Artefakt-Materialisierung, verhindert Block-Schleife bei async-Schreiben.
+
+**Anti-Pattern:** pre-allocated-Status ohne Materialisierungs-Plan in
+Folge-Rounds = Forward-Pointer-Drift. Nach 3 Rounds ohne active-Status
+WARN-Markierung in bridge-status (siehe bridge-status.md §forward-pointer-warning).
+
+**Empirische Validierung:** bridge-pair p3-real-user R11 worker-decision-lock
+mit pre-allocated annex; R12 advisor-Materialisierung mit status active.
+
+## §konvergenz-skip-rationale (Affordance-Documented, NEU v0.1.3 / D-005 Sub-B F-RP-34)
+
+Konvergenz-Kriterium aus eigener Pair-Round darf in nachfolgender Round
+übersprungen werden, wenn Substanz-Konvergenz bilateral schon erreicht ist
+(z.B. via Plan-Layer-Akzeptanz aus früherer Round).
+
+**Pflicht-Markierung:** Skip-Round Body enthält `status_observations[]`-Eintrag:
+
+```yaml
+status_observations:
+  - type: convergence_criterion_skip
+    defined_in_round: <N>      # Round, die Kriterium definiert hat
+    skipped_in_round: <M>      # diese Round
+    skip_basis: "<Begründung — z.B. bilaterale Substanz-Konvergenz>"
+    cycle_counter: <Anzahl Cycles seit Definition>
+```
+
+**Anti-Pattern:**
+- Skip ohne Markierung = AP-08-Bypass-Verdacht (Konsens-Inszenierung)
+- Skip-mit-Markierung = legitime Affordance
+
+**Empirische Validierung:** bridge-pair p3-real-user R11 (Worker-Self-Bypass
+eigener R8-Konvergenz-Kriterium-Definition).
+
+## §Re-Sync-Sub-Typen (NEU v0.1.3 / D-001 Worker-Pos)
+
+`/bridge-handover --type=re-sync` differenziert zwei Sub-Typen via Body-Marker
+und Pre-Flight-Pflicht:
+
+### plan-layer-resync
+
+**Inhalt:** Erwartung, Hypothesen, Plan über advisor-side / worker-side-Status.
+**Pre-Flight-Pflicht:** keine zusätzliche.
+**Pflicht-Body-Marker:**
+```yaml
+resync_sub_type: plan-layer
+```
+
+### execution-layer-resync
+
+**Inhalt:** Verifikation tatsächlicher persistierter State, Round-Counter,
+shared-path-Inhalte.
+**Pre-Flight-Pflicht (NEU v0.1.3):** ≥1 reference muss `type=evidence` sein
+mit advisor-side/worker-side-Pointer (z.B. via `mcp__session_info__read_transcript`
+oder Filesystem-State-Pointer).
+**Pflicht-Body-Marker:**
+```yaml
+resync_sub_type: execution-layer
+evidence_pointers:
+  - type: filesystem-state
+    pointer: bridge/state.json#current_round
+    verified_at: <ISO-timestamp>
+```
+
+### hybrid
+
+**Inhalt:** beide Layer im selben Body.
+**Pflicht-Body-Marker:**
+```yaml
+resync_sub_type: hybrid
+```
+Plus execution-layer-Pflicht erfüllt + plan-layer-Markierung im Body.
+
+**Anti-Pattern:** re-sync ohne `resync_sub_type`-Marker = Layer-Konfusions-
+Verdacht (F-RP-29). Pre-Flight 5 (NEU): WARN bei missing Marker.
+
+## §Output-Marker (NEU v0.1.3, F-RP-29 Korrektiv / D-001 Advisor-Pos)
+
+Skill darf NICHT erfolgreich-Output produzieren ohne folgenden Block:
+
+```
+============================================================
+BRIDGE-WRITE COMPLETED — Round <n>
+============================================================
+artifact:           bridge/handover/<n>-<from>-<to>-<hash>.md
+state.updated_at:   <timestamp>
+state.current_round: <n>
+phase:              <phase>
+============================================================
+```
+
+Block referenziert verifizierbare Filesystem-Pointer. User sieht direkt
+ob Bridge-Write erfolgte. Bei Skill-FAIL: NICHT diesen Block ausgeben,
+sondern explicit FAIL-Diagnose.
+
+## §Required-Args-Hard-Enforcement (NEU v0.1.3 / D-002 F-RP-32)
+
+Required-Args werden in Pre-Flight 5 hard-enforced. Elicitation-Fallback ist
+sekundär für optional-Args oder strukturierte Eingabe (z.B. JSON-Arrays für
+acceptance_criteria), NICHT für missing required.
+
+Begründung: Plugin-Robustheit-Garantie unabhängig von Modell-Verhalten
+(F-RP-32 Mapping-Decision D-002 PATCH).
 
 ## Ablauf
 

@@ -22,11 +22,29 @@ Attaches diese Session als zweite Rolle zu einem bestehenden Bridge-Pair.
 1. `<shared-path>/bridge/state.json` existiert
 2. State.pair_id == argument.pair_id
 3. State.phase == "init"
-4. **State.roles[<role>].session_id == "pending-attach"** (Sentinel-Check, P-RP-08) — eigene Rolle ist Pending-Stub aus init-Phase, NICHT bereits attached
-5. State.roles[<other-role>].session_id != this_session_id (kein Self-Attach)
-6. State.roles[<other-role>].session_id != "pending-attach" (andere Rolle muss bereits gefüllt sein durch init)
+4. **State.roles[<role>].session_id == "pending-attach"** (Sentinel-Check, REVIDIERT v0.1.3 strict / D-004 F-RP-23) — eigene Rolle ist Pending-Stub aus init-Phase, NICHT bereits attached. Bei Mismatch (z.B. direkter session_id-Pin aus v0.1.2-Pre-v0.1.3): FAIL. Diagnose: "Pre-Flight 4 FAIL — expected 'pending-attach', found '<X>'. Möglicher v0.1.2-Use-Case mit deprecated --worker-session-id-Pin. Empfehlung: state.json patch (session_id zurück auf 'pending-attach') und Re-attach. Siehe v0.1.3 Migration-Doku." KEIN auto-recover-Branch.
+5. **Pflicht-Args-Validation (NEU v0.1.3, hard-enforce / D-002 F-RP-32):**
+   - `--worker-focus` muss gesetzt sein (wenn role=worker)
+   - `--expertise-source` muss gesetzt sein (wenn role=advisor)
+   - Bei missing → ABBRUCH mit User-Question (NICHT Elicitation-Form-Fallback)
+   - Diagnose-Output: "Pre-Flight FAIL Punkt 5 — required-Arg `<name>` missing. Skill-Spec verlangt hard-enforce v0.1.3+ (F-RP-32). Bitte mit vollständigen Args erneut aufrufen."
+6. State.roles[<other-role>].session_id != this_session_id (kein Self-Attach)
+7. State.roles[<other-role>].session_id != "pending-attach" (andere Rolle muss bereits gefüllt sein durch init)
 
 Bei FAIL: ABBRUCH + Diagnose.
+
+## §Required-Args-Hard-Enforcement (NEU v0.1.3 / D-002 F-RP-32)
+
+Required-Args werden in Pre-Flight 5 hard-enforced. Elicitation-Fallback ist
+sekundär für optional-Args, NICHT für missing required.
+
+Begründung: Plugin-Robustheit-Garantie unabhängig von Modell-Verhalten
+(F-RP-32 Mapping-Decision D-002 PATCH).
+
+**Hinweis:** bridge-init Pre-Flight 5 (Profile-Validation) ist Vorbild für
+hard-enforce-Logik. Keine Elicitation-Form-Fallback bei missing required.
+Plugin-Robustheit darf nicht von Modell-Quality abhängen (F-RP-24
+Marketplace-Adoption-Argument).
 
 ## Ablauf
 
@@ -92,3 +110,5 @@ Anschließend (advisor-Session): erste initial-advice via
 
 - ADR_0029 §5.1 Lifecycle init-Phase
 - ADR_0029 §5.2 scope-lock Phase
+- v0.1.3-Patch-Pipeline D-002 F-RP-32 hard-enforce required-Args
+- v0.1.3-Patch-Pipeline D-004 F-RP-23 Sentinel-Invariante (Migration-Hinweis im CHANGELOG)

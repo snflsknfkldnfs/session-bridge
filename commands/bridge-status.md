@@ -19,56 +19,97 @@ Read-only Statusbericht über den aktuellen Bridge-Pair-Zustand.
 1. `<shared-path>/bridge/state.json` existiert
 2. Schema-Validate PASS (sonst Warning, dann raw output)
 
-## Ablauf
+## Ablauf (NEU v0.1.3 / F-RP-31 CRITICAL)
 
 ```python
+# 1. State-Read
 state = read_state(shared_path)
 
-# Aktuelle Übersicht
-print(f"""
-Bridge-Pair {state.pair_id}
-  topic:         {state.topic}
-  phase:         {state.phase}
-  current_round: {state.current_round}
-  created_at:    {state.created_at}
-  updated_at:    {state.updated_at}
+# 2. Eigene Rolle bestimmen
+this_role = "advisor" if state.roles.advisor.session_id == this_session_id else "worker"
+other_role = "worker" if this_role == "advisor" else "advisor"
 
-Rollen:
-  advisor: {state.roles.advisor.session_id} ({state.roles.advisor.expertise_source})
-  worker:  {state.roles.worker.session_id} (focus: {state.roles.worker.current_focus}, phase: {state.roles.worker.phase})
+# 3. Other-Session-Title via session_info MCP (graceful_degrade falls FAIL)
+try:
+    other_session_info = session_info.get(state.roles[other_role].session_id)
+    other_title = other_session_info.title
+    other_status = other_session_info.status  # running | idle
+    other_last_activity = other_session_info.last_activity_min_ago
+except:
+    other_title = "(unbekannt)"
+    other_status = "(degraded)"
+    other_last_activity = None
+
+# 4. Letzte 3 Rounds + Phase + Decision-Log + Blocker
+last_rounds = state.rounds[-3:]
+phase = state.phase
+decision_count = len(state.decision_log)
+open_blockers = state.open_blockers
+
+# 5. Nächste erwartete Aktion inferieren aus letzter Round + Phase
+next_action = infer_next_action(state, this_role)
+
+# 6. Forward-Pointer-Drift-Check (NEU v0.1.3 §forward-pointer-warning)
+# pre-allocated shared_artifacts ohne active-Status seit ≥3 Rounds → WARN
+forward_pointer_warnings = [
+    a for a in state.shared_artifacts
+    if a.get("status") == "pre-allocated"
+    and (state.current_round - a.get("round_allocated", state.current_round)) >= 3
+]
+
+# 7. Format Output
+print_status_block(this_role, other_role, other_title, other_status,
+                   other_last_activity, last_rounds, phase, decision_count,
+                   open_blockers, next_action, forward_pointer_warnings)
+```
+
+## Output-Format (NEU v0.1.3 / F-RP-31)
+
+```
+============================================================
+BRIDGE-PAIR <pair_id> — Phase: <phase>
+============================================================
+Diese Session:    <role> (<title>)
+Andere Session:   <other-role> (<other-title>)
+                  Status: <running|idle> · Last activity: <X min ago>
 
 Letzte 3 Rounds:
-""")
+  R<n> [<type>]   <from>→<to>   <timestamp>   <bytes>
+  R<n-1> [<type>] <from>→<to>   <timestamp>
+  R<n-2> [<type>] <from>→<to>   <timestamp>
 
-for r in state.rounds[-3:]:
-    print(f"  #{r.round} [{r.type}] {r.initiator}→{other_role(r.initiator)} ({r.timestamp})")
+Decision-Log: <count> Decisions locked
+Open Blockers: <count> (siehe state.open_blockers)
 
-# Offene Blocker
-if state.open_blockers:
-    print("\nOffene Blocker:")
-    for b in state.open_blockers:
-        print(f"  {b.id} [{b.severity}] {b.summary} (raised in round {b.raised_in_round} by {b.raised_by})")
-else:
-    print("\nKeine offenen Blocker.")
+Nächste erwartete Aktion (this session):
+  <inferred-action-text>
 
-# Decision-Log
-if state.decision_log:
-    print("\nDecision-Log:")
-    for d in state.decision_log:
-        print(f"  R#{d.round}: {d.decision} (by {d.decided_by})")
+Mögliche Skill-Calls:
+  /bridge-handover --type=<a|b|c>
+  /bridge-close (wenn Pair-Lifecycle-Ende erreicht)
+============================================================
+```
 
-# Wall-Clock-Drift (nur falls actual_min != null)
-drifts = [we for we in state.wallclock_estimates if we.actual_min is not None]
-if drifts:
-    avg_drift = sum(d.drift_factor for d in drifts) / len(drifts)
-    print(f"\nWall-Clock-Drift (avg): {avg_drift:.2f}x ({len(drifts)} samples)")
+## §forward-pointer-warning (NEU v0.1.3 / D-003)
 
-# Shared-Artifacts
-active = [a for a in state.shared_artifacts if a.lifecycle_state == "active"]
-if active:
-    print(f"\nAktive Shared-Artifacts ({len(active)}):")
-    for a in active[:5]:
-        print(f"  {a.path} — {a.purpose}")
+Wenn `shared_artifacts[]` Einträge mit `status: pre-allocated` und
+`round_allocated <= current_round - 3` vorliegen:
+
+```
+WARNUNG: Forward-Pointer-Drift erkannt.
+  artifact: bridge/artifacts/<file>.md
+  round_allocated: <N>  (current: <N+3+>)
+Folge-Round-Materialisierung mit status=active fehlt.
+Siehe bridge-handover.md §forward-pointer-rationale.
+```
+
+## Polling-Hint (NEU v0.1.3 per F-RP-31 Patch 3)
+
+Wenn `other_last_activity_min_ago > 30`:
+```
+HINWEIS: Other session inactive für >30 min.
+Möglicherweise in Plan-Phase (siehe F-RP-29).
+Erwäge Polling oder Worker-Probe-Round.
 ```
 
 ## Output (Beispiel)
@@ -104,7 +145,11 @@ Wall-Clock-Drift (avg): 0.87x (3 samples)
 - Read-only, schreibt KEINE Files
 - Output strukturiert, lesbar
 - Bei Schema-Validate-Fail: Warning + raw output
+- (NEU v0.1.3) Output enthält: Diese Session-Rolle, Other-Session-Title, Other-Last-Activity, letzte 3 Rounds, nächste erwartete Aktion, Forward-Pointer-Warnings (falls applicable)
+- (NEU v0.1.3) Bei other-session-inactive > 30 min: Polling-Hint im Output
 
 ## Cross-Refs
 
 - ADR_0029 §4.1 State-Schema
+- v0.1.3-Patch-Pipeline F-RP-31 (User-Lifecycle-Visibility CRITICAL)
+- v0.1.3-Patch-Pipeline D-003 F-RP-33 (forward-pointer-rationale)

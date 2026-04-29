@@ -5,6 +5,70 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.3] — 2026-04-29 — Plugin-Marketplace-Robustheit + F-RP-29-Disziplin
+
+### Source: Bridge-Pair p3-real-user (Mapping-Phase R12-R26, 5 Decisions)
+
+5 Mapping-Decisions D-001..D-005 covering 6 Items:
+- D-001 F-RP-29 → DISSENS-DOCUMENTED §3.4.2 (Plan-vs-Execution-Layer-Konfusion)
+- D-002 F-RP-32 → PATCH (Pre-Flight required-Args hard-enforce)
+- D-003 F-RP-33 → AFFORDANCE (pre-allocated-Pattern-Doku)
+- D-004 F-RP-23 → PATCH (Sentinel-Invariante, R23-revidiert nach Worker-Counter R22)
+- D-005 Sub-A F-RP-15 → PATCH (sandbox-mount-Pre-Flight)
+- D-005 Sub-B F-RP-34 → AFFORDANCE (Konvergenz-Skip-Konvention-Doku)
+
+Plus existing v0.1.3-Backlog: F-RP-30 (Worker-Role-Boundary), F-RP-31
+(User-Lifecycle-Visibility), F-RP-22 (Filesystem-Read), F-RP-24 (Title-statt-ID DEFERRED-V0.1.4),
+F-RP-25 (ID-Resolution).
+
+### Added
+
+- **bridge-handover §forward-pointer-rationale-Sektion** (D-003) — pre-allocated-
+  Pattern für decision-lock vor Annex-Materialisierung
+- **bridge-handover §konvergenz-skip-rationale + Pre-Flight 6** (D-005 Sub-B)
+- **bridge-handover §Re-Sync-Sub-Typen + Pre-Flight 5** (D-001 Worker-Pos) —
+  plan-layer / execution-layer / hybrid Differenzierung
+- **bridge-handover §Output-Marker BRIDGE-WRITE-COMPLETED** (D-001 Advisor-Pos)
+- **bridge-attach + bridge-handover Pre-Flight 5 hard-enforce** required-Args (D-002)
+- **bridge-init Pre-Flight 5b sandbox-mount + §sandbox-mount-prerequisite** (D-005 Sub-A)
+- **bridge-init Pre-Flight 2 PFLICHT-Tool-Call** (F-RP-22) — Filesystem-Read statt Conversational-Memory
+- **bridge-advisor §Anti-Plan-Drift + §User-Translation-Konvention** (D-001 Advisor-Pos, F-RP-29)
+- **bridge-worker §Role-Boundary** (F-RP-30, CRITICAL) — keine Profile-pflicht-workflows
+  oder AP-Diagnosen worker-side
+- **bridge-worker §ID-Resolution-Pre-Flight** (F-RP-25) — Friction-Befund-ID-Lookup
+- **bridge-status erweitert** (F-RP-31, CRITICAL) — User-friendly Output mit Rolle,
+  Rounds, nächster Aktion, Polling-Hint, Forward-Pointer-Warnings
+- **Skill-Mode-Marker `[bridge-worker mode]` / `[bridge-advisor mode | profile=...]`** (F-RP-31 Patch 4)
+- **bridge-init §Visualization-Widget UX-Pattern** (F-RP-19 BEOBACHTUNG)
+
+### Changed
+
+- **bridge-init `--worker-session-id`** ist jetzt UX-Hint, nicht state-Pin (D-004,
+  Breaking-Change). worker_obj setzt IMMER `session_id: SENTINEL_PENDING`.
+- **bridge-attach Pre-Flight 4** strict-Sentinel (D-004) — kein auto-recover-Branch.
+- **state-Schema v1.1.0 → v1.1.1** — `mapping_budget` als top-level optional, `mapping_category_history`
+  per Decision, `shared_artifacts.{owner,status,round_allocated,round_active}` (forward-pointer),
+  `status_observations.{type,defined_in_round,skipped_in_round,skip_basis,cycle_counter}` (convergence-skip).
+- **Self-Test 15 → 28 Tests** (NEU T14-T25 für v0.1.3 Mapping-Decisions). Alle 28/28 PASS.
+
+### Migration v0.1.2 → v0.1.3 (Breaking-Change F-RP-23)
+
+`state.json` mit direktem session_id-Pin (v0.1.2-Use-Case mit `--worker-session-id`):
+- Patch nötig:
+  ```bash
+  jq '.roles.worker.session_id = "pending-attach"' state.json > state.tmp && mv state.tmp state.json
+  ```
+- Anschließend: bridge-attach erneut ausführen
+
+### Verification
+
+- `claude plugin validate` PASS (erwartet)
+- Self-Test 28/28 PASS (T14-T25 NEU)
+- Bridge-Pair p3-real-user-Bilanz: `pilot-runs/p3-real-user/bridge/bilanz_8cbeaad0.md`
+- Patch-Pipeline-Doku: `pilot-runs/p3-real-user/v0.1.3-patch-pipeline.md`
+
+---
+
 ## [0.1.2-phase-b] — 2026-04-27 — process-consulting Profile (PB-014 Phase b, private)
 
 ### Added (private-notes/, NICHT im Plugin-Repo committed)

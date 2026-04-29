@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/snflsknfkldnfs/session-bridge/schemas/bridge_state_v1.json",
-  "title": "Bridge State v1.1.0",
-  "description": "Shared state file for session-bridge pair coordination. ADR_0029 §4.1 + ADR_0030 (expertise_profile).",
+  "title": "Bridge State v1.1.1",
+  "description": "Shared state file for session-bridge pair coordination. ADR_0029 §4.1 + ADR_0030 (expertise_profile). v1.1.1 adds mapping_budget + mapping_category_history per Decision (v0.1.3 D-001..D-005 Mapping-Decisions).",
   "type": "object",
   "required": [
     "pair_id",
@@ -28,7 +28,29 @@
       "description": "UUIDv4"
     },
     "schema_version": {
-      "enum": ["1.0.0", "1.1.0"]
+      "enum": ["1.0.0", "1.1.0", "1.1.1"]
+    },
+    "mapping_budget": {
+      "type": "object",
+      "description": "v1.1.1: mapping-phase budget tracking (NEU v0.1.3, optional).",
+      "properties": {
+        "min": {"type": "integer"},
+        "max": {"type": "integer"},
+        "started_round": {"type": "integer"},
+        "soft_cap": {"type": "boolean"},
+        "rounds_per_befund": {"type": "integer"},
+        "klarstellungs_reserve": {"type": "integer"},
+        "triggers": {
+          "type": "object",
+          "properties": {
+            "T1": {"type": "string"},
+            "T2": {"type": "string"},
+            "T3": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     },
     "created_at": {
       "type": "string",
@@ -138,6 +160,21 @@
           "alternatives_considered": {
             "type": "array",
             "items": {"type": "string"}
+          },
+          "mapping_category_history": {
+            "type": "array",
+            "description": "v1.1.1 (NEU v0.1.3): audit-trail for position revisions.",
+            "items": {
+              "type": "object",
+              "required": ["round", "position", "by"],
+              "properties": {
+                "round": {"type": "integer"},
+                "position": {"type": "string"},
+                "by": {"type": "string"},
+                "basis": {"type": "string"}
+              },
+              "additionalProperties": false
+            }
           }
         },
         "additionalProperties": false
@@ -147,14 +184,22 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["round", "observed_by", "fact", "verified_against"],
+        "required": ["round"],
         "properties": {
           "round": {"type": "integer", "minimum": 0},
           "observed_by": {"enum": ["advisor", "worker"]},
           "fact": {"type": "string"},
           "verified_against": {
             "enum": ["memory", "capability-probe", "filesystem", "transcript", "none"]
-          }
+          },
+          "type": {
+            "type": "string",
+            "description": "v1.1.1 (NEU v0.1.3 / D-005 Sub-B F-RP-34): observation type; 'convergence_criterion_skip' marks legitimate skip per §konvergenz-skip-rationale."
+          },
+          "defined_in_round": {"type": "integer", "minimum": 0},
+          "skipped_in_round": {"type": "integer", "minimum": 0},
+          "skip_basis": {"type": "string"},
+          "cycle_counter": {"type": "integer", "minimum": 0}
         },
         "additionalProperties": false
       }
@@ -174,7 +219,14 @@
           "path": {"type": "string"},
           "purpose": {"type": "string"},
           "lifecycle_state": {"enum": ["active", "archived", "superseded"]},
-          "last_referenced_in_round": {"type": "integer", "minimum": 0}
+          "last_referenced_in_round": {"type": "integer", "minimum": 0},
+          "owner": {"enum": ["advisor", "worker", "shared"], "description": "v1.1.1 (NEU v0.1.3): artifact owner."},
+          "status": {
+            "enum": ["pre-allocated", "active", "archived", "superseded"],
+            "description": "v1.1.1 (NEU v0.1.3 / D-003 F-RP-33): forward-pointer-pattern status. pre-allocated = referenced before materialization."
+          },
+          "round_allocated": {"type": "integer", "minimum": 0, "description": "v1.1.1: decision-lock round that pre-allocated this pointer."},
+          "round_active": {"type": "integer", "minimum": 0, "description": "v1.1.1: round in which artifact was materialized to active status."}
         },
         "additionalProperties": false
       }

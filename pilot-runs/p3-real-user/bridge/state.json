@@ -1,0 +1,457 @@
+{
+  "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+  "schema_version": "1.1.0",
+  "created_at": "2026-04-28T06:49:01Z",
+  "updated_at": "2026-04-29T11:09:53Z",
+  "phase": "close",
+  "roles": {
+    "advisor": {
+      "session_id": "local_86465bb7-0145-4b8c-a153-422f3165ae48",
+      "expertise_source": "process consulting expert software development, knowledge management",
+      "expertise_profile": "/Users/paulad/session-bridge/private-notes/expertise-profiles/process-consulting",
+      "profile_version": "0.1.0",
+      "active_since": "2026-04-28T06:49:01Z"
+    },
+    "worker": {
+      "session_id": "local_e9ba7337-68d6-4050-8759-bc47ee9dc1e0",
+      "active_since": "2026-04-28T08:58:36Z",
+      "current_focus": "Plugin-Dev-Strategie-Frage zu session-bridge",
+      "phase": "mapping-end"
+    }
+  },
+  "topic": "bridge-plugin development",
+  "current_round": 28,
+  "rounds": [
+    {
+      "round": 1,
+      "type": "status",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/1-worker-advisor-c1b0ea78.md",
+      "timestamp": "2026-04-28T09:02:20Z"
+    },
+    {
+      "round": 2,
+      "type": "status",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/2-advisor-worker-945cc651.md",
+      "timestamp": "2026-04-28T09:07:20Z"
+    },
+    {
+      "round": 3,
+      "type": "initial-advice",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/3-advisor-worker-0f869fa7.md",
+      "timestamp": "2026-04-28T09:44:45Z"
+    },
+    {
+      "round": 4,
+      "type": "question",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/4-worker-advisor-2718a6f0.md",
+      "timestamp": "2026-04-28T10:04:27Z"
+    },
+    {
+      "round": 5,
+      "type": "re-sync",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/5-advisor-worker-df87b3b7.md",
+      "timestamp": "2026-04-28T11:18:30Z"
+    },
+    {
+      "round": 6,
+      "type": "counter",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/6-worker-advisor-7f74f36e.md",
+      "timestamp": "2026-04-28T11:26:18Z"
+    },
+    {
+      "round": 7,
+      "type": "re-sync",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/7-worker-advisor-9760862a.md",
+      "timestamp": "2026-04-28T12:11:23Z"
+    },
+    {
+      "round": 8,
+      "type": "re-sync",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/8-worker-advisor-f5653416.md",
+      "timestamp": "2026-04-28T13:25:15Z"
+    },
+    {
+      "round": 9,
+      "type": "re-sync",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/9-advisor-worker-ced96be3.md",
+      "timestamp": "2026-04-28T14:42:05Z"
+    },
+    {
+      "round": 10,
+      "type": "re-sync",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/10-worker-advisor-98ef00fe.md",
+      "timestamp": "2026-04-28T14:57:49Z"
+    },
+    {
+      "round": 11,
+      "type": "decision-lock",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/11-worker-advisor-aaa33ca3.md",
+      "timestamp": "2026-04-28T15:11:29Z"
+    },
+    {
+      "round": 12,
+      "type": "re-sync",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/12-advisor-worker-3c134123.md",
+      "timestamp": "2026-04-28T16:14:25Z"
+    },
+    {
+      "round": 13,
+      "type": "question",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/13-worker-advisor-a1d2cef9.md",
+      "timestamp": "2026-04-28T16:32:48Z"
+    },
+    {
+      "round": 14,
+      "type": "re-sync",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/14-advisor-worker-174c3000.md",
+      "timestamp": "2026-04-28T16:51:20Z"
+    },
+    {
+      "round": 15,
+      "type": "re-sync",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/15-worker-advisor-795bef2c.md",
+      "timestamp": "2026-04-28T17:14:02Z"
+    },
+    {
+      "round": 16,
+      "type": "status",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/16-advisor-worker-58dd0018.md",
+      "timestamp": "2026-04-28T17:44:56Z"
+    },
+    {
+      "round": 17,
+      "type": "re-sync",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/17-advisor-worker-28fa209e.md",
+      "timestamp": "2026-04-28T18:06:54Z"
+    },
+    {
+      "round": 18,
+      "type": "re-sync",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/18-worker-advisor-c59d07a9.md",
+      "timestamp": "2026-04-28T18:22:26Z"
+    },
+    {
+      "round": 19,
+      "type": "re-sync",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/19-advisor-worker-ac0d7579.md",
+      "timestamp": "2026-04-28T20:15:49Z"
+    },
+    {
+      "round": 20,
+      "type": "re-sync",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/20-worker-advisor-a4a743fa.md",
+      "timestamp": "2026-04-28T20:27:32Z"
+    },
+    {
+      "round": 21,
+      "type": "re-sync",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/21-advisor-worker-a6e11467.md",
+      "timestamp": "2026-04-28T20:37:42Z"
+    },
+    {
+      "round": 22,
+      "type": "re-sync",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/22-worker-advisor-13457a0a.md",
+      "timestamp": "2026-04-29T07:40:20Z"
+    },
+    {
+      "round": 23,
+      "type": "re-sync",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/23-advisor-worker-c1c6992c.md",
+      "timestamp": "2026-04-29T09:13:21Z"
+    },
+    {
+      "round": 24,
+      "type": "re-sync",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/24-worker-advisor-4d3a6b24.md",
+      "timestamp": "2026-04-29T09:17:10Z"
+    },
+    {
+      "round": 25,
+      "type": "re-sync",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/25-advisor-worker-81ed5ed1.md",
+      "timestamp": "2026-04-29T09:32:47Z"
+    },
+    {
+      "round": 26,
+      "type": "re-sync",
+      "initiator": "worker",
+      "artifact_path": "bridge/handover/26-worker-advisor-86ad3113.md",
+      "timestamp": "2026-04-29T10:44:24Z"
+    },
+    {
+      "round": 27,
+      "type": "status",
+      "initiator": "advisor",
+      "artifact_path": "bridge/handover/27-advisor-worker-7194f5dc.md",
+      "timestamp": "2026-04-29T10:58:58Z"
+    },
+    {
+      "round": 28,
+      "type": "bridge-close",
+      "initiator": "advisor",
+      "artifact_path": "bridge/bilanz_8cbeaad0.md",
+      "timestamp": "2026-04-29T11:09:53Z"
+    }
+  ],
+  "open_blockers": [],
+  "decision_log": [
+    {
+      "round": 11,
+      "decision": "scope-lock-Auftrag: Mapping der drei p3-real-user Friction-Befunde plus F-RP-YY nach {Patch | Affordance | Defer | Dissens-Documented} mit Annex als methodischer Boden",
+      "rationale": "siehe bridge/artifacts/mapping-method-annex.md (Annex schreibt advisor in Round 12 als erste Mapping-Phase-Aktion, Annex-Pfad ist pre-allocated als shared_artifact)",
+      "decided_by": "consensus",
+      "alternatives_considered": [
+        "Dissens-Markierung pro Befund in Mapping-Phase legitimer Output, nicht Failure-Mode (Worker-Round-8 Teil C)",
+        "Pair erlaubt {Patch | Affordance | Defer | Dissens-{Worker:X / Advisor:Y}} als 4. Mapping-Kategorie (Worker-Round-8 Teil C)",
+        "pflicht_workflow `dissens-management-pflicht-bei-konsens-druck` ist aktiv f\u00fcr Mapping-Phase (Worker-Round-8 Teil C)",
+        "F-RP-YY-Lokalisierungs-Differenz Worker (Skill-Spec-only) vs Advisor (Multi-Layer): Worker-Position \u2286 Advisor-Position als Skopus-Differenz, nicht kompetitive Alternative \u2014 nimmt F-RP-YY als first-test-case f\u00fcr Dissens-Documented-Kategorie (Worker-Round-10 Teil B + Advisor-Round-9 Teil C)"
+      ]
+    }
+  ],
+  "status_observations": [
+    {
+      "round": 8,
+      "blocker_id": "B-1",
+      "transition": "OPEN \u2192 RESOLVED",
+      "resolution": "H3 (user-Erwartungs-Lag) best\u00e4tigt. Kein Mechanism-Bug. Advisor-Schreibvorgang lief, war zum Zeitpunkt der User-Aussage nur noch nicht persistiert."
+    },
+    {
+      "round": 11,
+      "note": "Annex-Datei bridge/artifacts/mapping-method-annex.md zum Zeitpunkt decision-lock NICHT existent \u2014 wird erste Mapping-Phase-Aktion advisor-side in Round 12. decision_log[0].rationale-Pointer ist forward-pointer."
+    },
+    {
+      "round": 13,
+      "note": "Mapping-Phase pausiert f\u00fcr Meta-Pause-Round 13-14. Worker-Round-13 = question mit sechs Meta-Beobachtungen M-1..M-6. Konvergenz-Kriterium-Compliance auf R12 Teil A-E erfolgt in Worker-Round 15 nach Advisor-R14-Meta-Antwort."
+    },
+    {
+      "round": 15,
+      "note": "Konvergenz-Kriterium-Compliance erbracht: 16/16 Akzeptanz f\u00fcr R12 Teil A-E + R14 Teil A-G. 0 Counter. Mapping-Phase ab Round 16 fortgesetzt. Reihenfolge gew\u00e4hlt: B\u00fcndelung-Alternative (R19 = F-RP-15 + M-5). Mapping-Phase endet R19. Real-IDs verwendet (F-RP-23, F-RP-29) statt Placeholder."
+    },
+    {
+      "round": 17,
+      "note": "Round-Z\u00e4hl-Verschiebung +1 durch advisor-Klarstellung R17. Neue Mapping-Reihenfolge: R18 Worker-B\u00fcndelung, R19 advisor M-3, R20 Mapping-Ende (statt R19)."
+    },
+    {
+      "round": 18,
+      "note": "Worker-B\u00fcndelung-Move ausgef\u00fchrt: 3/3 Sub-Aktionen (F-RP-29 Status DISSENS-DOCUMENTED, F-RP-32 NEW HIGH, bridge-handover R18). 6/6 Akzeptanz D-002 Pflicht-Felder. 0 Counter. F-RP-29 Empirie-Feld auf 4\u00d7 Live-Reproduktion upgedated."
+    },
+    {
+      "round": 19,
+      "note": "Annex v0.1.1 \u2192 v0.1.2 (\u00a77 Budget-Re-Kalibrierung min:8/max:14, T1-Round 17\u219226 post-hoc-Empirie). mapping-decisions.md v0.1.1 \u2192 v0.1.2 (D-003 NEU f\u00fcr M-3 \u2192 AFFORDANCE). Mapping-Phase-Ende geplant R24."
+    },
+    {
+      "round": 20,
+      "note": "Worker-B\u00fcndelung-Move R20 ausgef\u00fchrt: 2/2 Sub-Aktionen (F-RP-33 NEU BEOBACHTUNG mit Status Affordance-Documented direkt, bridge-handover R20). 6/6 Akzeptanz D-003 + Annex v0.1.2 Budget acknowledged. 0 Counter. D-003 locked."
+    },
+    {
+      "round": 21,
+      "note": "Advisor-D-004 f\u00fcr F-RP-23 \u2192 AFFORDANCE-Position widerspricht friction-log-Empfehlung Option v1 PATCH. pflicht_workflow dissens-management aktiv. Worker-Wahl: Pfad A Akzeptanz oder Pfad B Counter."
+    },
+    {
+      "round": 22,
+      "note": "Worker-Pfad-B gew\u00e4hlt: Counter zu D-004 mit PATCH-Position (folgt friction-log Option v1). Frame-Counter F1.1+F4.2 statt advisor F1.2+F4.1. 4 Substanz-Argumente. DISSENS-DOCUMENTED \u00a73.4.1 KOMPETITIV erwartet als R23-Lock. Mapping-Phase-Ende verschiebt sich auf R26 (max-Budget exakt)."
+    },
+    {
+      "round": 23,
+      "note": "Advisor R23 Position-Revidierung AFFORDANCE \u2192 PATCH per Worker-Logik-Counter Argument 3 (Marketplace-Adoption-Konsistenz mit D-002). Selbst-Diagnose Methoden-Inkonsistenz dokumentiert. KEIN Dissens-Documented-Lock \u2014 Konvergenz nach Counter."
+    },
+    {
+      "round": 24,
+      "note": "Worker-Konvergenz-Lock D-004 PATCH per B\u00fcndelung-Move: 6/6 Akzeptanz Position-Revidierung, friction-log F-RP-23 Status RESOLVED-IN-V0.1.3 mit YAML-Migration + mapping_category_history (4 Position-Wechsel-Eintr\u00e4ge). 4/5 Decisions locked. Mapping-Phase-Ende: R26."
+    },
+    {
+      "round": 25,
+      "note": "Advisor D-005 B\u00fcndelung mit zwei Kategorien: Sub-A F-RP-15 \u2192 PATCH (Counter zu Worker-R15-Erwartung mit Methoden-Konsistenz-Begr\u00fcndung), Sub-B M-5 \u2192 AFFORDANCE (= F-RP-34 NEU). Counter-Begr\u00fcndung Methoden-Konsistenz mit D-002/D-004."
+    },
+    {
+      "round": 26,
+      "note": "Worker-Konvergenz-Lock D-005 + MAPPING-PHASE-ENDE: 11/11 Akzeptanz (6 Sub-A + 5 Sub-B), 3/3 Sub-Aktionen (F-RP-15 RESOLVED-IN-V0.1.3, F-RP-34 NEU AFFORDANCE-Documented, bridge-handover R26). 5/5 Decisions locked, 6 Items mappiert (3 PATCH + 2 AFFORDANCE + 1 DISSENS-DOCUMENTED \u00a73.4.2). Methoden-Bilanz: 3 Pointen (dissens-management-Wirksamkeit, Position-Revidierung als Konvergenz-Pfad, Methoden-Konsistenz als Spec-Boden)."
+    }
+  ],
+  "file_ownership": {
+    "bridge/artifacts/mapping-method-annex.md": "advisor (writes in Round 12, updated R16/R19)",
+    "bridge/artifacts/mapping-decisions.md": "advisor (writes from R16, updated R17/R19/R23/R25)",
+    "setup-friction-log.md": "shared (worker R18 updated F-RP-29 + added F-RP-32; worker R20 added F-RP-33; worker R24 updated F-RP-23; worker R26 updated F-RP-15 + added F-RP-34)"
+  },
+  "shared_artifacts": [
+    {
+      "path": "bridge/artifacts/mapping-method-annex.md",
+      "owner": "advisor",
+      "status": "closed-active",
+      "purpose": "Mapping-Methoden-Annex: anwendbare/un-anwendbare Frames, vier Mapping-Kategorien, Defer-Trigger-Format, Konsens-Konvergenz-Kriterium-Spec, SoT-Migrations-Pfad, \u00a77 Budget-Spec",
+      "round_allocated": 11,
+      "round_active": 12,
+      "annex_version": "v0.1.2",
+      "round_last_updated": 19,
+      "round_closed": 28
+    },
+    {
+      "path": "bridge/artifacts/mapping-decisions.md",
+      "owner": "advisor",
+      "status": "closed-active",
+      "purpose": "Mapping-Decisions-Log: append-only D-NNN-Eintraege mit Worker-Action + Plugin-Dev-Action getrennt per ADR_0021",
+      "round_allocated": 16,
+      "round_active": 16,
+      "schema_version": "v0.1.0",
+      "decisions_version": "v0.1.5",
+      "round_last_updated": 25,
+      "round_closed": 28
+    }
+  ],
+  "wallclock_estimates": [
+    {
+      "phase": "pre-mapping (init + scope-lock + decision-lock-negotiations)",
+      "rounds_range": "R0-R11",
+      "estimated_rounds": 5,
+      "actual_rounds": 12,
+      "drift_factor": 2.4,
+      "note": "ADR_0029 Default 4-6 Rounds f\u00fcr scope-lock; mit Profile-Pin signifikant l\u00e4nger. Lehre f\u00fcr ADR_0030 Annex-Update."
+    },
+    {
+      "phase": "mapping-phase (D-001 bis D-005)",
+      "rounds_range": "R12-R26",
+      "estimated_rounds": 14,
+      "actual_rounds": 16,
+      "drift_factor": 1.14,
+      "note": "Annex v0.1.2 \u00a77 Re-Kalibrierung post-empirisch korrekt; 2 Klarstellungs-Pauses R13/R17 innerhalb Reserve."
+    },
+    {
+      "phase": "total-pair-lifecycle",
+      "rounds_range": "R0-R28",
+      "estimated_rounds": 19,
+      "actual_rounds": 28,
+      "drift_factor": 1.47,
+      "note": "Total-Drift dominiert von Pre-Mapping-Phase. Mapping-Phase-Spec robust dimensioniert."
+    }
+  ],
+  "rollback_plan_path": null,
+  "mapping_budget": {
+    "min": 8,
+    "max": 14,
+    "started_round": 12,
+    "ended_round": 26,
+    "rounds_per_befund": 2,
+    "klarstellungs_reserve": 2,
+    "soft_cap": true,
+    "actual_rounds_used": 14,
+    "budget_compliance": "max-Budget exakt erreicht (R12-R26), Klarstellungs-Reserve aufgebraucht (R13/R17), T1 nicht aktiviert",
+    "triggers": {
+      "T1": "post-Mapping-Phase-Empirie-Check: nach Round 26 (= started_round 12 + max 14) noch >=1 Befund ohne Mapping-Entscheidung -> re-sync, Budget-Verlaengerung verhandeln (NICHT AKTIVIERT \u2014 alle 5 Decisions locked bei R26)",
+      "T2": "Substanzielle neue Spannung am Mapping-Schema selbst -> re-sync, optional Frame-Erweiterung (NICHT AKTIVIERT)",
+      "T3": "Plugin-Maintainer-Kontext (User) revidiert Budget -> re-sync mit Aktualisierung im decision_log (NICHT AKTIVIERT)"
+    },
+    "mapping_sequence": [
+      {
+        "decision_id": "D-001",
+        "befund": "F-RP-29",
+        "decision_round": 12,
+        "convergence_round": 15,
+        "category": "DISSENS-DOCUMENTED \u00a73.4.2",
+        "status": "locked"
+      },
+      {
+        "decision_id": "D-002",
+        "befund": "F-RP-32 (M-6 + worker-focus-validation)",
+        "decision_round": 16,
+        "convergence_round": 18,
+        "category": "PATCH",
+        "status": "locked"
+      },
+      {
+        "decision_id": "D-003",
+        "befund": "F-RP-33 (M-3 pre-allocated-Pattern)",
+        "decision_round": 19,
+        "convergence_round": 20,
+        "category": "AFFORDANCE",
+        "status": "locked"
+      },
+      {
+        "decision_id": "D-004",
+        "befund": "F-RP-23 (Sentinel-Bypass CRITICAL)",
+        "decision_round": 21,
+        "counter_round": 22,
+        "revidierung_round": 23,
+        "convergence_round": 24,
+        "category": "PATCH (post-Revidierung)",
+        "status": "locked",
+        "category_history": [
+          {
+            "round": 21,
+            "by": "advisor",
+            "category": "AFFORDANCE"
+          },
+          {
+            "round": 22,
+            "by": "worker (counter)",
+            "category": "PATCH"
+          },
+          {
+            "round": 23,
+            "by": "advisor (revidiert)",
+            "category": "PATCH"
+          },
+          {
+            "round": 24,
+            "by": "worker (konvergenz-lock)",
+            "category": "PATCH"
+          }
+        ]
+      },
+      {
+        "decision_id": "D-005",
+        "befund": "F-RP-15 + M-5 (B\u00fcndelung mit Sub-Differenzierung)",
+        "decision_round": 25,
+        "convergence_round": 26,
+        "category": "B\u00fcndelung Sub-A PATCH \u22a5 Sub-B AFFORDANCE",
+        "status": "locked",
+        "sub_decisions": [
+          {
+            "sub": "A",
+            "befund": "F-RP-15",
+            "category": "PATCH"
+          },
+          {
+            "sub": "B",
+            "befund": "M-5 \u2192 F-RP-34",
+            "category": "AFFORDANCE"
+          }
+        ]
+      }
+    ],
+    "category_distribution": {
+      "PATCH": 3,
+      "AFFORDANCE": 2,
+      "DISSENS-DOCUMENTED \u00a73.4.2": 1,
+      "DISSENS-DOCUMENTED \u00a73.4.1": 0,
+      "DEFER": 0
+    }
+  },
+  "mapping_phase_complete": true,
+  "closed_at": "2026-04-29T11:09:53Z"
+}
