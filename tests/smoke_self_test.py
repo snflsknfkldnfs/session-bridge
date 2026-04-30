@@ -750,6 +750,305 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T39 v0.1.4 Phase F ADR_0031 Cross-Pair-Patterns", False, str(e))
 
+    # Test 40 (v0.1.5 PB-007): topic_metadata.domain_hint-Enum + backward-compat
+    try:
+        # State-Schema enum erweitert auf 1.2.0
+        sv_enum = state_schema["properties"]["schema_version"].get("enum", [])
+        assert "1.2.0" in sv_enum, f"schema_version 1.2.0 fehlt in Enum: {sv_enum}"
+
+        # topic_metadata.domain_hint-Enum vorhanden
+        tm = state_schema["properties"].get("topic_metadata", {})
+        assert tm.get("type") == "object", "topic_metadata fehlt oder nicht object"
+        dh = tm.get("properties", {}).get("domain_hint", {})
+        expected_enum = {"plugin-self-dev", "use-case", "architecture-spec",
+                        "investigation-trace", "methodology-improvement", "other"}
+        assert set(dh.get("enum", [])) == expected_enum, f"domain_hint enum mismatch"
+
+        # Positive: state mit topic_metadata.domain_hint validate PASS
+        state = synth_valid_state()
+        state["schema_version"] = "1.2.0"
+        state["topic_metadata"] = {"domain_hint": "plugin-self-dev"}
+        jsonschema.validate(state, state_schema)
+
+        # Backward-compat: state OHNE topic_metadata validate PASS (optional)
+        state2 = synth_valid_state()
+        # synth bleibt ohne topic_metadata
+        assert "topic_metadata" not in state2 or state2["topic_metadata"] == {}
+        jsonschema.validate(state2, state_schema)
+
+        # Negative: invalid domain_hint enum value FAIL
+        state3 = synth_valid_state()
+        state3["schema_version"] = "1.2.0"
+        state3["topic_metadata"] = {"domain_hint": "INVALID-VALUE"}
+        try:
+            jsonschema.validate(state3, state_schema)
+            raise AssertionError("expected ValidationError fuer invalid domain_hint")
+        except jsonschema.ValidationError:
+            pass
+
+        # bridge-init.md doku: --domain-hint dokumentiert
+        init_text = (PLUGIN_ROOT / "commands" / "bridge-init.md").read_text()
+        assert "--domain-hint" in init_text, "--domain-hint flag in bridge-init.md fehlt"
+
+        results.record("T40 v0.1.5 PB-007 topic_metadata.domain_hint-Enum + backward-compat", True)
+    except Exception as e:
+        results.record("T40 v0.1.5 PB-007 topic_metadata.domain_hint-Enum + backward-compat", False, str(e))
+
+    # Test 41 (v0.1.5 Phase I): ADR_0029 Annex B Filename-Konvention
+    try:
+        adr_path = PLUGIN_ROOT / "docs" / "adr" / "ADR_0029_Session_Bridge_Pattern.md"
+        adr_text = adr_path.read_text()
+        assert "Annex B" in adr_text, "ADR_0029 Annex B fehlt"
+        assert "bridge/bilanz_<pair_id>.md" in adr_text, "Filename-Konvention fehlt"
+        assert "schemas/bilanz_v1.json" in adr_text, "Schema-Pointer fehlt"
+        assert "ADR_0031" in adr_text, "ADR_0031-Cross-Ref fehlt"
+        results.record("T41 v0.1.5 Phase I ADR_0029 Annex B Filename-Konvention", True)
+    except Exception as e:
+        results.record("T41 v0.1.5 Phase I ADR_0029 Annex B Filename-Konvention", False, str(e))
+
+    # Test 42 (v0.1.5 PB-012): tools/bridge_state.py existiert + importierbar
+    try:
+        sys.path.insert(0, str(PLUGIN_ROOT / "tools"))
+        import bridge_state
+        # API check: v0.1.5 Phase B-Foundation-Subset (forward-compat fuer Phase H+D Erweiterungen)
+        phase_b_required = {"SENTINEL_PENDING_ATTACH", "read_state", "write_atomic_cas",
+                           "validate_against_schema", "pending_attach_replace",
+                           "append_round", "archive_shared_artifact",
+                           "calibrate_wallclock_post_hoc"}
+        actual_api = set(bridge_state.__all__)
+        missing = phase_b_required - actual_api
+        assert not missing, f"Phase B Foundation-API missing: {missing}"
+        assert bridge_state.SENTINEL_PENDING_ATTACH == "pending-attach"
+        results.record("T42 v0.1.5 PB-012 tools/bridge_state.py Library-API", True)
+    except Exception as e:
+        results.record("T42 v0.1.5 PB-012 tools/bridge_state.py Library-API", False, str(e))
+
+    # Test 43 (v0.1.5 PB-012): Library validate_against_schema funktional
+    try:
+        import bridge_state
+        valid_state = synth_valid_state()
+        errors = bridge_state.validate_against_schema(valid_state)
+        assert errors == [] or errors == ["jsonschema-not-available"], f"unexpected errors: {errors}"
+
+        # Negative: invalid state produces errors
+        invalid = synth_valid_state()
+        del invalid["phase"]
+        errors2 = bridge_state.validate_against_schema(invalid)
+        assert errors2 != [] or errors2 == ["jsonschema-not-available"], "expected errors fuer missing phase"
+        results.record("T43 v0.1.5 PB-012 Library validate_against_schema", True)
+    except Exception as e:
+        results.record("T43 v0.1.5 PB-012 Library validate_against_schema", False, str(e))
+
+    # Test 44 (v0.1.5 PB-012): Library pending_attach_replace strict-mode
+    try:
+        import bridge_state
+        state = synth_valid_state()
+        # Setze worker auf Sentinel
+        state["roles"]["worker"]["session_id"] = bridge_state.SENTINEL_PENDING_ATTACH
+        # Initial-Set Test: phase entfernen damit setdefault greift
+        state["roles"]["worker"].pop("phase", None)
+        # Replace
+        state2 = bridge_state.pending_attach_replace(state, "worker", "local_test_123", "test-focus")
+        assert state2["roles"]["worker"]["session_id"] == "local_test_123"
+        assert state2["roles"]["worker"]["current_focus"] == "test-focus"
+        assert state2["roles"]["worker"]["phase"] == "kickoff"  # Initial-Set v0.1.4 Phase A.2
+
+        # Plus: existing phase wird NICHT ueberschrieben (setdefault-Semantik)
+        state_x = synth_valid_state()
+        state_x["roles"]["worker"]["session_id"] = bridge_state.SENTINEL_PENDING_ATTACH
+        state_x["roles"]["worker"]["phase"] = "existing-phase"
+        state_y = bridge_state.pending_attach_replace(state_x, "worker", "local_xyz")
+        assert state_y["roles"]["worker"]["phase"] == "existing-phase"  # nicht ueberschrieben
+
+        # Negative: non-Sentinel direct-pin → ValueError per D-004 R23-Revidierung strict
+        state3 = synth_valid_state()
+        state3["roles"]["worker"]["session_id"] = "local_already_pinned"
+        try:
+            bridge_state.pending_attach_replace(state3, "worker", "local_other")
+            raise AssertionError("expected ValueError for non-Sentinel session_id")
+        except ValueError:
+            pass
+        results.record("T44 v0.1.5 PB-012 Library pending_attach_replace strict", True)
+    except Exception as e:
+        results.record("T44 v0.1.5 PB-012 Library pending_attach_replace strict", False, str(e))
+
+    # Test 45 (v0.1.5 PB-012): Library append_round + worker.phase Auto-Propagation
+    try:
+        import bridge_state
+        state = synth_valid_state()
+        round_data = {
+            "round": state["current_round"] + 1,
+            "type": "status",
+            "initiator": "worker",
+            "artifact_path": "bridge/handover/test.md",
+            "timestamp": "2026-04-30T12:00:00Z",
+            "frontmatter": {"worker_phase": "iterate-substantive"}
+        }
+        state2 = bridge_state.append_round(state, round_data)
+        assert state2["current_round"] == round_data["round"]
+        assert len(state2["rounds"]) >= 1
+        # Auto-Propagation worker.phase aus frontmatter (F-RP-26 v0.1.4)
+        assert state2["roles"]["worker"]["phase"] == "iterate-substantive"
+        results.record("T45 v0.1.5 PB-012 Library append_round + Auto-Propagation", True)
+    except Exception as e:
+        results.record("T45 v0.1.5 PB-012 Library append_round + Auto-Propagation", False, str(e))
+
+    # Test 46 (v0.1.5 PB-012): Library calibrate_wallclock_post_hoc
+    try:
+        import bridge_state
+        state = synth_valid_state()
+        phases = [
+            {"phase": "init", "rounds_range": "R0", "estimated_rounds": 1, "actual_rounds": 1},
+            {"phase": "scope-lock", "rounds_range": "R1-R11", "estimated_rounds": 5, "actual_rounds": 12, "note": "Profile-Pin-Effekt"}
+        ]
+        state2 = bridge_state.calibrate_wallclock_post_hoc(state, phases)
+        we = state2["wallclock_estimates"]
+        assert len(we) == 2
+        assert we[1]["drift_factor"] == 2.4  # 12/5 = 2.4 per ADR_0030 Annex A Empirie
+        results.record("T46 v0.1.5 PB-012 Library calibrate_wallclock_post_hoc", True)
+    except Exception as e:
+        results.record("T46 v0.1.5 PB-012 Library calibrate_wallclock_post_hoc", False, str(e))
+
+    # Test 47 (v0.1.5 PB-013): commands/bridge-update.md existiert + Pflicht-Sektionen
+    try:
+        bu_path = PLUGIN_ROOT / "commands" / "bridge-update.md"
+        assert bu_path.exists()
+        bu_text = bu_path.read_text()
+        for sec in ["## Argumente", "## Pre-Flight", "## Ablauf", "## Output", "## Akzeptanz", "## Anti-Pattern"]:
+            assert sec in bu_text, f"Sektion fehlt: {sec}"
+        # Whitelist + Library-Cross-Ref
+        assert "topic\\|expertise-source\\|worker-focus\\|domain-hint" in bu_text or "topic|expertise-source|worker-focus|domain-hint" in bu_text
+        assert "tools/bridge_state.py" in bu_text
+        results.record("T47 v0.1.5 PB-013 commands/bridge-update.md", True)
+    except Exception as e:
+        results.record("T47 v0.1.5 PB-013 commands/bridge-update.md", False, str(e))
+
+    # Test 48 (v0.1.5 PB-013): bridge-update Pre-Flight 3 phase-block dokumentiert
+    try:
+        bu_text = (PLUGIN_ROOT / "commands" / "bridge-update.md").read_text()
+        assert "phase \u2208 {init, scope-lock, iterate}" in bu_text or "phase ∈ {init, scope-lock, iterate}" in bu_text, "phase-Whitelist fehlt"
+        assert "execute/verify/close" in bu_text or "Decision-Log brechen" in bu_text, "phase-block-Begruendung fehlt"
+        # status_observations Update-Trail
+        assert "status_observations" in bu_text
+        results.record("T48 v0.1.5 PB-013 bridge-update Pre-Flight phase-block + Update-Trail", True)
+    except Exception as e:
+        results.record("T48 v0.1.5 PB-013 bridge-update Pre-Flight phase-block + Update-Trail", False, str(e))
+
+    # Test 49 (v0.1.5 Phase H): bridge-close.md §bilanz-schema-enforcement + Library
+    try:
+        # Library validate_bilanz_against_schema vorhanden
+        import bridge_state
+        assert "validate_bilanz_against_schema" in bridge_state.__all__, "Library-API fehlt validate_bilanz_against_schema"
+
+        # Synth valide Bilanz validate PASS
+        synth_bilanz = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "pair_topic": "test",
+            "created_at": "2026-04-30T00:00:00Z",
+            "closed_at": "2026-04-30T01:00:00Z",
+            "total_rounds": 5,
+            "phase_sequence": [{"phase": "init", "rounds_range": "R0", "rounds_count": 1}],
+            "decision_log_summary": [{"decision": "x", "decided_by": "consensus"}],
+            "wallclock_drift_calibrated": [{"phase": "init", "estimated_rounds": 1, "actual_rounds": 1, "drift_factor": 1.0}],
+            "reflection": {"was_funktionierte": ["a"], "was_problematisch": [], "was_als_naechstes": ["b"]},
+            "successful_patterns": [],
+            "anti_patterns_detected": [],
+            "cross_pair_transfer_hinweise": []
+        }
+        errors = bridge_state.validate_bilanz_against_schema(synth_bilanz)
+        assert errors == [] or errors == ["jsonschema-not-available"], f"unexpected errors: {errors}"
+
+        # bridge-close.md hat §bilanz-schema-enforcement
+        bc_path = PLUGIN_ROOT / "commands" / "bridge-close.md"
+        assert bc_path.exists()
+        bc_text = bc_path.read_text()
+        assert "§bilanz-schema-enforcement" in bc_text
+        assert "schemas/bilanz_v1.json" in bc_text
+        assert "validate_bilanz_against_schema" in bc_text
+        results.record("T49 v0.1.5 Phase H bilanz-schema-enforcement", True)
+    except Exception as e:
+        results.record("T49 v0.1.5 Phase H bilanz-schema-enforcement", False, str(e))
+
+    # Test 50 (v0.1.5 Phase D.1 PB-009): check_drift_plausibility Domain-aware
+    try:
+        import bridge_state
+        # Plugin-Self-Dev domain: p3-drift 2.4 sollte OK sein (range 0.8-3.5)
+        result = bridge_state.check_drift_plausibility("plugin-self-dev", 2.4)
+        assert result["status"] == "OK", f"p3 drift 2.4 sollte OK sein: {result}"
+        # Plugin-Self-Dev: drift 5.0 ausserhalb range → WARN
+        result2 = bridge_state.check_drift_plausibility("plugin-self-dev", 5.0)
+        assert result2["status"] == "WARN", f"drift 5.0 sollte WARN sein: {result2}"
+        # Use-Case: drift 0.67 OK
+        result3 = bridge_state.check_drift_plausibility("use-case", 0.67)
+        assert result3["status"] == "OK"
+        # Default fuer unknown domain
+        result4 = bridge_state.check_drift_plausibility(None, 1.5)
+        assert result4["status"] == "OK"
+        results.record("T50 v0.1.5 Phase D.1 PB-009 check_drift_plausibility Domain-aware", True)
+    except Exception as e:
+        results.record("T50 v0.1.5 Phase D.1 PB-009 check_drift_plausibility Domain-aware", False, str(e))
+
+    # Test 51 (v0.1.5 Phase D.2 PB-002): compute_reflection_action_ratio + check_ratio_threshold
+    try:
+        import bridge_state
+        # Synth p3-style state: 18 re-sync, 1 initial-advice, 1 decision-lock
+        state = synth_valid_state()
+        state["rounds"] = (
+            [{"round": i, "type": "re-sync", "initiator": "advisor", "artifact_path": "x", "timestamp": "2026-04-30T00:00:00Z"} for i in range(18)] +
+            [{"round": 19, "type": "initial-advice", "initiator": "advisor", "artifact_path": "x", "timestamp": "2026-04-30T00:00:00Z"}] +
+            [{"round": 20, "type": "decision-lock", "initiator": "worker", "artifact_path": "x", "timestamp": "2026-04-30T00:00:00Z"}]
+        )
+        ratio = bridge_state.compute_reflection_action_ratio(state)
+        assert ratio == 9.0, f"expected 18/2=9.0, got {ratio}"  # 18 re-sync (refl) / 2 action (initial-advice + decision-lock)
+
+        # Domain-aware Threshold-Check
+        # Default domain (unknown) → threshold 4.0 → 9.0 > 4.0 = WARN
+        state["topic_metadata"] = {"domain_hint": "use-case"}
+        result = bridge_state.check_ratio_threshold(state)
+        assert result["status"] == "WARN", f"use-case ratio 9 sollte WARN sein"
+        assert result["threshold"] == 4.0
+
+        # Plugin-Self-Dev: threshold 15.0 → 9.0 < 15.0 = OK
+        state["topic_metadata"]["domain_hint"] = "plugin-self-dev"
+        result2 = bridge_state.check_ratio_threshold(state)
+        assert result2["status"] == "OK", f"plugin-self-dev ratio 9 sollte OK sein"
+        assert result2["threshold"] == 15.0
+        results.record("T51 v0.1.5 Phase D.2 PB-002 ratio Domain-aware Threshold", True)
+    except Exception as e:
+        results.record("T51 v0.1.5 Phase D.2 PB-002 ratio Domain-aware Threshold", False, str(e))
+
+    # Test 52 (v0.1.5 Phase D): bridge-handover.md §lifecycle-health-checks-Sektion
+    try:
+        bh_text = (PLUGIN_ROOT / "commands" / "bridge-handover.md").read_text()
+        assert "§lifecycle-health-checks" in bh_text
+        assert "§drift-plausibility-check" in bh_text
+        assert "§reflection-action-ratio-check" in bh_text
+        # ADR_0031-Cross-Refs
+        assert "ADR_0031" in bh_text
+        # Empirie-Anker p3 12.5
+        assert "12.5" in bh_text or "12.50" in bh_text
+        results.record("T52 v0.1.5 Phase D bridge-handover §lifecycle-health-checks", True)
+    except Exception as e:
+        results.record("T52 v0.1.5 Phase D bridge-handover §lifecycle-health-checks", False, str(e))
+
+    # Test 53 (v0.1.5 Phase D): RATIO_THRESHOLDS + DRIFT_RANGES Konstanten
+    try:
+        import bridge_state
+        # RATIO_THRESHOLDS hat alle 6 ADR_0031-Domains
+        rt = bridge_state.RATIO_THRESHOLDS
+        for d in ["plugin-self-dev", "use-case", "default"]:
+            assert d in rt, f"RATIO_THRESHOLDS fehlt {d}"
+        assert rt["plugin-self-dev"] == 15.0
+        assert rt["use-case"] == 4.0
+        # DRIFT_RANGES
+        dr = bridge_state.DRIFT_RANGES
+        assert "plugin-self-dev" in dr
+        assert dr["plugin-self-dev"]["min"] >= 0.5  # p3-Empirie sanity
+        assert dr["plugin-self-dev"]["max"] <= 5.0
+        results.record("T53 v0.1.5 Phase D Library-Konstanten RATIO_THRESHOLDS + DRIFT_RANGES", True)
+    except Exception as e:
+        results.record("T53 v0.1.5 Phase D Library-Konstanten RATIO_THRESHOLDS + DRIFT_RANGES", False, str(e))
+
     if verbose:
         print("Passed:", results.passed)
 

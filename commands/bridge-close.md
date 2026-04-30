@@ -117,6 +117,26 @@ Pair ist geschlossen. Weitere /bridge-handover-Aufrufe sind blockiert.
 - Wall-Clock-Drift kalibriert (alle wallclock_estimates haben actual_min ≠ null oder explizit null=skipped)
 - Orphane handovers archiviert (falls --archive-orphans)
 
+## §bilanz-schema-enforcement (NEU v0.1.5 Phase H / PB-001 follow-up / ADR_0031 §4.3)
+
+bridge-close MUSS generierte Bilanz gegen `schemas/bilanz_v1.json` (NEU v0.1.4 PB-001) validieren.
+
+```python
+from tools.bridge_state import validate_bilanz_against_schema
+
+errors = validate_bilanz_against_schema(bilanz_data)
+if errors:
+    abort(f"Bilanz-Schema-Validate FAIL: {errors}")
+```
+
+**Filename-Konvention (ADR_0029 Annex B v0.1.5 Phase I):** `bridge/bilanz_<pair_id>.md`
+
+**Migration-Kandidaten:**
+- p4-eg-dev/bridge/BILANZ.md → soft-Migration (User-Aktion optional, kein hard-FAIL fuer historische Pairs pre-v0.1.5)
+- pre-v0.1.5 Bilanz-Files bleiben ohne Schema-Enforcement
+
+**Empirie-Anker:** pilot-runs/p3-real-user/bridge/bilanz_8cbeaad0.md als Reference-Implementation (12-Sektionen-konform, Stufe-7-Konsolidierung).
+
 ## Anti-Pattern
 
 - NICHT close in Phase=init (kein Round geschehen)

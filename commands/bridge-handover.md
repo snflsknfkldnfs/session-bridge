@@ -295,6 +295,50 @@ Bei type ∈ {alle Round-Types} und this_role=worker: state.roles.worker.phase w
 
 **Self-Test T29:** Worker-Handover mit worker_phase="X" → state.roles.worker.phase=="X" post-Skill.
 
+## §lifecycle-health-checks (NEU v0.1.5 Phase D / PB-009 + PB-002)
+
+### §drift-plausibility-check (PB-009 v0.1.5 Phase D.1)
+
+Bei type=verify oder type=execute mit `actual_min`-Wert: berechne `drift_factor = actual_min / estimated_min`. Library-Aufruf:
+
+```python
+from tools.bridge_state import check_drift_plausibility
+result = check_drift_plausibility(domain_hint, drift_factor)
+if result["status"] == "WARN":
+    # Marker in state.status_observations[]
+    print(f"DRIFT-WARN: {result['diagnosis']}")
+```
+
+**Domain-Range-Empirie (ADR_0031 §3.2):**
+- plugin-self-dev: drift 0.8-3.5 (p3-Empirie 1.14-2.4)
+- use-case: drift 0.4-2.0 (p4+p5+p6 0.67-1.67)
+
+### §reflection-action-ratio-check (PB-002 v0.1.5 Phase D.2 / ADR_0031 §4.1)
+
+Periodisch bei jedem Handover berechnet bridge-handover R/A-ratio. Library-Aufruf:
+
+```python
+from tools.bridge_state import compute_reflection_action_ratio, check_ratio_threshold
+ratio = compute_reflection_action_ratio(state)
+result = check_ratio_threshold(state, ratio)
+if result["status"] == "WARN":
+    # Lifecycle-Health-Alert in advisor-Skill-Output
+    print(f"LIFECYCLE-HEALTH-ALERT: ratio={result['ratio']} > threshold={result['threshold']} ({result['domain']})")
+```
+
+**Domain-aware Thresholds (ADR_0031 §4.1):**
+- plugin-self-dev: 15.0 (p3-Empirie 12.5 ist normal)
+- use-case: 4.0 (p4+p5+p6 0.67-2.00)
+- methodology-improvement: 5.0 (p6 early-stage)
+- default: 4.0
+
+**Empirie-Anker:** p3-real-user R/A-ratio 12.5 (Plugin-Self-Dev mit Profile) wuerde unter Default 4.0 falsch-WARN — Domain-aware Threshold verhindert false positive.
+
+### Anti-Pattern: Threshold-Bypass
+
+NICHT Domain-Hint manipulieren um WARN zu vermeiden. WARN ist Lifecycle-Health-Indicator, nicht Failure-Mode. Bei legitimer Threshold-Ueberschreitung: T2-Trigger (Budget-Verlaengerung) per Annex §7 (siehe p3 mapping_budget Spec).
+
+
 ## §body-number-konsistenz (NEU v0.1.4 / PB-010, optional Hook)
 
 Optional-Validator-Hook in bridge-handover-Skill: parse Body-Lists, count Items, vergleiche mit explizit genannten Zahlen.

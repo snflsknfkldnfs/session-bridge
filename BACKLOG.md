@@ -8,6 +8,15 @@
 - v0.1.3 (Plugin-Marketplace-Robustheit + F-RP-29-Disziplin) abgeschlossen 2026-04-29
 - Phase 2 **AKTIV** seit 2026-04-26 — Real-Use-Case-Pull erfüllt via EG_DEV_ADVISOR + UPP-Pair Pilot
 
+**v0.1.5 Closure-Marker (2026-04-30):**
+
+- 5 Phasen abgeschlossen (B + D + G + H + I) — Foundation + Lifecycle-Robustheit + ADR_0031-Decisions
+- 5 PB-Items resolved: PB-002 (Anti-Endless-Loop Domain-aware), PB-007 (Domain-Hint-Field), PB-009 (Drift-Plausibility), PB-012 (tools/-Library), PB-013 (/bridge-update)
+- 14 neue Self-Tests T40-T53 — Total 56/56 PASS
+- Schema-Bump state v1.1.2 -> v1.2.0 (topic_metadata.domain_hint Enum)
+- ADR_0029 Annex B + ADR_0031 alle 4 Decisions implementiert
+- v0.1.6-Roadmap: noch offen (PB-004/005/006/008 + Profile-Public-Release sind alle DEFERRED-Phase-2 mit Trigger-Bedingungen)
+
 **v0.1.4 Closure-Marker (2026-04-30):**
 
 - 4 Phasen abgeschlossen (A + C + E + F) — Mini-Release-Strategie
@@ -104,6 +113,8 @@ Plus Body-Sektionen: §1 Tatsächlicher Verlauf / §2 Reflexion ✅⚠️→ / �
 
 **Aufwand-Schätzung:** ~3h Self-Edit (State-Schema-Erweiterung + bridge-status-Command-Output + Skill-Body-Patch).
 
+
+**Status v0.1.5:** RESOLVED-IN-V0.1.5 Phase D.2 (Domain-aware Threshold per ADR_0031 §4.1)
 ---
 
 ### PB-003 Pre-Decision-Verification in `decision-lock`-Round
@@ -170,6 +181,8 @@ Mind. 1 Eintrag, max 2. Schema-allOf-Pflicht für type=decision-lock.
 
 **Trigger-Bedingung:** Real-Use über mehrere Domains hinweg.
 
+
+**Status v0.1.5:** RESOLVED-IN-V0.1.5 Phase G (state-Schema v1.2.0 topic_metadata.domain_hint)
 ---
 
 ### PB-008 4-Layer-Meta-Architecture-Erweiterung
@@ -194,6 +207,8 @@ Mind. 1 Eintrag, max 2. Schema-allOf-Pflicht für type=decision-lock.
 
 **Aufwand-Schätzung:** ~3h Self-Edit (Schema-Erweiterung wallclock_estimates + Heuristik-Code in bridge-handover-Command + Self-Test).
 
+
+**Status v0.1.5:** RESOLVED-IN-V0.1.5 Phase D.1 (Library check_drift_plausibility Domain-aware)
 ---
 
 ### PB-010 Number-Konsistenz-Validation in Handover-Body-Listen
@@ -240,6 +255,8 @@ Skills/Commands rufen via `${CLAUDE_PLUGIN_ROOT}/tools/bridge_state.py` (subproc
 
 **Aufwand-Schätzung:** ~5h Self-Edit (Library + 5 Commands refactoren + Self-Test extension).
 
+
+**Status v0.1.5:** RESOLVED-IN-V0.1.5 Phase B.1 (tools/bridge_state.py mit 11 Funktionen)
 ---
 
 ### PB-013 /bridge-update-Command für post-Init-Korrekturen
@@ -252,6 +269,8 @@ Skills/Commands rufen via `${CLAUDE_PLUGIN_ROOT}/tools/bridge_state.py` (subproc
 
 **Aufwand-Schätzung:** ~2h Self-Edit.
 
+
+**Status v0.1.5:** RESOLVED-IN-V0.1.5 Phase B.2 (commands/bridge-update.md)
 ---
 
 ## Tier-1-Activation-Reihenfolge (post-v0.1.1)
