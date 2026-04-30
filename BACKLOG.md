@@ -8,6 +8,16 @@
 - v0.1.3 (Plugin-Marketplace-Robustheit + F-RP-29-Disziplin) abgeschlossen 2026-04-29
 - Phase 2 **AKTIV** seit 2026-04-26 — Real-Use-Case-Pull erfüllt via EG_DEV_ADVISOR + UPP-Pair Pilot
 
+**v0.1.4 Closure-Marker (2026-04-30):**
+
+- 4 Phasen abgeschlossen (A + C + E + F) — Mini-Release-Strategie
+- 9 Items resolved: F-RP-24, F-RP-26, PB-001 (Bilanz-Schema), mapping_decisions-Schema (NEU), artifact_type-Enum (NEU), PB-003, PB-011, PB-010, ADR_0031 (NEU)
+- 14 neue Self-Tests T26-T39 — Total 42/42 PASS
+- 4 ADR-Decisions in ADR_0031 deferred auf v0.1.5: PB-002 Domain-aware Threshold, PB-007 Activation, bilanz_v1-Migration enforcement, ADR_0029 §5.6 Filename-Annex
+- Phase B (Foundation tools/-Library + bridge-update) + Phase D (PB-009 + PB-002) deferred auf v0.1.5 (eigener Major-Patch)
+- Cross-Pair-Empirie-Foundation (ADR_0031) ermoeglicht PB-006 Cross-Pair-Memory-Spec sobald n>=5 Pairs pro Domain-Klasse erreicht
+- v0.1.5-Roadmap: `pilot-runs/p3-real-user/v0.1.5-roadmap.md` (zu schreiben)
+
 **v0.1.3 Closure-Marker (2026-04-29):**
 
 - 5 Mapping-Decisions aus Bridge-Pair p3-real-user gepatched (D-001..D-005)
@@ -36,9 +46,9 @@
 | F-RP-33 | pre-allocated-Pattern | BEOBACHTUNG | Affordance-Documented (D-003) |
 | F-RP-34 | Konvergenz-Skip-Konvention | BEOBACHTUNG | Affordance-Documented (D-005 Sub-B) |
 | F-RP-22 | Conversational-Memory-Cache | HIGH | RESOLVED (Pre-Flight 2 PFLICHT-Tool-Call) |
-| F-RP-24 | Title-statt-Session-ID | HIGH | DEFERRED-V0.1.4 |
+| F-RP-24 | Title-statt-Session-ID | HIGH | RESOLVED-IN-V0.1.4 (Phase A.1) |
 | F-RP-25 | F-RP-XX-Placeholder-ID-Resolution | LOW | RESOLVED |
-| F-RP-26 | worker.phase-Konsistenz | BEOBACHTUNG | DEFERRED-V0.1.4 |
+| F-RP-26 | worker.phase-Konsistenz | BEOBACHTUNG | RESOLVED-IN-V0.1.4 (Phase A.2 Auto-Propagation) |
 | F-RP-19 | Visualization-Widget-UX | BEOBACHTUNG | DOCUMENTED (Phase A.3) |
 
 **v0.1.1 Hotfix-Closure-Marker (2026-04-26):**
@@ -78,6 +88,8 @@ Plus Body-Sektionen: §1 Tatsächlicher Verlauf / §2 Reflexion ✅⚠️→ / �
 
 **Aufwand-Schätzung:** ~2h Self-Edit (Schema + Smoke-Test + ADR §5.6 Referenz-Patch).
 
+
+**Status v0.1.4:** RESOLVED-IN-V0.1.4 Phase C.1
 ---
 
 ### PB-002 Anti-Endless-Loop / Reflection-Action-Ratio-Threshold
@@ -114,6 +126,8 @@ Mind. 1 Eintrag, max 2. Schema-allOf-Pflicht für type=decision-lock.
 
 **Aufwand-Schätzung:** ~2h Self-Edit (Handover-Schema + bridge-handover-Command-Logik + bridge-advisor-Skill-Update).
 
+
+**Status v0.1.4:** RESOLVED-IN-V0.1.4 Phase E.1
 ---
 
 ## Tier 2 — Adaptable / Phase-2-Erweiterung (deferred)
@@ -192,6 +206,8 @@ Mind. 1 Eintrag, max 2. Schema-allOf-Pflicht für type=decision-lock.
 
 **Aufwand-Schätzung:** ~1.5h Self-Edit. Niedrige Prio (kosmetisch, kein Daten-Bug).
 
+
+**Status v0.1.4:** RESOLVED-IN-V0.1.4 Phase E.3
 ---
 
 ### PB-011 shared-path-Default-Heuristik mit Filesystem-Inspektion
@@ -204,6 +220,8 @@ Mind. 1 Eintrag, max 2. Schema-allOf-Pflicht für type=decision-lock.
 
 **Aufwand-Schätzung:** ~2h Self-Edit + Empirie-Test in 2-Project-Pilot.
 
+
+**Status v0.1.4:** RESOLVED-IN-V0.1.4 Phase E.2
 ---
 
 ### PB-012 tools/-Library für Atomic-Write + State-Mutation
@@ -292,15 +310,30 @@ Phase-2-Entwicklung startet **nicht** bei Spec-Reife oder Roadmap-Plan, sondern 
 - Cherry-Picking-Stichprobe 5/10 PASS, Lizenz-Pre-Check OK (3 Belege paraphrasiert in Stufe 7)
 - Profile-Pre-Flight (bridge-init Schritt 5) Self-Test: 5/5 PASS
 
-## PB-014 Phase b deferred (Pre-Publication-Path)
+## PB-014 Phase b deferred (Pre-Publication-Path) — DEFERRED-V0.2.0+
 
-Vor öffentlicher Distribution des process-consulting-Profile:
-1. Lizenzrecht-Check (User-Aktion + ggf. juristische Beratung)
-2. Cherry-Picking-Vollaudit (alle 10 Frames stichprobenweise gegen Quell-Zettel)
-3. Empirie-Test in Real-User-Pair mit aktiviertem Profile
-4. Profile in `expertise-profiles/process-consulting/` (public-Repo) verschieben
+**Status (2026-04-30):** Public-Release DEFERRED bis post-juristischer-Beratung. Audit-Status sauber, Migration kann ohne Re-Audit erfolgen.
 
-Aktuell: Profile bleibt in `private-notes/` (gitignored) — User-Decision-Pending für Public-Release.
+### Pre-Publication-Pflicht-Aktionen Status
+
+| # | Aktion | Status |
+|---|---|---|
+| 1 | Lizenzrecht-Check (User-Aktion + juristische Beratung) | **PENDING** — Scope kommerzielle Distribution erfordert juristische Vorab-Klärung |
+| 2 | Cherry-Picking-Vollaudit (alle 10 Frames + 10 APs gegen Quell-Zettel) | **PASS** — Stufe-8-Report `private-notes/process-consulting-curation/08_validation-report-vollaudit.md` |
+| 3 | Empirie-Test in Real-User-Pair mit aktiviertem Profile | **PASS** — Bridge-Pair p3-real-user 28 Rounds, Bilanz `pilot-runs/p3-real-user/bridge/bilanz_8cbeaad0.md` |
+| 4 | Profile in `expertise-profiles/process-consulting/` (public-Repo) verschieben | **DEFERRED** — Migration-Plan in Stufe-8-Report §9 bereit |
+
+### Re-Check-Trigger
+
+- **post-juristischer-Beratung User-Decision Lizenz-Modell:** entweder (a) Open-Source-with-Citation-Pflicht (z.B. CC-BY-NC-SA), (b) Commercial-License, (c) Hybrid (Open-Source-Profile + Commercial-Tooling), oder (d) weiterhin private-notes/ defer
+- **Audit-Status:** Stufe 8 PASS — Migration kann ohne Re-Audit erfolgen
+- **Pre-Migration-Pflicht:** User-Decision (1) + Migration-Plan §9 ausführen
+
+### Lizenz-Beratungs-Vorbereitungs-Doku
+
+`private-notes/process-consulting-curation/09_juristische-beratung-vorbereitung.md` — strukturiertes Material für Anwalts-Termin (Quellen, Charakter, Distribution-Optionen, Disclaimers, konkrete Fragen).
+
+Aktuell: Profile bleibt in `private-notes/` (gitignored). Public-Release-Aktivierung post-juristische-Beratung.
 
 ## Smoke-Test-Befunde aus 2026-04-27 (Tier-2-Backlog)
 

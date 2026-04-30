@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/snflsknfkldnfs/session-bridge/schemas/handover_frontmatter_v1.json",
   "title": "Handover Frontmatter v1.0.0",
-  "description": "YAML-Frontmatter schema for handover/<round>-<from>-<to>-<short-uuid>.md files. ADR_0029 §4.3.",
+  "description": "YAML-Frontmatter schema for handover/<round>-<from>-<to>-<short-uuid>.md files. ADR_0029 \u00a74.3.",
   "type": "object",
   "required": [
     "pair_id",
@@ -21,9 +21,22 @@
       "type": "string",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
     },
-    "round": {"type": "integer", "minimum": 0},
-    "from": {"enum": ["advisor", "worker"]},
-    "to": {"enum": ["advisor", "worker"]},
+    "round": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "from": {
+      "enum": [
+        "advisor",
+        "worker"
+      ]
+    },
+    "to": {
+      "enum": [
+        "advisor",
+        "worker"
+      ]
+    },
     "type": {
       "enum": [
         "initial-advice",
@@ -38,85 +51,211 @@
         "question"
       ]
     },
-    "timestamp": {"type": "string", "format": "date-time"},
-    "worker_phase": {"type": "string", "minLength": 1},
-    "worker_focus": {"type": "string", "minLength": 1},
-    "status_verified_at": {"type": "string", "format": "date-time"},
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "worker_phase": {
+      "type": "string",
+      "minLength": 1
+    },
+    "worker_focus": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "references": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["type", "pointer", "verified"],
+        "required": [
+          "type",
+          "pointer",
+          "verified"
+        ],
         "properties": {
           "type": {
-            "enum": ["transcript", "memory", "capability-probe", "filesystem", "shared-artifact"]
+            "enum": [
+              "transcript",
+              "memory",
+              "capability-probe",
+              "filesystem",
+              "shared-artifact"
+            ]
           },
-          "pointer": {"type": "string", "minLength": 1},
-          "verified": {"type": "boolean"}
+          "pointer": {
+            "type": "string",
+            "minLength": 1
+          },
+          "verified": {
+            "type": "boolean"
+          }
         },
         "additionalProperties": false
       }
     },
     "related_blockers": {
       "type": "array",
-      "items": {"type": "string", "pattern": "^B-[0-9]+$"}
+      "items": {
+        "type": "string",
+        "pattern": "^B-[0-9]+$"
+      }
     },
     "related_decisions": {
       "type": "array",
-      "items": {"type": "string", "pattern": "^D-[0-9]+$"}
+      "items": {
+        "type": "string",
+        "pattern": "^D-[0-9]+$"
+      }
     },
     "acceptance_criteria": {
       "type": "array",
-      "items": {"type": "string"}
+      "items": {
+        "type": "string"
+      }
     },
     "rollback_triggers": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["condition", "action"],
+        "required": [
+          "condition",
+          "action"
+        ],
         "properties": {
-          "condition": {"type": "string"},
-          "action": {"type": "string"}
+          "condition": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          }
         },
         "additionalProperties": false
       }
     },
-    "wallclock_estimate_min": {"type": "integer", "minimum": 0},
-    "decided_by": {"enum": ["user", "consensus"]}
+    "wallclock_estimate_min": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "decided_by": {
+      "enum": [
+        "user",
+        "consensus"
+      ]
+    },
+    "pre_decision_verification": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "description": "NEU v0.1.4 (PB-003): Pflicht fuer type=decision-lock. Reverse-Questioning-Bank-Limit max 2 binaere Klaerungs-Fragen.",
+      "items": {
+        "type": "object",
+        "required": [
+          "question",
+          "answer",
+          "timestamp"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Konkrete binaere Klaerungs-Frage."
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "description": "User-Antwort."
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
   },
   "additionalProperties": false,
   "allOf": [
     {
       "if": {
-        "properties": {"type": {"enum": ["pre-patch", "execute", "verify"]}}
+        "properties": {
+          "type": {
+            "enum": [
+              "pre-patch",
+              "execute",
+              "verify"
+            ]
+          }
+        }
       },
       "then": {
-        "required": ["acceptance_criteria"]
+        "required": [
+          "acceptance_criteria"
+        ]
       }
     },
     {
       "if": {
-        "properties": {"type": {"const": "execute"}}
+        "properties": {
+          "type": {
+            "const": "execute"
+          }
+        }
       },
       "then": {
-        "required": ["rollback_triggers"]
+        "required": [
+          "rollback_triggers"
+        ]
       }
     },
     {
       "if": {
-        "properties": {"type": {"enum": ["pre-patch", "execute"]}}
+        "properties": {
+          "type": {
+            "enum": [
+              "pre-patch",
+              "execute"
+            ]
+          }
+        }
       },
       "then": {
-        "required": ["wallclock_estimate_min"]
+        "required": [
+          "wallclock_estimate_min"
+        ]
       }
     },
     {
       "if": {
-        "properties": {"type": {"const": "decision-lock"}}
+        "properties": {
+          "type": {
+            "const": "decision-lock"
+          }
+        }
       },
       "then": {
-        "required": ["decided_by"]
+        "required": [
+          "decided_by"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "decision-lock"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "pre_decision_verification"
+        ],
+        "description": "NEU v0.1.4 (PB-003): decision-lock-Handover MUSS pre_decision_verification mit 1-2 Eintraegen haben."
       }
     }
   ]

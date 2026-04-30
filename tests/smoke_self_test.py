@@ -120,6 +120,14 @@ def synth_valid_handover(round_type: str = "initial-advice") -> dict:
         base["wallclock_estimate_min"] = 30
     if round_type == "decision-lock":
         base["decided_by"] = "user"
+        # NEU v0.1.4 PB-003: pre_decision_verification Pflicht (allOf type=decision-lock)
+        base["pre_decision_verification"] = [
+            {
+                "question": "smoke-test: ist Decision-Boden ausreichend?",
+                "answer": "ja",
+                "timestamp": "2026-04-30T10:00:00Z"
+            }
+        ]
     return base
 
 
@@ -492,6 +500,255 @@ def main(verbose: bool = False) -> int:
         results.record("T25 F-RP-22 Pre-Flight 2 filesystem-read", True)
     except Exception as e:
         results.record("T25 F-RP-22 Pre-Flight 2 filesystem-read", False, str(e))
+
+    # Test 26 (v0.1.4 F-RP-24): bridge-init --worker-session-title primary flag in Argumente
+    try:
+        init_spec_path = PLUGIN_ROOT / "commands" / "bridge-init.md"
+        spec_text = init_spec_path.read_text()
+        # NEU v0.1.4: --worker-session-title primaer empfohlen
+        assert "--worker-session-title" in spec_text, "--worker-session-title flag missing"
+        assert "primaer empfohlen" in spec_text, "primary marker missing"
+        assert "Fallback / Power-User" in spec_text, "fallback marker for --worker-session-id missing"
+        results.record("T26 v0.1.4 F-RP-24 bridge-init Title-Flag primary", True)
+    except Exception as e:
+        results.record("T26 v0.1.4 F-RP-24 bridge-init Title-Flag primary", False, str(e))
+
+    # Test 27 (v0.1.4 F-RP-24): bridge-init Argument-Resolution title-first multi-match + no-match
+    try:
+        init_spec_path = PLUGIN_ROOT / "commands" / "bridge-init.md"
+        spec_text = init_spec_path.read_text()
+        # multi-match resolution path
+        assert "multi-match" in spec_text, "multi-match resolution path missing"
+        # no-match resolution path
+        assert "no-match" in spec_text, "no-match resolution path missing"
+        # Sentinel-Invariante v0.1.3+ bestaetigt
+        assert "IMMER auf `pending-attach`-Sentinel gesetzt" in spec_text, "Sentinel-Invariante v0.1.3+ marker missing"
+        results.record("T27 v0.1.4 F-RP-24 Argument-Resolution title-first paths", True)
+    except Exception as e:
+        results.record("T27 v0.1.4 F-RP-24 Argument-Resolution title-first paths", False, str(e))
+
+    # Test 28 (v0.1.4 F-RP-24): bridge-attach --this-session-title row
+    try:
+        attach_spec_path = PLUGIN_ROOT / "commands" / "bridge-attach.md"
+        spec_text = attach_spec_path.read_text()
+        assert "--this-session-title" in spec_text, "--this-session-title flag missing in bridge-attach"
+        assert "F-RP-24" in spec_text, "F-RP-24 reference marker missing"
+        results.record("T28 v0.1.4 F-RP-24 bridge-attach Title-Flag", True)
+    except Exception as e:
+        results.record("T28 v0.1.4 F-RP-24 bridge-attach Title-Flag", False, str(e))
+
+    # Test 29 (v0.1.4 F-RP-26): bridge-handover §worker.phase-Auto-Propagation + bridge-attach Initial-Set
+    try:
+        handover_spec_path = PLUGIN_ROOT / "commands" / "bridge-handover.md"
+        handover_text = handover_spec_path.read_text()
+        # Auto-Propagation-Sektion
+        assert "§worker.phase-Auto-Propagation" in handover_text, "§worker.phase-Auto-Propagation section missing"
+        # Pseudocode-Marker fuer Auto-Propagation
+        assert 'state.roles.worker.phase = frontmatter.get("worker_phase")' in handover_text, "auto-propagation pseudocode missing"
+
+        attach_spec_path = PLUGIN_ROOT / "commands" / "bridge-attach.md"
+        attach_text = attach_spec_path.read_text()
+        # Initial-Set-Sektion in bridge-attach
+        assert "§worker.phase-Initial-Set" in attach_text, "§worker.phase-Initial-Set section missing in bridge-attach"
+
+        # Schema-Spec worker.phase Auto-propagation description
+        sa_path = PLUGIN_ROOT / "schemas" / "bridge_state_v1.json"
+        sa = json.load(open(sa_path))
+        worker_phase_spec = sa["properties"]["roles"]["properties"]["worker"]["properties"]["phase"]
+        assert "description" in worker_phase_spec, "worker.phase description missing"
+        assert "Auto-propagation" in worker_phase_spec["description"], "Auto-propagation marker missing in description"
+
+        results.record("T29 v0.1.4 F-RP-26 worker.phase Auto-Propagation + Initial-Set", True)
+    except Exception as e:
+        results.record("T29 v0.1.4 F-RP-26 worker.phase Auto-Propagation + Initial-Set", False, str(e))
+
+    # Test 30 (v0.1.4 PB-001): bilanz_v1.json schema syntax + valid-bilanz validate
+    try:
+        bilanz_schema_path = SCHEMAS_DIR / "bilanz_v1.json"
+        bilanz_schema = load_schema(bilanz_schema_path)
+        jsonschema.Draft7Validator.check_schema(bilanz_schema)
+
+        # Synth valid Bilanz
+        synth = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "pair_topic": "test",
+            "created_at": "2026-04-28T06:49:01Z",
+            "closed_at": "2026-04-29T11:09:53Z",
+            "total_rounds": 28,
+            "phase_sequence": [{"phase": "init", "rounds_range": "R0", "rounds_count": 1}],
+            "decision_log_summary": [{"decision": "test", "decided_by": "consensus"}],
+            "wallclock_drift_calibrated": [{"phase": "test", "estimated_rounds": 5,
+                                           "actual_rounds": 12, "drift_factor": 2.4}],
+            "reflection": {"was_funktionierte": ["x"], "was_problematisch": [],
+                          "was_als_naechstes": ["y"]},
+            "successful_patterns": [],
+            "anti_patterns_detected": [],
+            "cross_pair_transfer_hinweise": []
+        }
+        jsonschema.validate(synth, bilanz_schema)
+        results.record("T30 v0.1.4 PB-001 bilanz_v1 schema + valid-bilanz", True)
+    except Exception as e:
+        results.record("T30 v0.1.4 PB-001 bilanz_v1 schema + valid-bilanz", False, str(e))
+
+    # Test 31 (v0.1.4): mapping_decisions_v1 schema + DISSENS-allOf-Constraint
+    try:
+        md_schema_path = SCHEMAS_DIR / "mapping_decisions_v1.json"
+        md_schema = load_schema(md_schema_path)
+        jsonschema.Draft7Validator.check_schema(md_schema)
+
+        # Synth valid mapping with both PATCH + DISSENS-DOCUMENTED-with-sub_type
+        synth = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "schema_version": "1.0.0",
+            "mapping_phase_start": {"round": 12, "decision_locked_in_round": 11},
+            "decisions": [
+                {"id": "D-001", "round_decided": 12, "konvergenz_status": "locked",
+                 "frame": "F1.2", "mapping_category": "DISSENS-DOCUMENTED",
+                 "sub_type": "§3.4.2 Skopus"},
+                {"id": "D-002", "round_decided": 16, "konvergenz_status": "locked",
+                 "frame": "F1.1", "mapping_category": "PATCH"}
+            ]
+        }
+        jsonschema.validate(synth, md_schema)
+
+        # Negative: DISSENS-DOCUMENTED ohne sub_type → FAIL erwartet
+        bad = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "schema_version": "1.0.0",
+            "mapping_phase_start": {"round": 12, "decision_locked_in_round": 11},
+            "decisions": [{"id": "D-001", "round_decided": 12, "konvergenz_status": "locked",
+                          "frame": "F1.2", "mapping_category": "DISSENS-DOCUMENTED"}]
+        }
+        try:
+            jsonschema.validate(bad, md_schema)
+            raise AssertionError("expected ValidationError for DISSENS without sub_type")
+        except jsonschema.ValidationError:
+            pass
+
+        results.record("T31 v0.1.4 mapping_decisions_v1 schema + DISSENS-allOf", True)
+    except Exception as e:
+        results.record("T31 v0.1.4 mapping_decisions_v1 schema + DISSENS-allOf", False, str(e))
+
+    # Test 32 (v0.1.4): bridge_state_v1 shared_artifacts.artifact_type-Enum
+    try:
+        sa_at = state_schema["properties"]["shared_artifacts"]["items"]["properties"].get("artifact_type", {})
+        assert "enum" in sa_at, "artifact_type missing enum"
+        expected = {"mapping-method-annex", "mapping-decisions-log", "bilanz", "custom"}
+        assert set(sa_at["enum"]) == expected, f"expected {expected}, got {set(sa_at['enum'])}"
+        results.record("T32 v0.1.4 bridge_state shared_artifacts.artifact_type-Enum", True)
+    except Exception as e:
+        results.record("T32 v0.1.4 bridge_state shared_artifacts.artifact_type-Enum", False, str(e))
+
+    # Test 33 (v0.1.4 Cross-Validation): mapping_decisions accepts P3-style mapping_category_history audit-trail
+    try:
+        md_schema_path = SCHEMAS_DIR / "mapping_decisions_v1.json"
+        md_schema = load_schema(md_schema_path)
+
+        # P3 D-004 R23-Revision pattern: mapping_category_history mit 4 Eintraegen
+        synth = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "schema_version": "1.0.0",
+            "mapping_phase_start": {"round": 12, "decision_locked_in_round": 11},
+            "decisions": [{
+                "id": "D-004",
+                "round_decided": 21,
+                "konvergenz_status": "locked",
+                "frame": "F1.1 + F4.2",
+                "mapping_category": "PATCH",
+                "mapping_category_history": [
+                    {"round": 21, "position": "AFFORDANCE", "by": "advisor"},
+                    {"round": 22, "position": "PATCH", "by": "worker", "basis": "counter"},
+                    {"round": 23, "position": "PATCH", "by": "advisor",
+                     "basis": "Worker-Argument 3 Methoden-Logik-Treffer + F4.2"},
+                    {"round": 24, "position": "PATCH", "by": "worker", "basis": "konvergenz-lock"}
+                ]
+            }]
+        }
+        jsonschema.validate(synth, md_schema)
+        results.record("T33 v0.1.4 mapping_decisions akzeptiert P3-D-004-Revision-Pattern", True)
+    except Exception as e:
+        results.record("T33 v0.1.4 mapping_decisions akzeptiert P3-D-004-Revision-Pattern", False, str(e))
+
+    # Test 34 (v0.1.4 PB-003): decision-lock-Handover mit pre_decision_verification 1 Eintrag PASS
+    try:
+        ho = synth_valid_handover("decision-lock")
+        # synth schon mit 1 Eintrag — sollte validate PASS
+        jsonschema.validate(ho, handover_schema)
+        results.record("T34 v0.1.4 PB-003 decision-lock pre_decision_verification 1 Eintrag PASS", True)
+    except Exception as e:
+        results.record("T34 v0.1.4 PB-003 decision-lock pre_decision_verification 1 Eintrag PASS", False, str(e))
+
+    # Test 35 (v0.1.4 PB-003): decision-lock OHNE pre_decision_verification FAIL via allOf
+    try:
+        ho = synth_valid_handover("decision-lock")
+        del ho["pre_decision_verification"]
+        jsonschema.validate(ho, handover_schema)
+        results.record("T35 v0.1.4 PB-003 decision-lock ohne pre_decision_verification FAIL", False, "expected ValidationError")
+    except jsonschema.ValidationError:
+        results.record("T35 v0.1.4 PB-003 decision-lock ohne pre_decision_verification FAIL", True)
+    except Exception as e:
+        results.record("T35 v0.1.4 PB-003 decision-lock ohne pre_decision_verification FAIL", False, f"unexpected: {e}")
+
+    # Test 36 (v0.1.4 PB-003): pre_decision_verification mit 3 Eintraegen FAIL via maxItems=2
+    try:
+        ho = synth_valid_handover("decision-lock")
+        ho["pre_decision_verification"] = [
+            {"question": "q1?", "answer": "ja", "timestamp": "2026-04-30T10:00:00Z"},
+            {"question": "q2?", "answer": "nein", "timestamp": "2026-04-30T10:01:00Z"},
+            {"question": "q3?", "answer": "vielleicht", "timestamp": "2026-04-30T10:02:00Z"}
+        ]
+        jsonschema.validate(ho, handover_schema)
+        results.record("T36 v0.1.4 PB-003 pre_decision_verification maxItems=2 FAIL", False, "expected ValidationError fuer 3 Eintraege")
+    except jsonschema.ValidationError:
+        results.record("T36 v0.1.4 PB-003 pre_decision_verification maxItems=2 FAIL", True)
+    except Exception as e:
+        results.record("T36 v0.1.4 PB-003 pre_decision_verification maxItems=2 FAIL", False, f"unexpected: {e}")
+
+    # Test 37 (v0.1.4 PB-011): tools/find_shared_path.sh existiert + executable
+    try:
+        import os as _os
+        helper_path = PLUGIN_ROOT / "tools" / "find_shared_path.sh"
+        assert helper_path.exists(), "find_shared_path.sh fehlt"
+        assert _os.access(helper_path, _os.X_OK), "find_shared_path.sh nicht executable"
+        # Plus: bridge-init.md verweist auf tools/find_shared_path.sh
+        init_text = (PLUGIN_ROOT / "commands" / "bridge-init.md").read_text()
+        assert "tools/find_shared_path.sh" in init_text, "bridge-init.md verweist nicht auf Helper"
+        results.record("T37 v0.1.4 PB-011 find_shared_path.sh + bridge-init-Pointer", True)
+    except Exception as e:
+        results.record("T37 v0.1.4 PB-011 find_shared_path.sh + bridge-init-Pointer", False, str(e))
+
+    # Test 38 (v0.1.4 PB-010): bridge-handover.md §body-number-konsistenz dokumentiert
+    try:
+        ho_text = (PLUGIN_ROOT / "commands" / "bridge-handover.md").read_text()
+        assert "§body-number-konsistenz" in ho_text, "§body-number-konsistenz Sektion fehlt"
+        # Plus: Pattern-Match-Doku-Marker
+        assert "atomar" in ho_text or "Eintraege" in ho_text or "Items" in ho_text, "Pattern-Match-Doku fehlt"
+        # Plus: Empirie-Anker UPP-Pair
+        assert "UPP-Pair" in ho_text, "Empirie-Anker UPP-Pair fehlt"
+        results.record("T38 v0.1.4 PB-010 bridge-handover §body-number-konsistenz", True)
+    except Exception as e:
+        results.record("T38 v0.1.4 PB-010 bridge-handover §body-number-konsistenz", False, str(e))
+
+    # Test 39 (v0.1.4 Phase F): ADR_0031 Cross-Pair-Patterns existiert + Pflicht-Sektionen
+    try:
+        adr_path = PLUGIN_ROOT / "docs" / "adr" / "ADR_0031_Cross-Pair-Patterns.md"
+        assert adr_path.exists(), "ADR_0031 fehlt"
+        adr_text = adr_path.read_text()
+        # Pflicht-Sektionen
+        for section in ["§1 Scope", "§2 Empirie", "§3 Cross-Pair-Patterns",
+                       "§4 Decisions", "§5 Foundation fuer PB-006",
+                       "§6 Implications", "§7 Cross-Refs"]:
+            assert section in adr_text, f"§-Section fehlt: {section}"
+        # Empirie-Sample 4 Pairs
+        for pilot in ["p3-real-user", "p4-eg-dev", "p5-eg-v06-spec", "p6-upp-eg-advice"]:
+            assert pilot in adr_text, f"Pilot-Reference fehlt: {pilot}"
+        # PB-002 Threshold-Decision
+        assert "Domain-Hint-aware" in adr_text or "Domain-aware" in adr_text, "Domain-aware-Decision fehlt"
+        # PB-007 Domain-Hint-Field Activation
+        assert "PB-007" in adr_text, "PB-007 Activation-Decision fehlt"
+        results.record("T39 v0.1.4 Phase F ADR_0031 Cross-Pair-Patterns", True)
+    except Exception as e:
+        results.record("T39 v0.1.4 Phase F ADR_0031 Cross-Pair-Patterns", False, str(e))
 
     if verbose:
         print("Passed:", results.passed)

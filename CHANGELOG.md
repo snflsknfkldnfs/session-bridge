@@ -5,6 +5,59 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.4] — 2026-04-30 — DEFERRED-Items + Schema-Formalisierungen + Lower-Priority + Cross-Pair-Patterns
+
+### Source: v0.1.3-Roadmap Phasen A + C + E + F (Mini-Release)
+
+Phase A (DEFERRED-V0.1.4-Items aus v0.1.3):
+- F-RP-24 HIGH RESOLVED: Title-statt-Session-ID — `--worker-session-title` als primaerer UX-Flag, `--worker-session-id` als Fallback
+- F-RP-26 BEOBACHTUNG RESOLVED: worker.phase Auto-Propagation aus Worker-Frontmatter
+
+Phase C (Schema-Formalisierungen aus p3-Empirie):
+- PB-001 RESOLVED: bilanz_v1.json Schema (12 Sektionen Reference-Implementation aus p3-bilanz_8cbeaad0.md)
+- NEU: mapping_decisions_v1.json Schema (D-NNN-Format mit allOf-Pflicht DISSENS-DOCUMENTED requires sub_type)
+- NEU: bridge_state_v1.json shared_artifacts.artifact_type-Enum (mapping-method-annex / mapping-decisions-log / bilanz / custom)
+
+Phase E (Lower-Priority HIGH/MEDIUM):
+- PB-003 RESOLVED: Pre-Decision-Verification Pflicht-Feld in handover-Frontmatter (allOf type=decision-lock, minItems=1, maxItems=2)
+- PB-011 RESOLVED: shared-path-Default-Heuristik mit `tools/find_shared_path.sh` Helper-Stub
+- PB-010 RESOLVED: bridge-handover §body-number-konsistenz optional Hook (WARN-Mode Tippfehler-Detection)
+
+Phase F (Cross-Pair-Empirie-Synthese):
+- ADR_0031 NEU: Cross-Pair-Patterns aus 4 Pilot-Run-Empirie (p3+p4+p5+p6) — 7 §-Sektionen + 9 §-Sub-Sektionen
+- 4 ADR-Decisions: PB-002 Domain-aware Threshold, PB-007 Activation, bilanz_v1-Migration, ADR_0029 §5.6 Filename-Konvention
+
+### Added
+
+- **schemas/bilanz_v1.json** (NEU, PB-001) — Bilanz-File-Schema mit 12 Pflicht-Sektionen
+- **schemas/mapping_decisions_v1.json** (NEU) — D-NNN-Decisions-Log-Schema mit allOf-Constraints
+- **tools/find_shared_path.sh** (NEU, PB-011) — Helper-Script Stub fuer shared-path-Heuristik (executable)
+- **docs/adr/ADR_0031_Cross-Pair-Patterns.md** (NEU) — Cross-Pair-Empirie-Synthese aus 4 Pilots
+- **commands/bridge-init.md** §--worker-session-title (primaer) + Argument-Resolution title-first 3 Pfade (multi-match, no-match, direct-id)
+- **commands/bridge-attach.md** §--this-session-title + §worker.phase-Initial-Set
+- **commands/bridge-handover.md** §worker.phase-Auto-Propagation + §pre-decision-verification + §body-number-konsistenz
+- **schemas/handover_frontmatter_v1.json** pre_decision_verification array property + allOf type=decision-lock requires it
+- **schemas/bridge_state_v1.json** shared_artifacts.artifact_type-Enum + worker.phase Auto-propagation description
+
+### Changed
+
+- **synth_valid_handover** in tests/smoke_self_test.py — decision-lock-Cases include pre_decision_verification (1 Eintrag)
+- **bridge-init.md** Argument-Resolution-Protokoll — title-first jetzt primaerer Pfad
+
+### Deferred to v0.1.5
+
+- Phase B (Foundation tools/-Library + bridge-update) — substantielles Refactoring, eigener Major-Patch
+- Phase D (PB-009 Drift-Plausibility + PB-002 Anti-Endless-Loop) — depends on Phase B
+- ADR_0031 Decisions §4.1 (PB-002 Domain-aware Threshold) + §4.2 (PB-007 Activation) + §4.3 (bilanz_v1 Migration enforcement) + §4.4 (ADR_0029 §5.6 Annex B Filename-Konvention)
+
+### Verification
+
+- Self-Test 42/42 PASS (T26-T39 NEU, +14 Tests)
+- claude plugin validate (in User-Terminal-Session zu pruefen)
+- Cross-Pair-Empirie-Validation via ADR_0031 (4 Pilot-Runs analysiert)
+
+---
+
 ## [0.1.3] — 2026-04-29 — Plugin-Marketplace-Robustheit + F-RP-29-Disziplin
 
 ### Source: Bridge-Pair p3-real-user (Mapping-Phase R12-R26, 5 Decisions)

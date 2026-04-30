@@ -17,7 +17,8 @@ Initialisiert neuen Session-Bridge-Pair.
 | `--expertise-source="<string>"` | nur wenn role=advisor | z.B. "escape-game-generator P.1+P.2" |
 | `--expertise-profile=<path>` | optional bei role=advisor | Pfad zu einem Expertise-Profile-Verzeichnis (siehe ADR_0030). Z.B. `expertise-profiles/process-consulting` (relativ ab Plugin-Repo) oder `private-notes/expertise-profiles/process-consulting` (relativ ab shared-path) oder absoluter Pfad. Schema v1.1.0 Field. |
 | `--worker-focus="<string>"` | nur wenn role=worker | z.B. "phase-1.6 implementation" |
-| `--worker-session-id=<string>` | empfohlen wenn role=advisor | Session-ID der Worker-Session (für Status-Verifikation via session_info MCP). Falls unbekannt: Skill listet via list_sessions + fragt User |
+| `--worker-session-title="<title>"` | **primaer empfohlen** wenn role=advisor (NEU v0.1.4 / F-RP-24) | Worker-Session-Title (User-friendly, sichtbar in Cowork-UI). Skill resolved intern via `mcp__session_info__list_sessions` exact-title-match. Bei multi-match: User-Disambiguation-Question. Bei no-match: User-Question mit verfuegbaren Sessions. |
+| `--worker-session-id=<string>` | Fallback / Power-User wenn role=advisor | Session-ID der Worker-Session direkt. Bleibt akzeptiert fuer Power-User die Session-ID kennen (z.B. via session_info MCP). Bei v0.1.4+ ist `--worker-session-title` primaer empfohlen weil User-friendly. |
 
 ## Argument-Resolution-Protokoll (PFLICHT — Anti-Inferenz)
 
@@ -44,22 +45,46 @@ Schritt 3: User-Confirmation:
 Schritt 4: Erst nach User-Bestätigung → /bridge-init mit korrektem --topic erneut aufrufen.
 ```
 
-### Bei missing `--shared-path`
+### Bei missing `--shared-path` (NEU v0.1.4 PB-011: tools/find_shared_path.sh Helper)
 
-ABBRUCH mit User-Question. Default-Heuristik:
+ABBRUCH mit User-Question. Default-Heuristik (v0.1.4 erweitert):
 
 1. Wenn beide Sessions gleiches Cowork-Project nutzen: deren gemeinsamer Working-Dir.
-2. Falls Working-Dirs unterschiedlich: User-explizit-Pfad-Frage. Plugin schlägt vor: "größter gemeinsamer Mount-Pfad" via Filesystem-Inspektion (z.B. `/Users/paulad/<project>/`).
-3. Niemals eigenes Cowork-Outputs-Verzeichnis als Default — Worker-Session sieht das nicht.
+2. Falls Working-Dirs unterschiedlich: Plugin ruft `tools/find_shared_path.sh <session-id-1> <session-id-2>` auf, schlaegt groessten gemeinsamen Mount-Pfad via Filesystem-Inspektion vor (z.B. `/Users/paulad/<project>/`).
+3. Bei Ambiguitaet (mehrere gemeinsame Praefixe): User-explizit-Pfad-Frage mit Kandidaten-Liste.
+4. Niemals eigenes Cowork-Outputs-Verzeichnis als Default — Worker-Session sieht das nicht.
 
-### Bei missing `--worker-session-id` (advisor-only)
+**Helper-Tool:** `tools/find_shared_path.sh` (PB-011 v0.1.4) — Stub fuer Filesystem-Heuristik. Voll-Implementation v0.1.5+ wenn session_info Working-Dir-API stabil.
+
+### Bei missing `--worker-session-title` (advisor-only, primaerer Pfad NEU v0.1.4)
 
 Empfohlen aber nicht hart-blockierend. Wenn missing:
 - Plugin ruft `mcp__session_info__list_sessions` auf
-- Listet aktive Sessions
-- User wählt Worker-Session aus
+- Listet aktive Sessions mit Title (User-friendly) + ID (Debug-info)
+- User waehlt Worker-Session via Title aus
+- Skill resolved Title → Session-ID intern via exact-title-match
 
-`worker.session_id` im state.json wird auf `pending-attach`-Sentinel gesetzt falls keine Worker-Session-ID bekannt — bridge-attach replaced das später.
+### Bei `--worker-session-title` mit multi-match (advisor-only)
+
+- Plugin praesentiert User strukturierte Disambiguation-Question:
+  ```
+  Title "<X>" matched mehrere Sessions:
+  1. <session-id-1> (created <timestamp>)
+  2. <session-id-2> (created <timestamp>)
+  Welche?
+  ```
+- User waehlt Index → Skill resolved zu konkreter ID
+
+### Bei `--worker-session-title` mit no-match (advisor-only)
+
+- Plugin praesentiert User: "Title `<X>` nicht in aktiven Sessions gefunden. Verfuegbare Sessions:" + Liste
+- User korrigiert Title oder gibt `--worker-session-id` direkt ein
+
+### Bei `--worker-session-id` direkt (Power-User, Fallback)
+
+Akzeptiert ohne Title-Resolution. State-Verhalten identisch (Sentinel-Pfad in v0.1.3+).
+
+`worker.session_id` im state.json wird IMMER auf `pending-attach`-Sentinel gesetzt (D-004 R23-Revidierung, Sentinel-Invariante v0.1.3+) — bridge-attach replaced das spaeter.
 
 ## Pre-Flight (PFLICHT, ATOMAR — alle 5 Punkte VOR state.json-Write)
 

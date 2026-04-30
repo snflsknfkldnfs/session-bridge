@@ -1,0 +1,231 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "bilanz_v1.json",
+  "title": "session-bridge bilanz schema v1.0.0",
+  "description": "Bilanz-File-Schema fuer bridge-close. Basiert auf p3-real-user-Empirie (bilanz_8cbeaad0.md mit 12 Sektionen). PB-001 v0.1.4 NEU.",
+  "type": "object",
+  "required": [
+    "pair_id",
+    "pair_topic",
+    "created_at",
+    "closed_at",
+    "total_rounds",
+    "phase_sequence",
+    "decision_log_summary",
+    "wallclock_drift_calibrated",
+    "reflection",
+    "successful_patterns",
+    "anti_patterns_detected",
+    "cross_pair_transfer_hinweise"
+  ],
+  "properties": {
+    "pair_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "pair_topic": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "total_rounds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "phase_sequence": {
+      "type": "array",
+      "description": "Phase-by-Phase Lifecycle-Trace (init, scope-lock, iterate, close).",
+      "items": {
+        "type": "object",
+        "required": [
+          "phase",
+          "rounds_range",
+          "rounds_count"
+        ],
+        "properties": {
+          "phase": {
+            "type": "string",
+            "enum": [
+              "init",
+              "scope-lock",
+              "iterate",
+              "execute",
+              "verify",
+              "close"
+            ]
+          },
+          "rounds_range": {
+            "type": "string",
+            "description": "z.B. R12-R26"
+          },
+          "rounds_count": {
+            "type": "integer"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "decision_log_summary": {
+      "type": "array",
+      "description": "Summary aller Decisions in diesem Pair-Lifecycle.",
+      "items": {
+        "type": "object",
+        "required": [
+          "decision",
+          "decided_by"
+        ],
+        "properties": {
+          "decision": {
+            "type": "string"
+          },
+          "round": {
+            "type": "integer"
+          },
+          "decided_by": {
+            "type": "string",
+            "enum": [
+              "user",
+              "consensus"
+            ]
+          },
+          "rationale_pointer": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "wallclock_drift_calibrated": {
+      "type": "array",
+      "description": "Post-hoc-kalibrierte Wallclock-Drift-Factors pro Phase. Aus state.wallclock_estimates uebernommen + final-kalibriert.",
+      "items": {
+        "type": "object",
+        "required": [
+          "phase",
+          "estimated_rounds",
+          "actual_rounds",
+          "drift_factor"
+        ],
+        "properties": {
+          "phase": {
+            "type": "string"
+          },
+          "rounds_range": {
+            "type": "string"
+          },
+          "estimated_rounds": {
+            "type": "integer"
+          },
+          "actual_rounds": {
+            "type": "integer"
+          },
+          "drift_factor": {
+            "type": "number",
+            "minimum": 0
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "reflection": {
+      "type": "object",
+      "required": [
+        "was_funktionierte",
+        "was_problematisch",
+        "was_als_naechstes"
+      ],
+      "description": "Pflicht-Sektion: 5-Stufen-Standard-Reflexion adaptiert auf Bridge-Pair-Lifecycle.",
+      "properties": {
+        "was_funktionierte": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "was_problematisch": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "was_als_naechstes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "successful_patterns": {
+      "type": "array",
+      "description": "Identifizierte successful Pair-Patterns (cross-pair-transferable).",
+      "items": {
+        "type": "object",
+        "required": [
+          "pattern",
+          "origin",
+          "cross_pair_anwendbar"
+        ],
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "cross_pair_anwendbar": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "anti_patterns_detected": {
+      "type": "array",
+      "description": "AP-IDs detected im Pair-Lifecycle mit Korrektur-Round-Pointer.",
+      "items": {
+        "type": "object",
+        "required": [
+          "ap",
+          "detected_in"
+        ],
+        "properties": {
+          "ap": {
+            "type": "string"
+          },
+          "detected_in": {
+            "type": "string"
+          },
+          "korrektur": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cross_pair_transfer_hinweise": {
+      "type": "array",
+      "description": "Patterns + Lessons fuer kuenftige Bridge-Pair-Pilots.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lessons_learned": {
+      "type": "array",
+      "description": "Optional: numbered Lessons-Learned-Liste fuer Plugin-Spec-Updates (z.B. ADR-Annex-Updates).",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

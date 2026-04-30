@@ -13,6 +13,7 @@ Attaches diese Session als zweite Rolle zu einem bestehenden Bridge-Pair.
 |---|---|---|
 | `<pair_id>` (positional) | ja | UUIDv4 aus `/bridge-init`-Output |
 | `--role=<advisor\|worker>` | ja | Rolle dieser Session (Komplement zur Initiator-Rolle) |
+| `--this-session-title="<title>"` | optional (NEU v0.1.4 / F-RP-24) | Eigener Session-Title fuer Identifikation gegenueber state.roles.<role>.session_id. Falls missing: Skill resolved via `mcp__session_info__list_sessions` (eigene Session-ID known via Skill-Context). |
 | `--shared-path=<absolute-path>` | nein | Default: aktuelles Working-Dir |
 | `--expertise-source="<string>"` | wenn role=advisor | analog /bridge-init |
 | `--worker-focus="<string>"` | wenn role=worker | analog /bridge-init |
@@ -97,6 +98,12 @@ Anschließend (advisor-Session): erste initial-advice via
 - State.roles[<other-role>].session_id != "pending-attach" (Initiator hat echte Session-ID)
 - State.phase == "scope-lock"
 - Schema-Validate PASS post-attach
+
+## §worker.phase-Initial-Set (NEU v0.1.4 / F-RP-26)
+
+Bei `/bridge-attach --role=worker`: nach Sentinel-Replace setzt Skill `state.roles.worker.phase = "kickoff"` als initial-default. Dieser Wert wird durch erste Worker-Handover-Round (mit explizitem `worker_phase`-Frontmatter-Feld) ueberschrieben via Auto-Propagation in bridge-handover (siehe bridge-handover.md §worker.phase-Auto-Propagation).
+
+**Empirie-Anker:** p3-real-user — initial phase="kickoff" war richtig, Stagnation entstand erst durch fehlende Auto-Propagation in Folge-Rounds (jetzt v0.1.4 behoben).
 
 ## Anti-Pattern
 

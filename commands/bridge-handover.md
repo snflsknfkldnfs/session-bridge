@@ -224,6 +224,10 @@ state.rounds.append({
 state.current_round = new_round
 state.updated_at = now_iso()
 
+# NEU v0.1.4 (F-RP-26 Auto-Propagation): worker.phase auto-update aus Worker-Frontmatter
+if this_role == "worker":
+    state.roles.worker.phase = frontmatter.get("worker_phase")  # Pflicht-Feld im handover-Schema
+
 # Phase-Auto-Übergänge:
 if state.phase == "scope-lock" and args.type == "initial-advice":
     state.phase = "iterate"
@@ -261,6 +265,50 @@ write_atomic_cas(state, expected_updated_at=read_at)
 - Handover-File existiert + Frontmatter-Schema-Validate PASS
 - State.json round=N+1 + neuer rounds-Eintrag
 - Schema-allOf-Pflichten erfüllt für Round-Type
+
+## §pre-decision-verification (NEU v0.1.4 / PB-003)
+
+decision-lock-Handover hat ab v0.1.4 zusaetzliches Pflicht-Frontmatter-Feld:
+
+```yaml
+pre_decision_verification:
+  - question: "<konkrete binaere Klaerungs-Frage>"
+    answer: "<user-Antwort>"
+    timestamp: <ISO-8601>
+```
+
+**Constraints (allOf type=decision-lock):**
+- mind. 1 Eintrag (Pflicht)
+- max 2 Eintraege (Reverse-Questioning-Bank-Limit aus META_PROZESSE-Korpus KB-10)
+
+**Driver:** Vor jeder fundamentalen Decision-Lock-Transformation: explizite User-Klaerung. Niemals automatische Annahmen ueber fundamentale Bewertungs-Direktionen.
+
+**Empirie-Anker (p3-real-user):** D-004 Position-Revidierung (R23) waere via pre_decision_verification frueher entschieden worden — Klaerungs-Frage "ist Pilot-Empirie n=1 ausreichend gegen friction-log Spec-Author-Empfehlung?" haette R21-Methoden-Inkonsistenz vermieden.
+
+**Self-Test T34-T35** (positive + negative max 2).
+
+## §worker.phase-Auto-Propagation (NEU v0.1.4 / F-RP-26)
+
+Bei type ∈ {alle Round-Types} und this_role=worker: state.roles.worker.phase wird automatisch aus handover-Frontmatter `worker_phase`-Pflichtfeld auf state.json propagiert. Verhindert worker.phase-Stagnation (F-RP-26 Beobachtung in p3-real-user: phase=kickoff durch 28 Rounds unveraendert trotz Phase-Transitions).
+
+**Empirie-Anker:** p3-real-user R1-R28 — worker.phase blieb "kickoff" obwohl Worker-self-reported sub-phases (mapping, scope-lock-counter, etc.) im Frontmatter standen. Auto-Propagation behebt diese State-Inkonsistenz.
+
+**Self-Test T29:** Worker-Handover mit worker_phase="X" → state.roles.worker.phase=="X" post-Skill.
+
+## §body-number-konsistenz (NEU v0.1.4 / PB-010, optional Hook)
+
+Optional-Validator-Hook in bridge-handover-Skill: parse Body-Lists, count Items, vergleiche mit explizit genannten Zahlen.
+
+**Pattern-Match:**
+- Body enthaelt String "<N> atomar" oder "<N> Eintraege" oder "<N> Items" gefolgt von Liste
+- Skill zaehlt tatsaechliche List-Items
+- Bei Diskrepanz N != count: WARN-Output
+
+**Empirie-Anker (UPP-Pair Round 9):** Worker schrieb "4 atomar gelistet=8" (Tippfehler — real 8 Items). Plugin haette via WARN frueh detektiert.
+
+**Implementation:** Optional Pre-Output-Check, kein hard-FAIL. WARN nur damit User Tippfehler korrigieren kann.
+
+**Self-Test T38** (negative case Tippfehler-Detection).
 
 ## Anti-Pattern
 
