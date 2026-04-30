@@ -5,6 +5,63 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.5] — 2026-04-30 — Foundation Library + Lifecycle-Robustheit + ADR_0031-Decisions
+
+### Source: v0.1.5-Roadmap Phasen B + D + G + H + I (Foundation + Lifecycle-Robustheit Release)
+
+Phase B (PB-012 + PB-013) — Foundation:
+- tools/bridge_state.py NEU (7 Library-Funktionen): read_state, write_atomic_cas (atomic-CAS via temp+rename + Pre-Atomic-Backup), validate_against_schema, pending_attach_replace (D-004 R23-Revidierung strict-mode), append_round (mit F-RP-26 Auto-Propagation), archive_shared_artifact, calibrate_wallclock_post_hoc
+- commands/bridge-update.md NEU (PB-013): /bridge-update --field=<topic|expertise-source|worker-focus|domain-hint> --value=<new>; Pre-Flight whitelisting + phase-block + status_observations Update-Trail
+
+Phase D — Lifecycle-Robustheit:
+- D.1 PB-009 Drift-Plausibility-Check: Library check_drift_plausibility(domain_hint, drift_factor) Domain-aware mit DRIFT_RANGES (plugin-self-dev / use-case / default); Empirie-Anker p3 drift 1.14-2.4
+- D.2 PB-002 Anti-Endless-Loop Reflection-Action-Ratio Domain-aware: Library compute_reflection_action_ratio + check_ratio_threshold per ADR_0031 §4.1 RATIO_THRESHOLDS (plugin-self-dev: 15.0, use-case: 4.0, default: 4.0)
+- bridge-handover.md §lifecycle-health-checks-Sektion mit drift + ratio Library-Aufrufen
+
+Phase G — PB-007 Domain-Hint-Field Activation:
+- bridge_state_v1.json: topic_metadata.domain_hint-Enum (6 Werte: plugin-self-dev, use-case, architecture-spec, investigation-trace, methodology-improvement, other)
+- schema_version-Enum erweitert auf 1.2.0
+- bridge-init.md: --domain-hint optional Argument
+
+Phase H — bilanz_v1-Schema Migration enforcement (PB-001 follow-up / ADR_0031 §4.3):
+- Library validate_bilanz_against_schema NEU
+- bridge-close.md §bilanz-schema-enforcement-Sektion mit ADR_0031 Cross-Refs
+
+Phase I — ADR_0029 §5.6 Annex B (ADR_0031 §4.4):
+- Filename-Konvention: bridge/bilanz_<pair_id>.md
+- Schema-Pointer: schemas/bilanz_v1.json
+- Migration-Kandidat: p4-eg-dev/bridge/BILANZ.md
+
+### Added
+
+- **tools/bridge_state.py** (NEU, 11 API-Funktionen + 2 Konstanten DRIFT_RANGES + RATIO_THRESHOLDS)
+- **commands/bridge-update.md** (NEU, PB-013)
+- **commands/bridge-close.md** §bilanz-schema-enforcement
+- **commands/bridge-handover.md** §lifecycle-health-checks (drift + ratio)
+- **commands/bridge-init.md** --domain-hint Argument (PB-007)
+- **schemas/bridge_state_v1.json** topic_metadata.domain_hint-Enum + schema_version v1.2.0
+- **docs/adr/ADR_0029_Session_Bridge_Pattern.md** Annex B (Bilanz-Filename-Konvention)
+
+### Changed
+
+- **state-Schema** v1.1.2 → v1.2.0 (topic_metadata.domain_hint, backward-compat mit v1.1.0/v1.1.1)
+
+### Verification
+
+- Self-Test 56/56 PASS (T40-T53 NEU, +14 Tests gegenueber v0.1.4)
+- claude plugin validate (in User-Terminal-Session zu pruefen)
+- ADR_0031-Decisions §4.1 (PB-002 Domain-aware), §4.2 (PB-007 Activation), §4.3 (bilanz Migration), §4.4 (Filename-Konvention) alle implementiert
+
+### Deferred to v0.1.6+
+
+- PB-004 Auto-Trigger-Hooks (Trigger: ≥2 reale Pairs mit "haette geholfen"-Befund)
+- PB-005 N-Pair-Topologie (Trigger: ≥3 parallele Sessions Use-Case)
+- PB-006 Cross-Pair-Memory (Trigger: n≥5 Pairs pro Domain — aktuell n=1-3, ADR_0031 §5)
+- PB-008 4-Layer-Meta-Architecture (Trigger: PB-006 Foundation + n≥10 Pairs)
+- Profile-Public-Release process-consulting (Trigger: post-juristische-Beratung User-Decision)
+
+---
+
 ## [0.1.4] — 2026-04-30 — DEFERRED-Items + Schema-Formalisierungen + Lower-Priority + Cross-Pair-Patterns
 
 ### Source: v0.1.3-Roadmap Phasen A + C + E + F (Mini-Release)
