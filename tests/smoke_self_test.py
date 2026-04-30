@@ -729,6 +729,27 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T38 v0.1.4 PB-010 bridge-handover §body-number-konsistenz", False, str(e))
 
+    # Test 39 (v0.1.4 Phase F): ADR_0031 Cross-Pair-Patterns existiert + Pflicht-Sektionen
+    try:
+        adr_path = PLUGIN_ROOT / "docs" / "adr" / "ADR_0031_Cross-Pair-Patterns.md"
+        assert adr_path.exists(), "ADR_0031 fehlt"
+        adr_text = adr_path.read_text()
+        # Pflicht-Sektionen
+        for section in ["§1 Scope", "§2 Empirie", "§3 Cross-Pair-Patterns",
+                       "§4 Decisions", "§5 Foundation fuer PB-006",
+                       "§6 Implications", "§7 Cross-Refs"]:
+            assert section in adr_text, f"§-Section fehlt: {section}"
+        # Empirie-Sample 4 Pairs
+        for pilot in ["p3-real-user", "p4-eg-dev", "p5-eg-v06-spec", "p6-upp-eg-advice"]:
+            assert pilot in adr_text, f"Pilot-Reference fehlt: {pilot}"
+        # PB-002 Threshold-Decision
+        assert "Domain-Hint-aware" in adr_text or "Domain-aware" in adr_text, "Domain-aware-Decision fehlt"
+        # PB-007 Domain-Hint-Field Activation
+        assert "PB-007" in adr_text, "PB-007 Activation-Decision fehlt"
+        results.record("T39 v0.1.4 Phase F ADR_0031 Cross-Pair-Patterns", True)
+    except Exception as e:
+        results.record("T39 v0.1.4 Phase F ADR_0031 Cross-Pair-Patterns", False, str(e))
+
     if verbose:
         print("Passed:", results.passed)
 
