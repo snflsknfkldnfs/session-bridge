@@ -806,6 +806,133 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T41 v0.1.5 Phase I ADR_0029 Annex B Filename-Konvention", False, str(e))
 
+    # Test 42 (v0.1.5 PB-012): tools/bridge_state.py existiert + importierbar
+    try:
+        sys.path.insert(0, str(PLUGIN_ROOT / "tools"))
+        import bridge_state
+        # API check: alle 7 Funktionen + Sentinel-Konstante
+        expected_api = {"SENTINEL_PENDING_ATTACH", "read_state", "write_atomic_cas",
+                       "validate_against_schema", "pending_attach_replace",
+                       "append_round", "archive_shared_artifact",
+                       "calibrate_wallclock_post_hoc"}
+        actual_api = set(bridge_state.__all__)
+        assert expected_api == actual_api, f"API-Mismatch: expected {expected_api}, got {actual_api}"
+        assert bridge_state.SENTINEL_PENDING_ATTACH == "pending-attach"
+        results.record("T42 v0.1.5 PB-012 tools/bridge_state.py Library-API", True)
+    except Exception as e:
+        results.record("T42 v0.1.5 PB-012 tools/bridge_state.py Library-API", False, str(e))
+
+    # Test 43 (v0.1.5 PB-012): Library validate_against_schema funktional
+    try:
+        import bridge_state
+        valid_state = synth_valid_state()
+        errors = bridge_state.validate_against_schema(valid_state)
+        assert errors == [] or errors == ["jsonschema-not-available"], f"unexpected errors: {errors}"
+
+        # Negative: invalid state produces errors
+        invalid = synth_valid_state()
+        del invalid["phase"]
+        errors2 = bridge_state.validate_against_schema(invalid)
+        assert errors2 != [] or errors2 == ["jsonschema-not-available"], "expected errors fuer missing phase"
+        results.record("T43 v0.1.5 PB-012 Library validate_against_schema", True)
+    except Exception as e:
+        results.record("T43 v0.1.5 PB-012 Library validate_against_schema", False, str(e))
+
+    # Test 44 (v0.1.5 PB-012): Library pending_attach_replace strict-mode
+    try:
+        import bridge_state
+        state = synth_valid_state()
+        # Setze worker auf Sentinel
+        state["roles"]["worker"]["session_id"] = bridge_state.SENTINEL_PENDING_ATTACH
+        # Initial-Set Test: phase entfernen damit setdefault greift
+        state["roles"]["worker"].pop("phase", None)
+        # Replace
+        state2 = bridge_state.pending_attach_replace(state, "worker", "local_test_123", "test-focus")
+        assert state2["roles"]["worker"]["session_id"] == "local_test_123"
+        assert state2["roles"]["worker"]["current_focus"] == "test-focus"
+        assert state2["roles"]["worker"]["phase"] == "kickoff"  # Initial-Set v0.1.4 Phase A.2
+
+        # Plus: existing phase wird NICHT ueberschrieben (setdefault-Semantik)
+        state_x = synth_valid_state()
+        state_x["roles"]["worker"]["session_id"] = bridge_state.SENTINEL_PENDING_ATTACH
+        state_x["roles"]["worker"]["phase"] = "existing-phase"
+        state_y = bridge_state.pending_attach_replace(state_x, "worker", "local_xyz")
+        assert state_y["roles"]["worker"]["phase"] == "existing-phase"  # nicht ueberschrieben
+
+        # Negative: non-Sentinel direct-pin → ValueError per D-004 R23-Revidierung strict
+        state3 = synth_valid_state()
+        state3["roles"]["worker"]["session_id"] = "local_already_pinned"
+        try:
+            bridge_state.pending_attach_replace(state3, "worker", "local_other")
+            raise AssertionError("expected ValueError for non-Sentinel session_id")
+        except ValueError:
+            pass
+        results.record("T44 v0.1.5 PB-012 Library pending_attach_replace strict", True)
+    except Exception as e:
+        results.record("T44 v0.1.5 PB-012 Library pending_attach_replace strict", False, str(e))
+
+    # Test 45 (v0.1.5 PB-012): Library append_round + worker.phase Auto-Propagation
+    try:
+        import bridge_state
+        state = synth_valid_state()
+        round_data = {
+            "round": state["current_round"] + 1,
+            "type": "status",
+            "initiator": "worker",
+            "artifact_path": "bridge/handover/test.md",
+            "timestamp": "2026-04-30T12:00:00Z",
+            "frontmatter": {"worker_phase": "iterate-substantive"}
+        }
+        state2 = bridge_state.append_round(state, round_data)
+        assert state2["current_round"] == round_data["round"]
+        assert len(state2["rounds"]) >= 1
+        # Auto-Propagation worker.phase aus frontmatter (F-RP-26 v0.1.4)
+        assert state2["roles"]["worker"]["phase"] == "iterate-substantive"
+        results.record("T45 v0.1.5 PB-012 Library append_round + Auto-Propagation", True)
+    except Exception as e:
+        results.record("T45 v0.1.5 PB-012 Library append_round + Auto-Propagation", False, str(e))
+
+    # Test 46 (v0.1.5 PB-012): Library calibrate_wallclock_post_hoc
+    try:
+        import bridge_state
+        state = synth_valid_state()
+        phases = [
+            {"phase": "init", "rounds_range": "R0", "estimated_rounds": 1, "actual_rounds": 1},
+            {"phase": "scope-lock", "rounds_range": "R1-R11", "estimated_rounds": 5, "actual_rounds": 12, "note": "Profile-Pin-Effekt"}
+        ]
+        state2 = bridge_state.calibrate_wallclock_post_hoc(state, phases)
+        we = state2["wallclock_estimates"]
+        assert len(we) == 2
+        assert we[1]["drift_factor"] == 2.4  # 12/5 = 2.4 per ADR_0030 Annex A Empirie
+        results.record("T46 v0.1.5 PB-012 Library calibrate_wallclock_post_hoc", True)
+    except Exception as e:
+        results.record("T46 v0.1.5 PB-012 Library calibrate_wallclock_post_hoc", False, str(e))
+
+    # Test 47 (v0.1.5 PB-013): commands/bridge-update.md existiert + Pflicht-Sektionen
+    try:
+        bu_path = PLUGIN_ROOT / "commands" / "bridge-update.md"
+        assert bu_path.exists()
+        bu_text = bu_path.read_text()
+        for sec in ["## Argumente", "## Pre-Flight", "## Ablauf", "## Output", "## Akzeptanz", "## Anti-Pattern"]:
+            assert sec in bu_text, f"Sektion fehlt: {sec}"
+        # Whitelist + Library-Cross-Ref
+        assert "topic\\|expertise-source\\|worker-focus\\|domain-hint" in bu_text or "topic|expertise-source|worker-focus|domain-hint" in bu_text
+        assert "tools/bridge_state.py" in bu_text
+        results.record("T47 v0.1.5 PB-013 commands/bridge-update.md", True)
+    except Exception as e:
+        results.record("T47 v0.1.5 PB-013 commands/bridge-update.md", False, str(e))
+
+    # Test 48 (v0.1.5 PB-013): bridge-update Pre-Flight 3 phase-block dokumentiert
+    try:
+        bu_text = (PLUGIN_ROOT / "commands" / "bridge-update.md").read_text()
+        assert "phase \u2208 {init, scope-lock, iterate}" in bu_text or "phase ∈ {init, scope-lock, iterate}" in bu_text, "phase-Whitelist fehlt"
+        assert "execute/verify/close" in bu_text or "Decision-Log brechen" in bu_text, "phase-block-Begruendung fehlt"
+        # status_observations Update-Trail
+        assert "status_observations" in bu_text
+        results.record("T48 v0.1.5 PB-013 bridge-update Pre-Flight phase-block + Update-Trail", True)
+    except Exception as e:
+        results.record("T48 v0.1.5 PB-013 bridge-update Pre-Flight phase-block + Update-Trail", False, str(e))
+
     if verbose:
         print("Passed:", results.passed)
 
