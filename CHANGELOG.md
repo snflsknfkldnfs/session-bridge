@@ -5,6 +5,57 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.6] — 2026-04-30 — Profile-with-workflows.md-Pattern + advisor-Skill-Patches + plugin.json-bridge-update-Eintrag
+
+### Source: klafki-didaktik-Profile-Aufbau (Phase 7 Functional-Anchoring) → V-1/V-2 Open-Points uncovered
+
+bridge-advisor SKILL.md hatte Hardcoding auf 4 Profile-Files (PROFILE.md + frames + APs + question-bank). pflicht_workflows-Frontmatter-Liste war soft-hint ohne operative Spec-Backbone. klafki-didaktik-Profile mit 5 ausspezifizierten Workflows (W-01..W-05) konnte nicht regulär geladen werden.
+
+### Added
+
+- **bridge-advisor SKILL.md** §Schritt 0 Profile-Loading erweitert um workflows.md-Loading (optional, Vorrang vor frontmatter-pflicht_workflows-Liste)
+- **bridge-advisor SKILL.md** Anti-Pattern-Liste:
+  - "NICHT workflows.md-Output-Formate ignorieren wenn Workflow getriggert"
+  - "NICHT Workflow-Verweigerungs-Logik skippen"
+- **bridge-advisor SKILL.md** Round-Type-Heuristik:
+  - "Worker-Plan unvollständig + Workflow-Verweigerungs-Bedingung erfüllt → status mit Klärungs-Anforderung statt initial-advice"
+- **docs/adr/ADR_0030_Expertise_Profile_Pattern.md Annex B** (NEU 2026-04-30) Profile-with-workflows.md-Pattern dokumentiert (Schema-Konvention + Vorrang-Regel + Backward-Compatibility)
+- **plugin.json commands** Eintrag commands/bridge-update.md ergänzt (war v0.1.5-Lücke)
+- **tests/smoke_self_test.py** T54 + T55 + T56 NEU
+  - T54: ADR_0030 Annex B workflows.md-Pattern dokumentiert
+  - T55: bridge-advisor SKILL.md workflows.md-Loading-Patch
+  - T56: klafki-didaktik Reference-Profile Vollständigkeit (skip-if-private)
+
+### Changed
+
+- **bridge-advisor SKILL.md** Cross-Refs erweitert um ADR_0030 Annex B + v0.1.6 SKILL-Patch-Hinweis
+
+### Reference-Implementation
+
+- `private-notes/expertise-profiles/klafki-didaktik/` — erstes Profile mit workflows.md (5 Workflows + Meta-Halbierungs-Diagnose)
+- `private-notes/expertise-profiles/process-consulting/` — bleibt v0.1.0 ohne workflows.md (Backward-Compat-Beispiel)
+
+### Verification
+
+- Self-Test 59/59 PASS (T1-T53 + T54/T55/T56 NEU)
+- claude plugin validate (in User-Terminal-Session zu pruefen)
+- Profile-Schema-Version unverändert v1.0.0 (workflows.md ist optionale Erweiterung, kein Schema-Break)
+
+### Backward-Compatibility
+
+- Profiles ohne workflows.md (z.B. process-consulting v0.1.0) funktionieren unverändert
+- bridge-advisor degradiert sauber wenn workflows.md fehlt
+
+### Deferred to v0.1.7+ (DEFERRED-Phase-2)
+
+- PB-004 Auto-Trigger-Hooks (Trigger: ≥2 reale Pairs mit "haette geholfen"-Befund)
+- PB-005 N-Pair-Topologie (Trigger: ≥3 parallele Sessions Use-Case)
+- PB-006 Cross-Pair-Memory (Trigger: n≥5 Pairs pro Domain — aktuell n=1-3, ADR_0031 §5)
+- PB-008 4-Layer-Meta-Architecture (Trigger: PB-006 Foundation + n≥10 Pairs)
+- klafki-didaktik Live-Pilot (Phase 8) pending User-Aktion in p9-klafki-pilot-Workspace
+
+---
+
 ## [0.1.5] — 2026-04-30 — Foundation Library + Lifecycle-Robustheit + ADR_0031-Decisions
 
 ### Source: v0.1.5-Roadmap Phasen B + D + G + H + I (Foundation + Lifecycle-Robustheit Release)

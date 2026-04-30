@@ -1,6 +1,6 @@
 {
   "name": "session-bridge",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Cross-Session Advisor/Worker coordination via shared filesystem (polling-based, ADR_0029).",
   "author": {
     "name": "session-bridge-Plugin-Project",
@@ -24,6 +24,7 @@
     "./commands/bridge-attach.md",
     "./commands/bridge-handover.md",
     "./commands/bridge-status.md",
-    "./commands/bridge-close.md"
+    "./commands/bridge-close.md",
+    "./commands/bridge-update.md"
   ]
 }

@@ -26,6 +26,7 @@ Usage:
 
 import json
 import os
+import re
 import sys
 import uuid
 import argparse
@@ -1048,6 +1049,59 @@ def main(verbose: bool = False) -> int:
         results.record("T53 v0.1.5 Phase D Library-Konstanten RATIO_THRESHOLDS + DRIFT_RANGES", True)
     except Exception as e:
         results.record("T53 v0.1.5 Phase D Library-Konstanten RATIO_THRESHOLDS + DRIFT_RANGES", False, str(e))
+
+    # T54: v0.1.6 ADR_0030 Annex B Profile-with-workflows.md-Pattern dokumentiert
+    try:
+        adr_path = Path(__file__).parent.parent / "docs/adr/ADR_0030_Expertise_Profile_Pattern.md"
+        adr_content = adr_path.read_text()
+        assert "## Annex B" in adr_content, "Annex B fehlt"
+        assert "Profile-with-workflows.md-Pattern" in adr_content
+        assert "workflows.md" in adr_content
+        assert "Vorrang" in adr_content, "Vorrang-Regel nicht dokumentiert"
+        assert "Backward-Compatibility" in adr_content or "backward-compat" in adr_content.lower()
+        results.record("T54 v0.1.6 ADR_0030 Annex B workflows.md-Pattern dokumentiert", True)
+    except Exception as e:
+        results.record("T54 v0.1.6 ADR_0030 Annex B workflows.md-Pattern dokumentiert", False, str(e))
+
+    # T55: v0.1.6 bridge-advisor SKILL.md workflows.md-Loading-Patch
+    try:
+        skill_path = Path(__file__).parent.parent / "skills/bridge-advisor/SKILL.md"
+        skill_content = skill_path.read_text()
+        # Schritt 0 Pseudocode erwähnt workflows.md
+        assert "workflows.md" in skill_content, "workflows.md nicht in SKILL.md"
+        # workflow_specs als Profile-Substruktur
+        assert "workflow_specs" in skill_content, "workflow_specs Variable fehlt"
+        # Vorrang-Regel
+        assert "Vorrang" in skill_content, "Vorrang-Regel fehlt"
+        # Anti-Pattern Workflow-Output-Format-Enforcement
+        assert "workflows.md-Output-Formate ignorieren" in skill_content, "AP für Output-Format-Enforcement fehlt"
+        # Verweigerungs-Logik
+        assert "Verweigerungs-Logik" in skill_content or "verweigerungs_klausel" in skill_content
+        # Cross-Ref auf Annex B
+        assert "Annex B" in skill_content and "v0.1.6" in skill_content, "Cross-Ref auf v0.1.6 Annex B fehlt"
+        results.record("T55 v0.1.6 bridge-advisor SKILL.md workflows.md-Loading-Patch", True)
+    except Exception as e:
+        results.record("T55 v0.1.6 bridge-advisor SKILL.md workflows.md-Loading-Patch", False, str(e))
+
+    # T56: v0.1.6 klafki-didaktik Reference-Profile vollständig
+    try:
+        klafki_dir = Path("/Users/paulad/session-bridge/private-notes/expertise-profiles/klafki-didaktik")
+        if not klafki_dir.exists():
+            # Skip wenn private-notes nicht vorhanden (CI-Environment)
+            results.record("T56 v0.1.6 klafki-didaktik Reference-Profile (skip-if-private)", True, "skipped: private-notes not present")
+        else:
+            for f in ["PROFILE.md", "diagnostic-frames.md", "anti-patterns.md", "question-bank.md", "workflows.md"]:
+                assert (klafki_dir / f).exists(), f"klafki-didaktik missing {f}"
+            # workflows.md hat 5 Workflows
+            wf_text = (klafki_dir / "workflows.md").read_text()
+            wf_ids = re.findall(r"## (W-\d+):", wf_text)
+            assert len(wf_ids) == 5, f"klafki workflows count {len(wf_ids)} != 5"
+            # PROFILE.md required_files enthält workflows.md
+            profile_text = (klafki_dir / "PROFILE.md").read_text()
+            assert "workflows.md" in profile_text, "workflows.md nicht in required_files"
+            results.record("T56 v0.1.6 klafki-didaktik Reference-Profile vollständig", True)
+    except Exception as e:
+        results.record("T56 v0.1.6 klafki-didaktik Reference-Profile vollständig", False, str(e))
 
     if verbose:
         print("Passed:", results.passed)

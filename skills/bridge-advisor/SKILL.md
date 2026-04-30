@@ -91,17 +91,25 @@ profile_path = state["roles"]["advisor"].get("expertise_profile")
 if profile_path:
     profile = load_profile(profile_path)
     # profile = {
-    #   "frontmatter": {profile_name, methodology_pillars, sources, pflicht_workflows, linkage_to_bridge_rounds, ...},
+    #   "frontmatter": {profile_name, methodology_pillars, sources, pflicht_workflows, linkage_to_bridge_rounds, required_files, ...},
     #   "diagnostic_frames": [...],   # aus diagnostic-frames.md
     #   "anti_patterns": [...],        # aus anti-patterns.md
-    #   "question_bank": {...}         # aus question-bank.md
+    #   "question_bank": {...},        # aus question-bank.md
+    #   "workflows": {...}             # NEU v0.1.6: aus workflows.md (optional, falls in required_files)
     # }
     profile_workflow_modifier = profile["frontmatter"]["linkage_to_bridge_rounds"].get(round_type, "")
     pflicht_workflows = profile["frontmatter"]["pflicht_workflows"]
+    # NEU v0.1.6: Workflow-Spec laden, falls vorhanden
+    workflow_specs = profile.get("workflows", {})  # workflow_id → {trigger, pflicht_schritte, output_format, linkage}
 else:
     profile = None
     pflicht_workflows = []
+    workflow_specs = {}
 ```
+
+**File-Loading-Logik (v0.1.6):** Lade alle in `frontmatter.required_files` aufgelisteten Files. Bekannte Files: `PROFILE.md` (Frontmatter-Quelle), `diagnostic-frames.md`, `anti-patterns.md`, `question-bank.md`, `workflows.md` (NEU v0.1.6, optional). Unbekannte Files in `required_files` werden als Profile-Annex geladen und in `profile["annexes"][filename]` abgelegt — dürfen advisor-Workflow nicht blockieren.
+
+**workflows.md-Vorrang-Regel (NEU v0.1.6):** Wenn `workflows.md` geladen ist, hat es Vorrang vor `pflicht_workflows`-Frontmatter-Liste. Frontmatter listet Workflow-IDs (z.B. `perspektivenschema-vollstaendigkeits-check-pre-stundenfrage`); workflows.md enthält die operative Spec (Trigger / Pflicht-Schritte / Output-Format / Linkage / Verweigerungs-Logik). Advisor MUSS workflows.md-Specs anwenden, nicht nur frontmatter-IDs erwähnen.
 
 Bei Profile-Load-FAIL: WARN, set `degraded_mode = True`, weiter ohne Profile.
 
@@ -167,6 +175,7 @@ Bei CAS-Failure: max 3 Retries, dann ABBRUCH + Nutzer informieren.
 | Worker fragt Status-Update an / Advisor will Snapshot teilen | `status` |
 | Advisor stellt Klarheits-Frage | `question` |
 | User-Entscheidung soll encoded werden | `decision-lock` (mit `decided_by: user` im Frontmatter) |
+| Worker-Plan unvollständig + Profile-Workflow-Verweigerungs-Bedingung erfüllt (NEU v0.1.6) | `status` mit Klärungs-Anforderung statt `initial-advice` |
 
 ## Anti-Pattern (FM-Mapping)
 
@@ -178,6 +187,8 @@ Bei CAS-Failure: max 3 Retries, dann ABBRUCH + Nutzer informieren.
 - **NICHT** Profile-Workflows skippen wenn expertise_profile gesetzt (ADR_0030 §3.4 — Pflicht-Loading bei jedem Trigger)
 - **NICHT** Profile mid-Pair switchen — Profile ist init-time-gepinnt (ADR_0030 §3.4, C1)
 - **NICHT** Profile-Inhalt wörtlich in Handover kopieren — Eigenformulierung mit profile-Reference (Lizenzrecht-Constraint, ADR_0030 §5 C2)
+- **NICHT** workflows.md-Output-Formate ignorieren wenn Workflow getriggert (NEU v0.1.6) — wenn workflow_specs[w_id]["output_format"] vorhanden, MUSS advisor das Format in handover §-Sektionen einbetten
+- **NICHT** Workflow-Verweigerungs-Logik skippen (NEU v0.1.6) — wenn workflow_specs[w_id]["verweigerungs_klausel"] erfüllt (z.B. W-01 N≥3 leere Perspektiven), advisor schreibt status-handover mit Klärungs-Anforderung statt fortzufahren
 
 ## Output-Konvention
 
@@ -203,6 +214,9 @@ Open Blockers updated: <count>
 - ADR_0029 §4.3 Handover-Schema
 - ADR_0029 §6 Conflict-Resolution
 - ADR_0029 §13 Concurrency
+- ADR_0030 Expertise-Profile-Pattern §3.4 Profile-Loading
+- ADR_0030 Annex B (NEU v0.1.6) Profile-with-workflows.md-Pattern
 - v0.1.3-Patch-Pipeline §Anti-Plan-Drift CRITICAL (F-RP-29)
 - v0.1.3-Patch-Pipeline §User-Translation-Konvention (D-001 Advisor-Pos)
 - v0.1.3-Patch-Pipeline F-RP-31 Patch 4 Skill-Mode-Marker
+- v0.1.6 SKILL-Patch §Schritt 0 workflows.md-Loading + §Anti-Pattern Workflow-Output-Format-Enforcement

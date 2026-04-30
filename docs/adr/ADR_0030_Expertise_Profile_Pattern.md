@@ -300,3 +300,108 @@ ADR_0029-Default. Begründung:
 erweitern. Spec-Default soll Profile-Pflicht-Workflow-Overhead reflektieren.
 
 **Annex-Lock:** 2026-04-29 als Teil v0.1.3 Patch-Welle.
+
+---
+
+## Annex B — Profile-with-workflows.md-Pattern (NEU v0.1.6, 2026-04-30)
+
+**Status:** LOCKED 2026-04-30 als Teil v0.1.6 Profile-Activation-Erweiterung
+**Trigger:** klafki-didaktik-Profile-Aufbau zeigte, dass Pflicht-Workflows operativ ausspezifiziert werden müssen (Trigger / Pflicht-Schritte / Output-Format / Linkage / Verweigerungs-Logik), nicht nur als Frontmatter-IDs gelistet.
+
+### B.1 Problem
+
+Das ADR_0030-§3.2-Schema definiert `pflicht_workflows`-Liste im PROFILE.md-Frontmatter als Workflow-IDs (z.B. `diagnose-frame-anwenden-pre-initial-advice`). Der bridge-advisor-Skill liest diese Liste, hat aber keine operative Spec — Workflow-IDs werden zu soft-hints ohne Enforcement-Backbone.
+
+Empirie aus klafki-didaktik-Profile (Phase 6 Pflicht-Workflows-Definition):
+- 5 Klafki-Workflows (W-01..W-05) plus Meta-Workflow brauchen je: Trigger-Bedingung, 5-7 Pflicht-Schritte, Output-Format-Vorlage (Tabellen/§-Sektionen), Linkage zu Frames+APs+Fragen, Verweigerungs-Klausel
+- Inline-Spec im PROFILE.md-Frontmatter würde Frontmatter-Größe explodieren lassen (>500 Zeilen)
+- Inline-Spec im PROFILE.md-Body würde Methodik-Sockel + Workflow-Spec mischen (Trennungs-Verlust)
+
+### B.2 Decision
+
+**Optionales workflows.md-File** als 5. Profile-File neben den 4 bestehenden:
+
+```
+expertise-profiles/<profile-name>/
+├── PROFILE.md                # Methodik-Sockel + Frontmatter
+├── diagnostic-frames.md      # Frames in Cluster
+├── anti-patterns.md          # APs mit Korrektiv-Verweisen
+├── question-bank.md          # Diagnose-Fragen Cluster-zugeordnet
+└── workflows.md              # NEU v0.1.6 (optional): operative Workflow-Specs
+```
+
+`required_files`-Frontmatter listet `workflows.md` falls vorhanden.
+
+### B.3 workflows.md Schema-Konvention
+
+Pro Workflow Pflicht-Sektionen:
+
+```markdown
+## W-NN: <workflow-id-aus-pflicht_workflows>
+
+**Trigger:**
+- Bedingung 1
+- Bedingung 2
+
+**Pflicht-Schritte:**
+1. Schritt 1
+2. Schritt 2
+...
+
+**Output-Format (im handover):**
+```
+§Section-Name (W-NN):
+<Tabelle oder Struktur-Vorlage>
+```
+
+**Linkage:** F-IDs, AP-IDs, Question-Bank-Refs
+
+**Verweigerungs-Logik (optional):** Bedingung, unter der advisor Beratung verweigert / status-handover mit Klärungs-Anforderung schreibt
+```
+
+Plus optionaler Meta-Workflow für Cross-Frame-Diagnostik.
+
+### B.4 Vorrang-Regel
+
+`workflows.md` hat **Vorrang** vor `pflicht_workflows`-Frontmatter-Liste:
+- Frontmatter listet Workflow-IDs (Profile-Lookup)
+- workflows.md enthält operative Spec
+- Skill-Implementation MUSS workflows.md-Specs anwenden, nicht nur frontmatter-IDs erwähnen
+
+Bei Konflikt zwischen frontmatter-pflicht_workflows und workflows.md-Workflow-IDs: WARN, workflows.md ist authoritative.
+
+### B.5 Profile-Schema-Version-Bump
+
+| Aspekt | Vor v0.1.6 | Ab v0.1.6 |
+|---|---|---|
+| `required_files` | 4 fixed | 4 + optional `workflows.md` |
+| `profile_schema_version` | 1.0.0 | 1.0.0 (kompatibel) — workflows.md ist optionale Erweiterung, kein Schema-Break |
+
+Backward-Compatibility: Profiles ohne workflows.md (z.B. process-consulting v0.1.0) funktionieren unverändert.
+
+### B.6 SKILL-Patches v0.1.6
+
+bridge-advisor-Skill SKILL.md erhält in §Schritt 0 Profile-Loading:
+- workflows.md-Loading falls in required_files
+- workflow_specs als Profile-Substruktur
+- Vorrang-Regel-Klausel
+
+bridge-advisor-Skill Anti-Pattern-Liste:
+- "NICHT workflows.md-Output-Formate ignorieren wenn Workflow getriggert"
+- "NICHT Workflow-Verweigerungs-Logik skippen"
+
+bridge-advisor-Skill Round-Type-Heuristik:
+- "Worker-Plan unvollständig + Verweigerungs-Bedingung erfüllt → status mit Klärungs-Anforderung"
+
+### B.7 Reference-Implementation
+
+`expertise-profiles/klafki-didaktik/` ist erste Profile mit workflows.md (5 Workflows W-01..W-05 + Meta-Halbierungs-Diagnose). process-consulting bleibt v0.1.0 ohne workflows.md (backward-compat).
+
+### B.8 Cross-Refs
+
+- ADR_0030 §3.2 Profile-Schema (Annex B erweitert required_files-Liste)
+- ADR_0030 §3.4 Profile-Loading (Annex B erweitert Loading-Logik)
+- bridge-advisor SKILL.md §Schritt 0 (v0.1.6 Patch)
+- expertise-profiles/klafki-didaktik/workflows.md (Reference-Implementation)
+- expertise-profiles/process-consulting/PROFILE.md (Backward-Compat-Beispiel ohne workflows.md)
+
