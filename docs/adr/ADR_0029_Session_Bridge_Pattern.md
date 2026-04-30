@@ -557,3 +557,38 @@ Format: `<round>-<from>-<to>-<short-uuid>.md` wo `short-uuid` 8 Zeichen UUID4. E
 ---
 
 **Lock-Status:** LOCKED. A1-A9 PASS verifiziert 2026-04-26. Phase 4 (MVP-Plugin-Scaffold) freigegeben. Schema-Bumps ab hier nur via §13.1-Bump-Regeln.
+
+
+---
+
+## Annex B — Bilanz-Filename-Konvention + Schema-Pointer (NEU v0.1.5 / ADR_0031 §4.4)
+
+**Empirie aus Bridge-Pair p3-real-user (closed 2026-04-29) + Cross-Pair-Analyse p4/p5/p6 (ADR_0031):**
+
+ADR_0029 §5.6 erwähnt Bilanz-Datei in close-Phase ohne Filename-Konvention oder Schema-Pointer. Empirie zeigte zwei verschiedene Naming-Patterns:
+
+| Pair | Bilanz-Filename |
+|---|---|
+| p3-real-user | `bridge/bilanz_8cbeaad0.md` (mit Pair-ID-Suffix) |
+| p4-eg-dev | `bridge/BILANZ.md` (uppercase, kein Suffix) |
+
+**Decision:** ab v0.1.5 ist die Filename-Konvention `bridge/bilanz_<pair_id>.md` (analog state.json + handover-Files mit Pair-ID-Suffix für Cross-Pair-Eindeutigkeit).
+
+**Schema-Pointer:** Bilanz-File-Inhalt MUSS `schemas/bilanz_v1.json` (NEU v0.1.4 PB-001) folgen. Pflicht-Sektionen:
+- pair_id, pair_topic, created_at, closed_at
+- total_rounds, phase_sequence, decision_log_summary
+- wallclock_drift_calibrated
+- reflection (mit Pflicht-Sub-Feldern was_funktionierte / was_problematisch / was_als_naechstes)
+- successful_patterns, anti_patterns_detected, cross_pair_transfer_hinweise
+
+**Empirie-Anker:** `pilot-runs/p3-real-user/bridge/bilanz_8cbeaad0.md` als Reference-Implementation (12-Sektionen-Schema-strikt, Stufe-7-Konsolidierung).
+
+**Migration:**
+- p4-BILANZ als Migration-Kandidat (rename + Schema-konform machen) — v0.1.5 Phase H (optional, nicht hard-enforced für historische Pairs)
+- bridge-close-Skill v0.1.5 enforced bilanz_v1-Schema bei Generierung neuer Bilanzen
+
+**Cross-Refs:**
+- ADR_0031 §4.3 + §4.4 (Decision-Source)
+- schemas/bilanz_v1.json (Schema-Spec)
+- pilot-runs/p3-real-user/bridge/bilanz_8cbeaad0.md (Reference-Implementation)
+- pilot-runs/p4-eg-dev/bridge/BILANZ.md (Migration-Kandidat)

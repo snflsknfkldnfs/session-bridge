@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/snflsknfkldnfs/session-bridge/schemas/bridge_state_v1.json",
   "title": "Bridge State v1.1.1",
-  "description": "Shared state file for session-bridge pair coordination. ADR_0029 \u00a74.1 + ADR_0030 (expertise_profile). v1.1.1 adds mapping_budget + mapping_category_history per Decision (v0.1.3 D-001..D-005 Mapping-Decisions). v1.1.2 (NEU v0.1.4): worker.phase Auto-Propagation-Doku.",
+  "description": "Shared state file for session-bridge pair coordination. ADR_0029 \u00a74.1 + ADR_0030 (expertise_profile). v1.1.1 adds mapping_budget + mapping_category_history per Decision (v0.1.3 D-001..D-005 Mapping-Decisions). v1.1.2 (NEU v0.1.4): worker.phase Auto-Propagation-Doku. v1.2.0 (NEU v0.1.5): topic_metadata.domain_hint-Enum (PB-007 / ADR_0031 \u00a74.2).",
   "type": "object",
   "required": [
     "pair_id",
@@ -31,7 +31,8 @@
       "enum": [
         "1.0.0",
         "1.1.0",
-        "1.1.1"
+        "1.1.1",
+        "1.2.0"
       ]
     },
     "mapping_budget": {
@@ -500,6 +501,24 @@
         "string",
         "null"
       ]
+    },
+    "topic_metadata": {
+      "type": "object",
+      "description": "NEU v0.1.5 (PB-007 / ADR_0031 \u00a74.2): Topic-Metadaten fuer Cross-Pair-Pattern-Erkennung + Domain-aware Threshold-Kalibrierung.",
+      "properties": {
+        "domain_hint": {
+          "type": "string",
+          "enum": [
+            "plugin-self-dev",
+            "use-case",
+            "architecture-spec",
+            "investigation-trace",
+            "methodology-improvement",
+            "other"
+          ],
+          "description": "Domain-Klassifikation. plugin-self-dev = Plugin-Self-Dev (z.B. p3); use-case = generic Use-Case (z.B. p4 escape-game); architecture-spec = Architektur-Spec (z.B. p5); investigation-trace = Empirie-Trace (z.B. p4 sub-pattern); methodology-improvement = Cross-Pair-Methode (z.B. p6)."
+        }
+      }
     }
   },
   "additionalProperties": false

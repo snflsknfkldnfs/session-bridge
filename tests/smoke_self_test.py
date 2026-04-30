@@ -750,6 +750,62 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T39 v0.1.4 Phase F ADR_0031 Cross-Pair-Patterns", False, str(e))
 
+    # Test 40 (v0.1.5 PB-007): topic_metadata.domain_hint-Enum + backward-compat
+    try:
+        # State-Schema enum erweitert auf 1.2.0
+        sv_enum = state_schema["properties"]["schema_version"].get("enum", [])
+        assert "1.2.0" in sv_enum, f"schema_version 1.2.0 fehlt in Enum: {sv_enum}"
+
+        # topic_metadata.domain_hint-Enum vorhanden
+        tm = state_schema["properties"].get("topic_metadata", {})
+        assert tm.get("type") == "object", "topic_metadata fehlt oder nicht object"
+        dh = tm.get("properties", {}).get("domain_hint", {})
+        expected_enum = {"plugin-self-dev", "use-case", "architecture-spec",
+                        "investigation-trace", "methodology-improvement", "other"}
+        assert set(dh.get("enum", [])) == expected_enum, f"domain_hint enum mismatch"
+
+        # Positive: state mit topic_metadata.domain_hint validate PASS
+        state = synth_valid_state()
+        state["schema_version"] = "1.2.0"
+        state["topic_metadata"] = {"domain_hint": "plugin-self-dev"}
+        jsonschema.validate(state, state_schema)
+
+        # Backward-compat: state OHNE topic_metadata validate PASS (optional)
+        state2 = synth_valid_state()
+        # synth bleibt ohne topic_metadata
+        assert "topic_metadata" not in state2 or state2["topic_metadata"] == {}
+        jsonschema.validate(state2, state_schema)
+
+        # Negative: invalid domain_hint enum value FAIL
+        state3 = synth_valid_state()
+        state3["schema_version"] = "1.2.0"
+        state3["topic_metadata"] = {"domain_hint": "INVALID-VALUE"}
+        try:
+            jsonschema.validate(state3, state_schema)
+            raise AssertionError("expected ValidationError fuer invalid domain_hint")
+        except jsonschema.ValidationError:
+            pass
+
+        # bridge-init.md doku: --domain-hint dokumentiert
+        init_text = (PLUGIN_ROOT / "commands" / "bridge-init.md").read_text()
+        assert "--domain-hint" in init_text, "--domain-hint flag in bridge-init.md fehlt"
+
+        results.record("T40 v0.1.5 PB-007 topic_metadata.domain_hint-Enum + backward-compat", True)
+    except Exception as e:
+        results.record("T40 v0.1.5 PB-007 topic_metadata.domain_hint-Enum + backward-compat", False, str(e))
+
+    # Test 41 (v0.1.5 Phase I): ADR_0029 Annex B Filename-Konvention
+    try:
+        adr_path = PLUGIN_ROOT / "docs" / "adr" / "ADR_0029_Session_Bridge_Pattern.md"
+        adr_text = adr_path.read_text()
+        assert "Annex B" in adr_text, "ADR_0029 Annex B fehlt"
+        assert "bridge/bilanz_<pair_id>.md" in adr_text, "Filename-Konvention fehlt"
+        assert "schemas/bilanz_v1.json" in adr_text, "Schema-Pointer fehlt"
+        assert "ADR_0031" in adr_text, "ADR_0031-Cross-Ref fehlt"
+        results.record("T41 v0.1.5 Phase I ADR_0029 Annex B Filename-Konvention", True)
+    except Exception as e:
+        results.record("T41 v0.1.5 Phase I ADR_0029 Annex B Filename-Konvention", False, str(e))
+
     if verbose:
         print("Passed:", results.passed)
 
