@@ -1,0 +1,197 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "mapping_decisions_v1.json",
+  "title": "session-bridge mapping-decisions-log schema v1.0.0",
+  "description": "Mapping-Decisions-Log shared_artifact-Schema. Basiert auf p3-real-user-Empirie (mapping-decisions.md v0.1.5 mit D-001..D-005). v0.1.4 NEU.",
+  "type": "object",
+  "required": [
+    "pair_id",
+    "schema_version",
+    "mapping_phase_start",
+    "decisions"
+  ],
+  "properties": {
+    "pair_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "1.0.0"
+      ]
+    },
+    "mapping_phase_start": {
+      "type": "object",
+      "required": [
+        "round",
+        "decision_locked_in_round"
+      ],
+      "properties": {
+        "round": {
+          "type": "integer"
+        },
+        "decision_locked_in_round": {
+          "type": "integer"
+        }
+      }
+    },
+    "annex_pointer": {
+      "type": "string",
+      "description": "Optional: Pointer auf mapping-method-annex.md fuer methodischen Boden."
+    },
+    "decisions": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "round_decided",
+          "konvergenz_status",
+          "frame",
+          "mapping_category"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^D-[0-9]{3}$",
+            "description": "Decision-ID im Format D-NNN."
+          },
+          "round_decided": {
+            "type": "integer"
+          },
+          "konvergenz_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "counter-pending",
+              "locked"
+            ]
+          },
+          "frame": {
+            "type": "string",
+            "description": "Profile-Frame-Pointer (z.B. F1.2 + F4.1)."
+          },
+          "mapping_category": {
+            "type": "string",
+            "enum": [
+              "PATCH",
+              "AFFORDANCE",
+              "DEFER",
+              "DISSENS-DOCUMENTED"
+            ]
+          },
+          "mapping_category_history": {
+            "type": "array",
+            "description": "Audit-Trail fuer Position-Wechsel-Cases (z.B. R21-AFFORDANCE -> R23-PATCH).",
+            "items": {
+              "type": "object",
+              "required": [
+                "round",
+                "position",
+                "by"
+              ],
+              "properties": {
+                "round": {
+                  "type": "integer"
+                },
+                "position": {
+                  "type": "string"
+                },
+                "by": {
+                  "type": "string",
+                  "enum": [
+                    "advisor",
+                    "worker"
+                  ]
+                },
+                "basis": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "befund_id": {
+            "type": "string"
+          },
+          "real_id": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "CRITICAL",
+              "HIGH",
+              "MEDIUM",
+              "LOW",
+              "BEOBACHTUNG",
+              "NONE"
+            ]
+          },
+          "worker_action": {
+            "type": "string",
+            "description": "Konkrete Worker-Schritte im Bridge-Pair (z.B. friction-log-Updates)."
+          },
+          "plugin_dev_action": {
+            "type": "string",
+            "description": "Konkrete Plugin-Dev-Schritte out-of-pair (per ADR_0021 strict-separation)."
+          },
+          "migration": {
+            "type": "object",
+            "description": "Status-Uebergangs-Spec (per Annex SoT-Migrations-Pfad)."
+          },
+          "sub_type": {
+            "type": "string",
+            "description": "DISSENS-DOCUMENTED Sub-Typ (z.B. \u00a73.4.1 KOMPETITIV oder \u00a73.4.2 SKOPUS)."
+          },
+          "cross_references": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "mapping_category": {
+                  "const": "DISSENS-DOCUMENTED"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "sub_type"
+              ],
+              "description": "DISSENS-DOCUMENTED MUSS sub_type angeben (\u00a73.4.1 KOMPETITIV oder \u00a73.4.2 SKOPUS) per Annex \u00a73.4.0 Inflations-Schutz."
+            }
+          }
+        ]
+      }
+    },
+    "pending_decisions": {
+      "type": "array",
+      "description": "Geplante Decisions fuer kommende Rounds.",
+      "items": {
+        "type": "object",
+        "required": [
+          "round"
+        ],
+        "properties": {
+          "round": {
+            "type": "integer"
+          },
+          "befund": {
+            "type": "string"
+          },
+          "vorschlag_kategorie": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

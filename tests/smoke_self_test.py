@@ -554,6 +554,113 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T29 v0.1.4 F-RP-26 worker.phase Auto-Propagation + Initial-Set", False, str(e))
 
+    # Test 30 (v0.1.4 PB-001): bilanz_v1.json schema syntax + valid-bilanz validate
+    try:
+        bilanz_schema_path = SCHEMAS_DIR / "bilanz_v1.json"
+        bilanz_schema = load_schema(bilanz_schema_path)
+        jsonschema.Draft7Validator.check_schema(bilanz_schema)
+
+        # Synth valid Bilanz
+        synth = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "pair_topic": "test",
+            "created_at": "2026-04-28T06:49:01Z",
+            "closed_at": "2026-04-29T11:09:53Z",
+            "total_rounds": 28,
+            "phase_sequence": [{"phase": "init", "rounds_range": "R0", "rounds_count": 1}],
+            "decision_log_summary": [{"decision": "test", "decided_by": "consensus"}],
+            "wallclock_drift_calibrated": [{"phase": "test", "estimated_rounds": 5,
+                                           "actual_rounds": 12, "drift_factor": 2.4}],
+            "reflection": {"was_funktionierte": ["x"], "was_problematisch": [],
+                          "was_als_naechstes": ["y"]},
+            "successful_patterns": [],
+            "anti_patterns_detected": [],
+            "cross_pair_transfer_hinweise": []
+        }
+        jsonschema.validate(synth, bilanz_schema)
+        results.record("T30 v0.1.4 PB-001 bilanz_v1 schema + valid-bilanz", True)
+    except Exception as e:
+        results.record("T30 v0.1.4 PB-001 bilanz_v1 schema + valid-bilanz", False, str(e))
+
+    # Test 31 (v0.1.4): mapping_decisions_v1 schema + DISSENS-allOf-Constraint
+    try:
+        md_schema_path = SCHEMAS_DIR / "mapping_decisions_v1.json"
+        md_schema = load_schema(md_schema_path)
+        jsonschema.Draft7Validator.check_schema(md_schema)
+
+        # Synth valid mapping with both PATCH + DISSENS-DOCUMENTED-with-sub_type
+        synth = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "schema_version": "1.0.0",
+            "mapping_phase_start": {"round": 12, "decision_locked_in_round": 11},
+            "decisions": [
+                {"id": "D-001", "round_decided": 12, "konvergenz_status": "locked",
+                 "frame": "F1.2", "mapping_category": "DISSENS-DOCUMENTED",
+                 "sub_type": "§3.4.2 Skopus"},
+                {"id": "D-002", "round_decided": 16, "konvergenz_status": "locked",
+                 "frame": "F1.1", "mapping_category": "PATCH"}
+            ]
+        }
+        jsonschema.validate(synth, md_schema)
+
+        # Negative: DISSENS-DOCUMENTED ohne sub_type → FAIL erwartet
+        bad = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "schema_version": "1.0.0",
+            "mapping_phase_start": {"round": 12, "decision_locked_in_round": 11},
+            "decisions": [{"id": "D-001", "round_decided": 12, "konvergenz_status": "locked",
+                          "frame": "F1.2", "mapping_category": "DISSENS-DOCUMENTED"}]
+        }
+        try:
+            jsonschema.validate(bad, md_schema)
+            raise AssertionError("expected ValidationError for DISSENS without sub_type")
+        except jsonschema.ValidationError:
+            pass
+
+        results.record("T31 v0.1.4 mapping_decisions_v1 schema + DISSENS-allOf", True)
+    except Exception as e:
+        results.record("T31 v0.1.4 mapping_decisions_v1 schema + DISSENS-allOf", False, str(e))
+
+    # Test 32 (v0.1.4): bridge_state_v1 shared_artifacts.artifact_type-Enum
+    try:
+        sa_at = state_schema["properties"]["shared_artifacts"]["items"]["properties"].get("artifact_type", {})
+        assert "enum" in sa_at, "artifact_type missing enum"
+        expected = {"mapping-method-annex", "mapping-decisions-log", "bilanz", "custom"}
+        assert set(sa_at["enum"]) == expected, f"expected {expected}, got {set(sa_at['enum'])}"
+        results.record("T32 v0.1.4 bridge_state shared_artifacts.artifact_type-Enum", True)
+    except Exception as e:
+        results.record("T32 v0.1.4 bridge_state shared_artifacts.artifact_type-Enum", False, str(e))
+
+    # Test 33 (v0.1.4 Cross-Validation): mapping_decisions accepts P3-style mapping_category_history audit-trail
+    try:
+        md_schema_path = SCHEMAS_DIR / "mapping_decisions_v1.json"
+        md_schema = load_schema(md_schema_path)
+
+        # P3 D-004 R23-Revision pattern: mapping_category_history mit 4 Eintraegen
+        synth = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "schema_version": "1.0.0",
+            "mapping_phase_start": {"round": 12, "decision_locked_in_round": 11},
+            "decisions": [{
+                "id": "D-004",
+                "round_decided": 21,
+                "konvergenz_status": "locked",
+                "frame": "F1.1 + F4.2",
+                "mapping_category": "PATCH",
+                "mapping_category_history": [
+                    {"round": 21, "position": "AFFORDANCE", "by": "advisor"},
+                    {"round": 22, "position": "PATCH", "by": "worker", "basis": "counter"},
+                    {"round": 23, "position": "PATCH", "by": "advisor",
+                     "basis": "Worker-Argument 3 Methoden-Logik-Treffer + F4.2"},
+                    {"round": 24, "position": "PATCH", "by": "worker", "basis": "konvergenz-lock"}
+                ]
+            }]
+        }
+        jsonschema.validate(synth, md_schema)
+        results.record("T33 v0.1.4 mapping_decisions akzeptiert P3-D-004-Revision-Pattern", True)
+    except Exception as e:
+        results.record("T33 v0.1.4 mapping_decisions akzeptiert P3-D-004-Revision-Pattern", False, str(e))
+
     if verbose:
         print("Passed:", results.passed)
 

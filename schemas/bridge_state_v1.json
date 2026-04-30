@@ -446,6 +446,16 @@
             "type": "integer",
             "minimum": 0,
             "description": "v1.1.1: round in which artifact was materialized to active status."
+          },
+          "artifact_type": {
+            "type": "string",
+            "enum": [
+              "mapping-method-annex",
+              "mapping-decisions-log",
+              "bilanz",
+              "custom"
+            ],
+            "description": "NEU v0.1.4 (PB-001 + Schema-Formalisierungen aus p3-Empirie): shared_artifact-Sub-Typ fuer Cross-Pair-Pattern-Erkennbarkeit. 'custom' als Default fuer pair-spezifische Artefakte."
           }
         },
         "additionalProperties": false
