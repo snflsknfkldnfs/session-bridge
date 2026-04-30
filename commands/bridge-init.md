@@ -45,13 +45,16 @@ Schritt 3: User-Confirmation:
 Schritt 4: Erst nach User-Bestätigung → /bridge-init mit korrektem --topic erneut aufrufen.
 ```
 
-### Bei missing `--shared-path`
+### Bei missing `--shared-path` (NEU v0.1.4 PB-011: tools/find_shared_path.sh Helper)
 
-ABBRUCH mit User-Question. Default-Heuristik:
+ABBRUCH mit User-Question. Default-Heuristik (v0.1.4 erweitert):
 
 1. Wenn beide Sessions gleiches Cowork-Project nutzen: deren gemeinsamer Working-Dir.
-2. Falls Working-Dirs unterschiedlich: User-explizit-Pfad-Frage. Plugin schlägt vor: "größter gemeinsamer Mount-Pfad" via Filesystem-Inspektion (z.B. `/Users/paulad/<project>/`).
-3. Niemals eigenes Cowork-Outputs-Verzeichnis als Default — Worker-Session sieht das nicht.
+2. Falls Working-Dirs unterschiedlich: Plugin ruft `tools/find_shared_path.sh <session-id-1> <session-id-2>` auf, schlaegt groessten gemeinsamen Mount-Pfad via Filesystem-Inspektion vor (z.B. `/Users/paulad/<project>/`).
+3. Bei Ambiguitaet (mehrere gemeinsame Praefixe): User-explizit-Pfad-Frage mit Kandidaten-Liste.
+4. Niemals eigenes Cowork-Outputs-Verzeichnis als Default — Worker-Session sieht das nicht.
+
+**Helper-Tool:** `tools/find_shared_path.sh` (PB-011 v0.1.4) — Stub fuer Filesystem-Heuristik. Voll-Implementation v0.1.5+ wenn session_info Working-Dir-API stabil.
 
 ### Bei missing `--worker-session-title` (advisor-only, primaerer Pfad NEU v0.1.4)
 

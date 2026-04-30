@@ -120,6 +120,14 @@ def synth_valid_handover(round_type: str = "initial-advice") -> dict:
         base["wallclock_estimate_min"] = 30
     if round_type == "decision-lock":
         base["decided_by"] = "user"
+        # NEU v0.1.4 PB-003: pre_decision_verification Pflicht (allOf type=decision-lock)
+        base["pre_decision_verification"] = [
+            {
+                "question": "smoke-test: ist Decision-Boden ausreichend?",
+                "answer": "ja",
+                "timestamp": "2026-04-30T10:00:00Z"
+            }
+        ]
     return base
 
 
@@ -660,6 +668,66 @@ def main(verbose: bool = False) -> int:
         results.record("T33 v0.1.4 mapping_decisions akzeptiert P3-D-004-Revision-Pattern", True)
     except Exception as e:
         results.record("T33 v0.1.4 mapping_decisions akzeptiert P3-D-004-Revision-Pattern", False, str(e))
+
+    # Test 34 (v0.1.4 PB-003): decision-lock-Handover mit pre_decision_verification 1 Eintrag PASS
+    try:
+        ho = synth_valid_handover("decision-lock")
+        # synth schon mit 1 Eintrag — sollte validate PASS
+        jsonschema.validate(ho, handover_schema)
+        results.record("T34 v0.1.4 PB-003 decision-lock pre_decision_verification 1 Eintrag PASS", True)
+    except Exception as e:
+        results.record("T34 v0.1.4 PB-003 decision-lock pre_decision_verification 1 Eintrag PASS", False, str(e))
+
+    # Test 35 (v0.1.4 PB-003): decision-lock OHNE pre_decision_verification FAIL via allOf
+    try:
+        ho = synth_valid_handover("decision-lock")
+        del ho["pre_decision_verification"]
+        jsonschema.validate(ho, handover_schema)
+        results.record("T35 v0.1.4 PB-003 decision-lock ohne pre_decision_verification FAIL", False, "expected ValidationError")
+    except jsonschema.ValidationError:
+        results.record("T35 v0.1.4 PB-003 decision-lock ohne pre_decision_verification FAIL", True)
+    except Exception as e:
+        results.record("T35 v0.1.4 PB-003 decision-lock ohne pre_decision_verification FAIL", False, f"unexpected: {e}")
+
+    # Test 36 (v0.1.4 PB-003): pre_decision_verification mit 3 Eintraegen FAIL via maxItems=2
+    try:
+        ho = synth_valid_handover("decision-lock")
+        ho["pre_decision_verification"] = [
+            {"question": "q1?", "answer": "ja", "timestamp": "2026-04-30T10:00:00Z"},
+            {"question": "q2?", "answer": "nein", "timestamp": "2026-04-30T10:01:00Z"},
+            {"question": "q3?", "answer": "vielleicht", "timestamp": "2026-04-30T10:02:00Z"}
+        ]
+        jsonschema.validate(ho, handover_schema)
+        results.record("T36 v0.1.4 PB-003 pre_decision_verification maxItems=2 FAIL", False, "expected ValidationError fuer 3 Eintraege")
+    except jsonschema.ValidationError:
+        results.record("T36 v0.1.4 PB-003 pre_decision_verification maxItems=2 FAIL", True)
+    except Exception as e:
+        results.record("T36 v0.1.4 PB-003 pre_decision_verification maxItems=2 FAIL", False, f"unexpected: {e}")
+
+    # Test 37 (v0.1.4 PB-011): tools/find_shared_path.sh existiert + executable
+    try:
+        import os as _os
+        helper_path = PLUGIN_ROOT / "tools" / "find_shared_path.sh"
+        assert helper_path.exists(), "find_shared_path.sh fehlt"
+        assert _os.access(helper_path, _os.X_OK), "find_shared_path.sh nicht executable"
+        # Plus: bridge-init.md verweist auf tools/find_shared_path.sh
+        init_text = (PLUGIN_ROOT / "commands" / "bridge-init.md").read_text()
+        assert "tools/find_shared_path.sh" in init_text, "bridge-init.md verweist nicht auf Helper"
+        results.record("T37 v0.1.4 PB-011 find_shared_path.sh + bridge-init-Pointer", True)
+    except Exception as e:
+        results.record("T37 v0.1.4 PB-011 find_shared_path.sh + bridge-init-Pointer", False, str(e))
+
+    # Test 38 (v0.1.4 PB-010): bridge-handover.md §body-number-konsistenz dokumentiert
+    try:
+        ho_text = (PLUGIN_ROOT / "commands" / "bridge-handover.md").read_text()
+        assert "§body-number-konsistenz" in ho_text, "§body-number-konsistenz Sektion fehlt"
+        # Plus: Pattern-Match-Doku-Marker
+        assert "atomar" in ho_text or "Eintraege" in ho_text or "Items" in ho_text, "Pattern-Match-Doku fehlt"
+        # Plus: Empirie-Anker UPP-Pair
+        assert "UPP-Pair" in ho_text, "Empirie-Anker UPP-Pair fehlt"
+        results.record("T38 v0.1.4 PB-010 bridge-handover §body-number-konsistenz", True)
+    except Exception as e:
+        results.record("T38 v0.1.4 PB-010 bridge-handover §body-number-konsistenz", False, str(e))
 
     if verbose:
         print("Passed:", results.passed)
