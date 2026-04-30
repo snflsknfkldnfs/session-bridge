@@ -810,13 +810,14 @@ def main(verbose: bool = False) -> int:
     try:
         sys.path.insert(0, str(PLUGIN_ROOT / "tools"))
         import bridge_state
-        # API check: alle 7 Funktionen + Sentinel-Konstante
-        expected_api = {"SENTINEL_PENDING_ATTACH", "read_state", "write_atomic_cas",
-                       "validate_against_schema", "pending_attach_replace",
-                       "append_round", "archive_shared_artifact",
-                       "calibrate_wallclock_post_hoc"}
+        # API check: v0.1.5 Phase B-Foundation-Subset (forward-compat fuer Phase H+D Erweiterungen)
+        phase_b_required = {"SENTINEL_PENDING_ATTACH", "read_state", "write_atomic_cas",
+                           "validate_against_schema", "pending_attach_replace",
+                           "append_round", "archive_shared_artifact",
+                           "calibrate_wallclock_post_hoc"}
         actual_api = set(bridge_state.__all__)
-        assert expected_api == actual_api, f"API-Mismatch: expected {expected_api}, got {actual_api}"
+        missing = phase_b_required - actual_api
+        assert not missing, f"Phase B Foundation-API missing: {missing}"
         assert bridge_state.SENTINEL_PENDING_ATTACH == "pending-attach"
         results.record("T42 v0.1.5 PB-012 tools/bridge_state.py Library-API", True)
     except Exception as e:
@@ -932,6 +933,121 @@ def main(verbose: bool = False) -> int:
         results.record("T48 v0.1.5 PB-013 bridge-update Pre-Flight phase-block + Update-Trail", True)
     except Exception as e:
         results.record("T48 v0.1.5 PB-013 bridge-update Pre-Flight phase-block + Update-Trail", False, str(e))
+
+    # Test 49 (v0.1.5 Phase H): bridge-close.md §bilanz-schema-enforcement + Library
+    try:
+        # Library validate_bilanz_against_schema vorhanden
+        import bridge_state
+        assert "validate_bilanz_against_schema" in bridge_state.__all__, "Library-API fehlt validate_bilanz_against_schema"
+
+        # Synth valide Bilanz validate PASS
+        synth_bilanz = {
+            "pair_id": "8cbeaad0-e67a-4184-889b-76a70c21d617",
+            "pair_topic": "test",
+            "created_at": "2026-04-30T00:00:00Z",
+            "closed_at": "2026-04-30T01:00:00Z",
+            "total_rounds": 5,
+            "phase_sequence": [{"phase": "init", "rounds_range": "R0", "rounds_count": 1}],
+            "decision_log_summary": [{"decision": "x", "decided_by": "consensus"}],
+            "wallclock_drift_calibrated": [{"phase": "init", "estimated_rounds": 1, "actual_rounds": 1, "drift_factor": 1.0}],
+            "reflection": {"was_funktionierte": ["a"], "was_problematisch": [], "was_als_naechstes": ["b"]},
+            "successful_patterns": [],
+            "anti_patterns_detected": [],
+            "cross_pair_transfer_hinweise": []
+        }
+        errors = bridge_state.validate_bilanz_against_schema(synth_bilanz)
+        assert errors == [] or errors == ["jsonschema-not-available"], f"unexpected errors: {errors}"
+
+        # bridge-close.md hat §bilanz-schema-enforcement
+        bc_path = PLUGIN_ROOT / "commands" / "bridge-close.md"
+        assert bc_path.exists()
+        bc_text = bc_path.read_text()
+        assert "§bilanz-schema-enforcement" in bc_text
+        assert "schemas/bilanz_v1.json" in bc_text
+        assert "validate_bilanz_against_schema" in bc_text
+        results.record("T49 v0.1.5 Phase H bilanz-schema-enforcement", True)
+    except Exception as e:
+        results.record("T49 v0.1.5 Phase H bilanz-schema-enforcement", False, str(e))
+
+    # Test 50 (v0.1.5 Phase D.1 PB-009): check_drift_plausibility Domain-aware
+    try:
+        import bridge_state
+        # Plugin-Self-Dev domain: p3-drift 2.4 sollte OK sein (range 0.8-3.5)
+        result = bridge_state.check_drift_plausibility("plugin-self-dev", 2.4)
+        assert result["status"] == "OK", f"p3 drift 2.4 sollte OK sein: {result}"
+        # Plugin-Self-Dev: drift 5.0 ausserhalb range → WARN
+        result2 = bridge_state.check_drift_plausibility("plugin-self-dev", 5.0)
+        assert result2["status"] == "WARN", f"drift 5.0 sollte WARN sein: {result2}"
+        # Use-Case: drift 0.67 OK
+        result3 = bridge_state.check_drift_plausibility("use-case", 0.67)
+        assert result3["status"] == "OK"
+        # Default fuer unknown domain
+        result4 = bridge_state.check_drift_plausibility(None, 1.5)
+        assert result4["status"] == "OK"
+        results.record("T50 v0.1.5 Phase D.1 PB-009 check_drift_plausibility Domain-aware", True)
+    except Exception as e:
+        results.record("T50 v0.1.5 Phase D.1 PB-009 check_drift_plausibility Domain-aware", False, str(e))
+
+    # Test 51 (v0.1.5 Phase D.2 PB-002): compute_reflection_action_ratio + check_ratio_threshold
+    try:
+        import bridge_state
+        # Synth p3-style state: 18 re-sync, 1 initial-advice, 1 decision-lock
+        state = synth_valid_state()
+        state["rounds"] = (
+            [{"round": i, "type": "re-sync", "initiator": "advisor", "artifact_path": "x", "timestamp": "2026-04-30T00:00:00Z"} for i in range(18)] +
+            [{"round": 19, "type": "initial-advice", "initiator": "advisor", "artifact_path": "x", "timestamp": "2026-04-30T00:00:00Z"}] +
+            [{"round": 20, "type": "decision-lock", "initiator": "worker", "artifact_path": "x", "timestamp": "2026-04-30T00:00:00Z"}]
+        )
+        ratio = bridge_state.compute_reflection_action_ratio(state)
+        assert ratio == 9.0, f"expected 18/2=9.0, got {ratio}"  # 18 re-sync (refl) / 2 action (initial-advice + decision-lock)
+
+        # Domain-aware Threshold-Check
+        # Default domain (unknown) → threshold 4.0 → 9.0 > 4.0 = WARN
+        state["topic_metadata"] = {"domain_hint": "use-case"}
+        result = bridge_state.check_ratio_threshold(state)
+        assert result["status"] == "WARN", f"use-case ratio 9 sollte WARN sein"
+        assert result["threshold"] == 4.0
+
+        # Plugin-Self-Dev: threshold 15.0 → 9.0 < 15.0 = OK
+        state["topic_metadata"]["domain_hint"] = "plugin-self-dev"
+        result2 = bridge_state.check_ratio_threshold(state)
+        assert result2["status"] == "OK", f"plugin-self-dev ratio 9 sollte OK sein"
+        assert result2["threshold"] == 15.0
+        results.record("T51 v0.1.5 Phase D.2 PB-002 ratio Domain-aware Threshold", True)
+    except Exception as e:
+        results.record("T51 v0.1.5 Phase D.2 PB-002 ratio Domain-aware Threshold", False, str(e))
+
+    # Test 52 (v0.1.5 Phase D): bridge-handover.md §lifecycle-health-checks-Sektion
+    try:
+        bh_text = (PLUGIN_ROOT / "commands" / "bridge-handover.md").read_text()
+        assert "§lifecycle-health-checks" in bh_text
+        assert "§drift-plausibility-check" in bh_text
+        assert "§reflection-action-ratio-check" in bh_text
+        # ADR_0031-Cross-Refs
+        assert "ADR_0031" in bh_text
+        # Empirie-Anker p3 12.5
+        assert "12.5" in bh_text or "12.50" in bh_text
+        results.record("T52 v0.1.5 Phase D bridge-handover §lifecycle-health-checks", True)
+    except Exception as e:
+        results.record("T52 v0.1.5 Phase D bridge-handover §lifecycle-health-checks", False, str(e))
+
+    # Test 53 (v0.1.5 Phase D): RATIO_THRESHOLDS + DRIFT_RANGES Konstanten
+    try:
+        import bridge_state
+        # RATIO_THRESHOLDS hat alle 6 ADR_0031-Domains
+        rt = bridge_state.RATIO_THRESHOLDS
+        for d in ["plugin-self-dev", "use-case", "default"]:
+            assert d in rt, f"RATIO_THRESHOLDS fehlt {d}"
+        assert rt["plugin-self-dev"] == 15.0
+        assert rt["use-case"] == 4.0
+        # DRIFT_RANGES
+        dr = bridge_state.DRIFT_RANGES
+        assert "plugin-self-dev" in dr
+        assert dr["plugin-self-dev"]["min"] >= 0.5  # p3-Empirie sanity
+        assert dr["plugin-self-dev"]["max"] <= 5.0
+        results.record("T53 v0.1.5 Phase D Library-Konstanten RATIO_THRESHOLDS + DRIFT_RANGES", True)
+    except Exception as e:
+        results.record("T53 v0.1.5 Phase D Library-Konstanten RATIO_THRESHOLDS + DRIFT_RANGES", False, str(e))
 
     if verbose:
         print("Passed:", results.passed)

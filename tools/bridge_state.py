@@ -216,13 +216,124 @@ def calibrate_wallclock_post_hoc(state: dict, phases: list) -> dict:
     return state
 
 
+
+
+# ============================================================
+# v0.1.5 Phase H + D — Lifecycle-Robustheit
+# ============================================================
+
+def validate_bilanz_against_schema(bilanz: dict, schema_path: Optional[Path] = None) -> list:
+    """
+    Validate Bilanz-File gegen schemas/bilanz_v1.json (NEU v0.1.5 Phase H, PB-001 follow-up).
+    Per ADR_0031 §4.3: bridge-close enforced bilanz_v1-Schema.
+    Returns list of errors (empty if valid).
+    """
+    if schema_path is None:
+        schema_path = SCHEMAS_DIR / "bilanz_v1.json"
+    return validate_against_schema(bilanz, schema_path)
+
+
+# Drift-Plausibility-Ranges per Domain-Klasse (ADR_0031 §3.2 Empirie)
+DRIFT_RANGES = {
+    "plugin-self-dev": {"min": 0.8, "max": 3.5, "stddev": 0.6},  # p3-Empirie 1.14-2.4
+    "use-case": {"min": 0.4, "max": 2.0, "stddev": 0.5},          # p4+p5+p6 0.67-1.67
+    "default": {"min": 0.5, "max": 2.5, "stddev": 0.6},
+}
+
+
+def check_drift_plausibility(domain_hint: Optional[str], drift_factor: float) -> dict:
+    """
+    NEU v0.1.5 Phase D.1 (PB-009).
+    Prueft drift_factor gegen Domain-Range. Bei Abweichung > 2x stddev: WARN.
+
+    Returns: {"status": "OK"|"WARN", "expected_range": ..., "diagnosis": ...}
+    """
+    domain = domain_hint or "default"
+    ranges = DRIFT_RANGES.get(domain, DRIFT_RANGES["default"])
+
+    in_range = ranges["min"] <= drift_factor <= ranges["max"]
+    # 2x-stddev-Outlier-Check (annaehernd)
+    midpoint = (ranges["min"] + ranges["max"]) / 2
+    deviation = abs(drift_factor - midpoint)
+    is_outlier = deviation > 2 * ranges["stddev"]
+
+    if in_range and not is_outlier:
+        return {"status": "OK", "expected_range": ranges, "diagnosis": "drift in range"}
+    return {
+        "status": "WARN",
+        "expected_range": ranges,
+        "diagnosis": f"drift_factor {drift_factor} ausserhalb 2-stddev-Range fuer domain={domain}. Manuelle Stichprobe empfohlen."
+    }
+
+
+# Reflection-Action-Ratio Thresholds per Domain (ADR_0031 §4.1 Decision)
+RATIO_THRESHOLDS = {
+    "plugin-self-dev": 15.0,                  # p3-Empirie 12.5
+    "use-case": 4.0,                          # p4+p5+p6 0.67-2.00, default
+    "architecture-spec": 4.0,                 # Sub-Pattern p5
+    "investigation-trace": 4.0,               # Sub-Pattern p4
+    "methodology-improvement": 5.0,           # Sub-Pattern p6 (early-stage)
+    "use-case-with-profile": 5.0,             # Hypothese, Empirie n=0
+    "default": 4.0,
+}
+
+
+def compute_reflection_action_ratio(state: dict) -> float:
+    """
+    NEU v0.1.5 Phase D.2 (PB-002).
+    Berechnet Reflection-Action-Ratio per ADR_0031 §2 Klassifikation.
+
+    Reflection = counter, re-sync, status, question
+    Action = execute, verify, decision-lock, pre-flight, pre-patch, initial-advice
+    """
+    REFLECTION_TYPES = {"counter", "re-sync", "status", "question"}
+    ACTION_TYPES = {"execute", "verify", "decision-lock", "pre-flight", "pre-patch", "initial-advice"}
+
+    rounds = state.get("rounds", [])
+    refl = sum(1 for r in rounds if r.get("type") in REFLECTION_TYPES)
+    act = sum(1 for r in rounds if r.get("type") in ACTION_TYPES)
+    return refl / act if act > 0 else float("inf")
+
+
+def check_ratio_threshold(state: dict, ratio: Optional[float] = None) -> dict:
+    """
+    NEU v0.1.5 Phase D.2 (PB-002).
+    Domain-aware Threshold-Check per ADR_0031 §4.1.
+    Lookup via state.topic_metadata.domain_hint (PB-007 v0.1.5 Phase G).
+
+    Returns: {"status": "OK"|"WARN", "ratio": float, "threshold": float, "domain": str}
+    """
+    if ratio is None:
+        ratio = compute_reflection_action_ratio(state)
+
+    domain = state.get("topic_metadata", {}).get("domain_hint", "default")
+    threshold = RATIO_THRESHOLDS.get(domain, RATIO_THRESHOLDS["default"])
+
+    status = "WARN" if ratio > threshold else "OK"
+    return {
+        "status": status,
+        "ratio": round(ratio, 2),
+        "threshold": threshold,
+        "domain": domain,
+        "diagnosis": (
+            f"R/A-ratio {round(ratio, 2)} ueberschreitet Threshold {threshold} fuer domain={domain}. "
+            "Lifecycle-Health-Alert: Pair tendiert zu Negotiations-Inflation."
+        ) if status == "WARN" else "ratio in expected range"
+    }
+
 __all__ = [
     "SENTINEL_PENDING_ATTACH",
+    "DRIFT_RANGES",
+    "RATIO_THRESHOLDS",
     "read_state",
     "write_atomic_cas",
     "validate_against_schema",
+    "validate_bilanz_against_schema",
     "pending_attach_replace",
     "append_round",
     "archive_shared_artifact",
     "calibrate_wallclock_post_hoc",
+    "check_drift_plausibility",
+    "compute_reflection_action_ratio",
+    "check_ratio_threshold",
 ]
