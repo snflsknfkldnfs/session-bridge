@@ -292,15 +292,30 @@ Phase-2-Entwicklung startet **nicht** bei Spec-Reife oder Roadmap-Plan, sondern 
 - Cherry-Picking-Stichprobe 5/10 PASS, Lizenz-Pre-Check OK (3 Belege paraphrasiert in Stufe 7)
 - Profile-Pre-Flight (bridge-init Schritt 5) Self-Test: 5/5 PASS
 
-## PB-014 Phase b deferred (Pre-Publication-Path)
+## PB-014 Phase b deferred (Pre-Publication-Path) — DEFERRED-V0.2.0+
 
-Vor öffentlicher Distribution des process-consulting-Profile:
-1. Lizenzrecht-Check (User-Aktion + ggf. juristische Beratung)
-2. Cherry-Picking-Vollaudit (alle 10 Frames stichprobenweise gegen Quell-Zettel)
-3. Empirie-Test in Real-User-Pair mit aktiviertem Profile
-4. Profile in `expertise-profiles/process-consulting/` (public-Repo) verschieben
+**Status (2026-04-30):** Public-Release DEFERRED bis post-juristischer-Beratung. Audit-Status sauber, Migration kann ohne Re-Audit erfolgen.
 
-Aktuell: Profile bleibt in `private-notes/` (gitignored) — User-Decision-Pending für Public-Release.
+### Pre-Publication-Pflicht-Aktionen Status
+
+| # | Aktion | Status |
+|---|---|---|
+| 1 | Lizenzrecht-Check (User-Aktion + juristische Beratung) | **PENDING** — Scope kommerzielle Distribution erfordert juristische Vorab-Klärung |
+| 2 | Cherry-Picking-Vollaudit (alle 10 Frames + 10 APs gegen Quell-Zettel) | **PASS** — Stufe-8-Report `private-notes/process-consulting-curation/08_validation-report-vollaudit.md` |
+| 3 | Empirie-Test in Real-User-Pair mit aktiviertem Profile | **PASS** — Bridge-Pair p3-real-user 28 Rounds, Bilanz `pilot-runs/p3-real-user/bridge/bilanz_8cbeaad0.md` |
+| 4 | Profile in `expertise-profiles/process-consulting/` (public-Repo) verschieben | **DEFERRED** — Migration-Plan in Stufe-8-Report §9 bereit |
+
+### Re-Check-Trigger
+
+- **post-juristischer-Beratung User-Decision Lizenz-Modell:** entweder (a) Open-Source-with-Citation-Pflicht (z.B. CC-BY-NC-SA), (b) Commercial-License, (c) Hybrid (Open-Source-Profile + Commercial-Tooling), oder (d) weiterhin private-notes/ defer
+- **Audit-Status:** Stufe 8 PASS — Migration kann ohne Re-Audit erfolgen
+- **Pre-Migration-Pflicht:** User-Decision (1) + Migration-Plan §9 ausführen
+
+### Lizenz-Beratungs-Vorbereitungs-Doku
+
+`private-notes/process-consulting-curation/09_juristische-beratung-vorbereitung.md` — strukturiertes Material für Anwalts-Termin (Quellen, Charakter, Distribution-Optionen, Disclaimers, konkrete Fragen).
+
+Aktuell: Profile bleibt in `private-notes/` (gitignored). Public-Release-Aktivierung post-juristische-Beratung.
 
 ## Smoke-Test-Befunde aus 2026-04-27 (Tier-2-Backlog)
 
