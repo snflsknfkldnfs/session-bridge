@@ -493,6 +493,67 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T25 F-RP-22 Pre-Flight 2 filesystem-read", False, str(e))
 
+    # Test 26 (v0.1.4 F-RP-24): bridge-init --worker-session-title primary flag in Argumente
+    try:
+        init_spec_path = PLUGIN_ROOT / "commands" / "bridge-init.md"
+        spec_text = init_spec_path.read_text()
+        # NEU v0.1.4: --worker-session-title primaer empfohlen
+        assert "--worker-session-title" in spec_text, "--worker-session-title flag missing"
+        assert "primaer empfohlen" in spec_text, "primary marker missing"
+        assert "Fallback / Power-User" in spec_text, "fallback marker for --worker-session-id missing"
+        results.record("T26 v0.1.4 F-RP-24 bridge-init Title-Flag primary", True)
+    except Exception as e:
+        results.record("T26 v0.1.4 F-RP-24 bridge-init Title-Flag primary", False, str(e))
+
+    # Test 27 (v0.1.4 F-RP-24): bridge-init Argument-Resolution title-first multi-match + no-match
+    try:
+        init_spec_path = PLUGIN_ROOT / "commands" / "bridge-init.md"
+        spec_text = init_spec_path.read_text()
+        # multi-match resolution path
+        assert "multi-match" in spec_text, "multi-match resolution path missing"
+        # no-match resolution path
+        assert "no-match" in spec_text, "no-match resolution path missing"
+        # Sentinel-Invariante v0.1.3+ bestaetigt
+        assert "IMMER auf `pending-attach`-Sentinel gesetzt" in spec_text, "Sentinel-Invariante v0.1.3+ marker missing"
+        results.record("T27 v0.1.4 F-RP-24 Argument-Resolution title-first paths", True)
+    except Exception as e:
+        results.record("T27 v0.1.4 F-RP-24 Argument-Resolution title-first paths", False, str(e))
+
+    # Test 28 (v0.1.4 F-RP-24): bridge-attach --this-session-title row
+    try:
+        attach_spec_path = PLUGIN_ROOT / "commands" / "bridge-attach.md"
+        spec_text = attach_spec_path.read_text()
+        assert "--this-session-title" in spec_text, "--this-session-title flag missing in bridge-attach"
+        assert "F-RP-24" in spec_text, "F-RP-24 reference marker missing"
+        results.record("T28 v0.1.4 F-RP-24 bridge-attach Title-Flag", True)
+    except Exception as e:
+        results.record("T28 v0.1.4 F-RP-24 bridge-attach Title-Flag", False, str(e))
+
+    # Test 29 (v0.1.4 F-RP-26): bridge-handover §worker.phase-Auto-Propagation + bridge-attach Initial-Set
+    try:
+        handover_spec_path = PLUGIN_ROOT / "commands" / "bridge-handover.md"
+        handover_text = handover_spec_path.read_text()
+        # Auto-Propagation-Sektion
+        assert "§worker.phase-Auto-Propagation" in handover_text, "§worker.phase-Auto-Propagation section missing"
+        # Pseudocode-Marker fuer Auto-Propagation
+        assert 'state.roles.worker.phase = frontmatter.get("worker_phase")' in handover_text, "auto-propagation pseudocode missing"
+
+        attach_spec_path = PLUGIN_ROOT / "commands" / "bridge-attach.md"
+        attach_text = attach_spec_path.read_text()
+        # Initial-Set-Sektion in bridge-attach
+        assert "§worker.phase-Initial-Set" in attach_text, "§worker.phase-Initial-Set section missing in bridge-attach"
+
+        # Schema-Spec worker.phase Auto-propagation description
+        sa_path = PLUGIN_ROOT / "schemas" / "bridge_state_v1.json"
+        sa = json.load(open(sa_path))
+        worker_phase_spec = sa["properties"]["roles"]["properties"]["worker"]["properties"]["phase"]
+        assert "description" in worker_phase_spec, "worker.phase description missing"
+        assert "Auto-propagation" in worker_phase_spec["description"], "Auto-propagation marker missing in description"
+
+        results.record("T29 v0.1.4 F-RP-26 worker.phase Auto-Propagation + Initial-Set", True)
+    except Exception as e:
+        results.record("T29 v0.1.4 F-RP-26 worker.phase Auto-Propagation + Initial-Set", False, str(e))
+
     if verbose:
         print("Passed:", results.passed)
 

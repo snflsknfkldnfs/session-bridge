@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/snflsknfkldnfs/session-bridge/schemas/bridge_state_v1.json",
   "title": "Bridge State v1.1.1",
-  "description": "Shared state file for session-bridge pair coordination. ADR_0029 §4.1 + ADR_0030 (expertise_profile). v1.1.1 adds mapping_budget + mapping_category_history per Decision (v0.1.3 D-001..D-005 Mapping-Decisions).",
+  "description": "Shared state file for session-bridge pair coordination. ADR_0029 \u00a74.1 + ADR_0030 (expertise_profile). v1.1.1 adds mapping_budget + mapping_category_history per Decision (v0.1.3 D-001..D-005 Mapping-Decisions). v1.1.2 (NEU v0.1.4): worker.phase Auto-Propagation-Doku.",
   "type": "object",
   "required": [
     "pair_id",
@@ -28,24 +28,46 @@
       "description": "UUIDv4"
     },
     "schema_version": {
-      "enum": ["1.0.0", "1.1.0", "1.1.1"]
+      "enum": [
+        "1.0.0",
+        "1.1.0",
+        "1.1.1"
+      ]
     },
     "mapping_budget": {
       "type": "object",
       "description": "v1.1.1: mapping-phase budget tracking (NEU v0.1.3, optional).",
       "properties": {
-        "min": {"type": "integer"},
-        "max": {"type": "integer"},
-        "started_round": {"type": "integer"},
-        "soft_cap": {"type": "boolean"},
-        "rounds_per_befund": {"type": "integer"},
-        "klarstellungs_reserve": {"type": "integer"},
+        "min": {
+          "type": "integer"
+        },
+        "max": {
+          "type": "integer"
+        },
+        "started_round": {
+          "type": "integer"
+        },
+        "soft_cap": {
+          "type": "boolean"
+        },
+        "rounds_per_befund": {
+          "type": "integer"
+        },
+        "klarstellungs_reserve": {
+          "type": "integer"
+        },
         "triggers": {
           "type": "object",
           "properties": {
-            "T1": {"type": "string"},
-            "T2": {"type": "string"},
-            "T3": {"type": "string"}
+            "T1": {
+              "type": "string"
+            },
+            "T2": {
+              "type": "string"
+            },
+            "T3": {
+              "type": "string"
+            }
           },
           "additionalProperties": false
         }
@@ -61,53 +83,107 @@
       "format": "date-time"
     },
     "phase": {
-      "enum": ["init", "scope-lock", "iterate", "execute", "verify", "close"]
+      "enum": [
+        "init",
+        "scope-lock",
+        "iterate",
+        "execute",
+        "verify",
+        "close"
+      ]
     },
     "roles": {
       "type": "object",
-      "required": ["advisor", "worker"],
+      "required": [
+        "advisor",
+        "worker"
+      ],
       "properties": {
         "advisor": {
           "type": "object",
-          "required": ["session_id", "active_since"],
+          "required": [
+            "session_id",
+            "active_since"
+          ],
           "properties": {
-            "session_id": {"type": "string"},
-            "expertise_source": {"type": "string"},
+            "session_id": {
+              "type": "string"
+            },
+            "expertise_source": {
+              "type": "string"
+            },
             "expertise_profile": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "v1.1.0: Pfad zum Profile-Verzeichnis (relativ oder absolut). Null bei generic advisor. ADR_0030."
             },
             "profile_version": {
-              "type": ["string", "null"],
-              "description": "v1.1.0: Profile-Version gepinnt zum init-Zeitpunkt. ADR_0030 §3.4."
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "v1.1.0: Profile-Version gepinnt zum init-Zeitpunkt. ADR_0030 \u00a73.4."
             },
-            "active_since": {"type": "string", "format": "date-time"}
+            "active_since": {
+              "type": "string",
+              "format": "date-time"
+            }
           },
           "additionalProperties": false
         },
         "worker": {
           "type": "object",
-          "required": ["session_id", "active_since"],
+          "required": [
+            "session_id",
+            "active_since"
+          ],
           "properties": {
-            "session_id": {"type": "string"},
-            "current_focus": {"type": "string"},
-            "phase": {"type": "string"},
-            "active_since": {"type": "string", "format": "date-time"}
+            "session_id": {
+              "type": "string"
+            },
+            "current_focus": {
+              "type": "string"
+            },
+            "phase": {
+              "type": "string",
+              "description": "Worker-self-reported sub-phase (z.B. kickoff, planning, executing, verifying, mapping). NEU v0.1.4: Auto-propagation aus handover-Frontmatter worker_phase bei jedem Worker-Handover (siehe bridge-handover Ablauf-Sektion). Bei bridge-attach initial gesetzt aus --worker-focus-Kontext oder Default \"kickoff\"."
+            },
+            "active_since": {
+              "type": "string",
+              "format": "date-time"
+            }
           },
           "additionalProperties": false
         }
       },
       "additionalProperties": false
     },
-    "topic": {"type": "string", "minLength": 1},
-    "current_round": {"type": "integer", "minimum": 0},
+    "topic": {
+      "type": "string",
+      "minLength": 1
+    },
+    "current_round": {
+      "type": "integer",
+      "minimum": 0
+    },
     "rounds": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["round", "type", "initiator", "artifact_path", "timestamp"],
+        "required": [
+          "round",
+          "type",
+          "initiator",
+          "artifact_path",
+          "timestamp"
+        ],
         "properties": {
-          "round": {"type": "integer", "minimum": 0},
+          "round": {
+            "type": "integer",
+            "minimum": 0
+          },
           "type": {
             "enum": [
               "initial-advice",
@@ -122,9 +198,20 @@
               "question"
             ]
           },
-          "initiator": {"enum": ["advisor", "worker"]},
-          "artifact_path": {"type": "string", "minLength": 1},
-          "timestamp": {"type": "string", "format": "date-time"}
+          "initiator": {
+            "enum": [
+              "advisor",
+              "worker"
+            ]
+          },
+          "artifact_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
         "additionalProperties": false
       }
@@ -133,15 +220,47 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "summary", "raised_by", "raised_in_round", "severity"],
+        "required": [
+          "id",
+          "summary",
+          "raised_by",
+          "raised_in_round",
+          "severity"
+        ],
         "properties": {
-          "id": {"type": "string", "pattern": "^B-[0-9]+$"},
-          "summary": {"type": "string"},
-          "raised_by": {"enum": ["advisor", "worker"]},
-          "raised_in_round": {"type": "integer", "minimum": 0},
-          "severity": {"enum": ["low", "medium", "high", "critical"]},
+          "id": {
+            "type": "string",
+            "pattern": "^B-[0-9]+$"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "raised_by": {
+            "enum": [
+              "advisor",
+              "worker"
+            ]
+          },
+          "raised_in_round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "severity": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
+          },
           "resolution_needed_before": {
-            "enum": ["scope-lock", "iterate", "execute", "verify", "close"]
+            "enum": [
+              "scope-lock",
+              "iterate",
+              "execute",
+              "verify",
+              "close"
+            ]
           }
         },
         "additionalProperties": false
@@ -151,27 +270,58 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["round", "decision", "rationale", "decided_by"],
+        "required": [
+          "round",
+          "decision",
+          "rationale",
+          "decided_by"
+        ],
         "properties": {
-          "round": {"type": "integer", "minimum": 0},
-          "decision": {"type": "string"},
-          "rationale": {"type": "string"},
-          "decided_by": {"enum": ["user", "consensus"]},
+          "round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "decision": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "decided_by": {
+            "enum": [
+              "user",
+              "consensus"
+            ]
+          },
           "alternatives_considered": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {
+              "type": "string"
+            }
           },
           "mapping_category_history": {
             "type": "array",
             "description": "v1.1.1 (NEU v0.1.3): audit-trail for position revisions.",
             "items": {
               "type": "object",
-              "required": ["round", "position", "by"],
+              "required": [
+                "round",
+                "position",
+                "by"
+              ],
               "properties": {
-                "round": {"type": "integer"},
-                "position": {"type": "string"},
-                "by": {"type": "string"},
-                "basis": {"type": "string"}
+                "round": {
+                  "type": "integer"
+                },
+                "position": {
+                  "type": "string"
+                },
+                "by": {
+                  "type": "string"
+                },
+                "basis": {
+                  "type": "string"
+                }
               },
               "additionalProperties": false
             }
@@ -184,22 +334,51 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["round"],
+        "required": [
+          "round"
+        ],
         "properties": {
-          "round": {"type": "integer", "minimum": 0},
-          "observed_by": {"enum": ["advisor", "worker"]},
-          "fact": {"type": "string"},
+          "round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "observed_by": {
+            "enum": [
+              "advisor",
+              "worker"
+            ]
+          },
+          "fact": {
+            "type": "string"
+          },
           "verified_against": {
-            "enum": ["memory", "capability-probe", "filesystem", "transcript", "none"]
+            "enum": [
+              "memory",
+              "capability-probe",
+              "filesystem",
+              "transcript",
+              "none"
+            ]
           },
           "type": {
             "type": "string",
-            "description": "v1.1.1 (NEU v0.1.3 / D-005 Sub-B F-RP-34): observation type; 'convergence_criterion_skip' marks legitimate skip per §konvergenz-skip-rationale."
+            "description": "v1.1.1 (NEU v0.1.3 / D-005 Sub-B F-RP-34): observation type; 'convergence_criterion_skip' marks legitimate skip per \u00a7konvergenz-skip-rationale."
           },
-          "defined_in_round": {"type": "integer", "minimum": 0},
-          "skipped_in_round": {"type": "integer", "minimum": 0},
-          "skip_basis": {"type": "string"},
-          "cycle_counter": {"type": "integer", "minimum": 0}
+          "defined_in_round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skipped_in_round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skip_basis": {
+            "type": "string"
+          },
+          "cycle_counter": {
+            "type": "integer",
+            "minimum": 0
+          }
         },
         "additionalProperties": false
       }
@@ -207,26 +386,67 @@
     "file_ownership": {
       "type": "object",
       "additionalProperties": {
-        "enum": ["advisor", "worker", "shared-readonly"]
+        "enum": [
+          "advisor",
+          "worker",
+          "shared-readonly"
+        ]
       }
     },
     "shared_artifacts": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["path", "purpose", "lifecycle_state"],
+        "required": [
+          "path",
+          "purpose",
+          "lifecycle_state"
+        ],
         "properties": {
-          "path": {"type": "string"},
-          "purpose": {"type": "string"},
-          "lifecycle_state": {"enum": ["active", "archived", "superseded"]},
-          "last_referenced_in_round": {"type": "integer", "minimum": 0},
-          "owner": {"enum": ["advisor", "worker", "shared"], "description": "v1.1.1 (NEU v0.1.3): artifact owner."},
+          "path": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "lifecycle_state": {
+            "enum": [
+              "active",
+              "archived",
+              "superseded"
+            ]
+          },
+          "last_referenced_in_round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "owner": {
+            "enum": [
+              "advisor",
+              "worker",
+              "shared"
+            ],
+            "description": "v1.1.1 (NEU v0.1.3): artifact owner."
+          },
           "status": {
-            "enum": ["pre-allocated", "active", "archived", "superseded"],
+            "enum": [
+              "pre-allocated",
+              "active",
+              "archived",
+              "superseded"
+            ],
             "description": "v1.1.1 (NEU v0.1.3 / D-003 F-RP-33): forward-pointer-pattern status. pre-allocated = referenced before materialization."
           },
-          "round_allocated": {"type": "integer", "minimum": 0, "description": "v1.1.1: decision-lock round that pre-allocated this pointer."},
-          "round_active": {"type": "integer", "minimum": 0, "description": "v1.1.1: round in which artifact was materialized to active status."}
+          "round_allocated": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "v1.1.1: decision-lock round that pre-allocated this pointer."
+          },
+          "round_active": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "v1.1.1: round in which artifact was materialized to active status."
+          }
         },
         "additionalProperties": false
       }
@@ -235,17 +455,42 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["round", "estimated_min"],
+        "required": [
+          "round",
+          "estimated_min"
+        ],
         "properties": {
-          "round": {"type": "integer", "minimum": 0},
-          "estimated_min": {"type": "integer", "minimum": 0},
-          "actual_min": {"type": ["integer", "null"], "minimum": 0},
-          "drift_factor": {"type": ["number", "null"]}
+          "round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "estimated_min": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "actual_min": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "drift_factor": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
         },
         "additionalProperties": false
       }
     },
-    "rollback_plan_path": {"type": ["string", "null"]}
+    "rollback_plan_path": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
   },
   "additionalProperties": false
 }

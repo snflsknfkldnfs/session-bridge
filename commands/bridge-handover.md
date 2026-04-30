@@ -224,6 +224,10 @@ state.rounds.append({
 state.current_round = new_round
 state.updated_at = now_iso()
 
+# NEU v0.1.4 (F-RP-26 Auto-Propagation): worker.phase auto-update aus Worker-Frontmatter
+if this_role == "worker":
+    state.roles.worker.phase = frontmatter.get("worker_phase")  # Pflicht-Feld im handover-Schema
+
 # Phase-Auto-Übergänge:
 if state.phase == "scope-lock" and args.type == "initial-advice":
     state.phase = "iterate"
@@ -261,6 +265,14 @@ write_atomic_cas(state, expected_updated_at=read_at)
 - Handover-File existiert + Frontmatter-Schema-Validate PASS
 - State.json round=N+1 + neuer rounds-Eintrag
 - Schema-allOf-Pflichten erfüllt für Round-Type
+
+## §worker.phase-Auto-Propagation (NEU v0.1.4 / F-RP-26)
+
+Bei type ∈ {alle Round-Types} und this_role=worker: state.roles.worker.phase wird automatisch aus handover-Frontmatter `worker_phase`-Pflichtfeld auf state.json propagiert. Verhindert worker.phase-Stagnation (F-RP-26 Beobachtung in p3-real-user: phase=kickoff durch 28 Rounds unveraendert trotz Phase-Transitions).
+
+**Empirie-Anker:** p3-real-user R1-R28 — worker.phase blieb "kickoff" obwohl Worker-self-reported sub-phases (mapping, scope-lock-counter, etc.) im Frontmatter standen. Auto-Propagation behebt diese State-Inkonsistenz.
+
+**Self-Test T29:** Worker-Handover mit worker_phase="X" → state.roles.worker.phase=="X" post-Skill.
 
 ## Anti-Pattern
 
