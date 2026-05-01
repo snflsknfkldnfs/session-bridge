@@ -1138,6 +1138,38 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
 
+    # T61: luhmann-erziehungssystem Reference-Profile vollständig (skip-if-private)
+    try:
+        luhmann_dir = Path("/Users/paulad/session-bridge/private-notes/expertise-profiles/luhmann-erziehungssystem")
+        if not luhmann_dir.exists():
+            results.record("T61 luhmann-erziehungssystem Reference-Profile (skip-if-private)", True, "skipped: private-notes not present")
+        else:
+            for f in ["PROFILE.md", "diagnostic-frames.md", "anti-patterns.md", "question-bank.md", "workflows.md"]:
+                assert (luhmann_dir / f).exists(), f"luhmann missing {f}"
+            wf_text = (luhmann_dir / "workflows.md").read_text()
+            wf_ids = re.findall(r"## (W-L-\w+):", wf_text)
+            assert len(wf_ids) == 6, f"luhmann workflows count {len(wf_ids)} != 6"
+            for wid in ["W-L-Funkdiff", "W-L-Beob2", "W-L-Reflex"]:
+                block_match = re.search(rf"## {re.escape(wid)}:.*?(?=## W-L-|## Workflow|---\Z)", wf_text, re.DOTALL)
+                assert block_match
+                for p in [1, 2, 3, 4]:
+                    assert f"### Pass {p}" in block_match.group(0), f"{wid} pass {p} fehlt"
+            frames_text = (luhmann_dir / "diagnostic-frames.md").read_text()
+            frame_ids = re.findall(r"### Frame (F\d+\.\d+)", frames_text)
+            assert len(frame_ids) == 10, f"luhmann frames count {len(frame_ids)} != 10"
+            ap_text = (luhmann_dir / "anti-patterns.md").read_text()
+            ap_ids = re.findall(r"## (AP-L\d+):", ap_text)
+            assert len(ap_ids) == 10, f"luhmann APs count {len(ap_ids)} != 10"
+            assert ap_text.count("**SELBSTANWENDUNG:**") >= 10
+            all_text = (luhmann_dir / "PROFILE.md").read_text() + frames_text + ap_text + wf_text
+            for marker in ["Funktionssystem", "Code", "Programm", "strukturelle Kopplung",
+                          "Beobachtung 2. Ordnung", "operative Geschlossenheit",
+                          "System/Umwelt", "Re-Entry", "Erziehungssystem", "Karriere-Code"]:
+                assert marker in all_text, f"Methodik-Marker fehlt: {marker}"
+            results.record("T61 luhmann-erziehungssystem Reference-Profile vollständig", True)
+    except Exception as e:
+        results.record("T61 luhmann-erziehungssystem Reference-Profile vollständig", False, str(e))
+
     # T60: foucault-genealogie Reference-Profile vollständig (skip-if-private)
     try:
         foucault_dir = Path("/Users/paulad/session-bridge/private-notes/expertise-profiles/foucault-genealogie")
