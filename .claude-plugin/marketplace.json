@@ -15,7 +15,7 @@
         "url": "https://github.com/snflsknfkldnfs/session-bridge.git"
       },
       "description": "Cross-Cowork-Session Advisor/Worker coordination via shared filesystem (polling-based, schema-driven, ADR_0029).",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "author": {
         "name": "Paul Cebulla"
       },

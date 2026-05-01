@@ -87,6 +87,84 @@ Akzeptiert ohne Title-Resolution. State-Verhalten identisch (Sentinel-Pfad in v0
 
 `worker.session_id` im state.json wird IMMER auf `pending-attach`-Sentinel gesetzt (D-004 R23-Revidierung, Sentinel-Invariante v0.1.3+) — bridge-attach replaced das spaeter.
 
+## Pre-Flight Phase A (NEU v0.1.8 — Auto-Resolution + Mount-Request)
+
+Vor dem ATOMAR-Pre-Flight läuft eine Auto-Resolution-Phase, die fehlende Args + Mounts auflöst. Reduziert User-Setup-Reibung von 8 manuellen Schritten auf 3 Approve-Klicks + 1 Auswahl-Klick.
+
+**Skip-Klausel:** Wenn alle Pflicht-Args explizit übergeben + alle Pfade bereits in Cowork-Mounts → Phase A komplett übersprungen (backward-compat zu v0.1.7-Manual-Mode).
+
+### Phase A.1: shared-path Auto-Generation + Mount
+
+Wenn `--shared-path` NICHT übergeben (oder = `auto`):
+
+1. Default-Pfad generieren via `tools/bridge_state.py:resolve_shared_path_default(topic)`:
+   - Pattern: `~/session-bridge/pilot-runs/p<auto-id>-<topic-slug>/`
+   - `auto-id` = nächste freie p-Nummer in `pilot-runs/` (Scan vorhandener `p<N>-`-Folder)
+   - `topic-slug` = topic lowercased, Bindestrich-separiert, max 30 Zeichen
+2. User-Confirmation: "Default-Pfad: `<path>`. Verwenden? (Y/n oder eigener Pfad)"
+3. Bei User-Override: User-Pfad nehmen
+4. Folder anlegen: `mkdir -p <path>/bridge`
+
+**Mount-Resolution:**
+
+5. Mount-Check: Wenn `<path>` NICHT in Cowork-Session-Mounts:
+   - `mcp__cowork__request_cowork_directory(path=<path>)` aufrufen
+   - User sieht Approve-Dialog in Cowork-UI
+6. Bei User-Decline: ABBRUCH mit Diagnose "shared-path nicht zugreifbar ohne Mount"
+
+### Phase A.2: profile-path Mount-Request (falls `--expertise-profile`)
+
+Wenn `--expertise-profile=<arg>` gesetzt:
+
+1. Profile-Pfad-Resolution via `tools/bridge_state.py:resolve_profile_path(arg)`:
+   - **Absolut-Pfad** (`/...`) → wie übergeben
+   - **Relativ-Pfad** → resolve gegen Cowork-Working-Dir
+   - **Kurz-Name** (z.B. `klafki`, `adorno`, `foucault`, `luhmann`, `process-consulting`) → Lookup-Reihenfolge:
+     1. `~/session-bridge/private-notes/expertise-profiles/<name>*/`
+     2. `~/session-bridge/expertise-profiles/<name>*/` (public)
+     3. Glob-Match (z.B. `klafki` → `klafki-didaktik`); bei multi-match: User-Disambiguation
+   - **Kurz-Name-Mapping** (Auto-Auflösung):
+     - `klafki` → `klafki-didaktik`
+     - `adorno` → `adorno-halbbildung-kritik`
+     - `foucault` → `foucault-genealogie`
+     - `luhmann` → `luhmann-erziehungssystem`
+     - `process-consulting` → `process-consulting`
+
+2. Mount-Check: Wenn Profile-Pfad NICHT in Cowork-Mounts:
+   - `mcp__cowork__request_cowork_directory(path=<resolved-profile-path>)`
+3. Bei User-Decline: WARN "Profile-Mount verweigert — degraded-mode, Profile wird nicht geladen, advisor agiert generic"
+
+### Phase A.3: worker-session-id Auto-Resolution (advisor-only)
+
+Wenn `--worker-session-id` UND `--worker-session-title` NICHT übergeben (oder Title = `auto`):
+
+1. `mcp__session_info__list_sessions()` aufrufen
+2. Sessions filtern: nur aktive Cowork-Sessions ≠ `this_session_id`
+3. Auswahl-Logik:
+   - **0 Sessions** → ABBRUCH "Keine andere Cowork-Session aktiv. Worker-Session vorher öffnen + UE-/Material-Generation starten, dann /bridge-init erneut"
+   - **1 Session** → Auto-Wahl + User-Confirmation: "Worker-Session: `<title>` (id: `<short-id>`). OK? (Y/n)"
+   - **N Sessions** → User-Auswahl-Liste:
+     ```
+     Aktive Sessions:
+     [1] <title-1> (id: <short-id-1>, created <timestamp>)
+     [2] <title-2> (id: <short-id-2>, created <timestamp>)
+     ...
+     Welche ist Worker? [1-N]
+     ```
+
+4. Resolved Session-ID → `worker_session_id_hint` (für Notification-Block, nicht für state-pin per D-004)
+
+### Phase A.4: Pair-ID-Anzeige für Worker-Attach (vereinfacht)
+
+Output am Ende von Phase A enthält:
+- Generierter `pair_id`
+- Resolved `shared_path` (mit Mount-Bestätigung)
+- Resolved `expertise_profile` (Pfad + Profile-Name)
+- Identified Worker-Session (Title + Short-ID)
+- **Copy-Paste-Block für Worker** (siehe §Worker-Notification-Block, vereinfacht durch Auto-Resolution: keine manuelle Path-Eingabe mehr nötig)
+
+---
+
 ## Pre-Flight (PFLICHT, ATOMAR — alle 5 Punkte VOR state.json-Write)
 
 **Empirisch (Real-User-Pilot): Pre-Flight Punkt 4 wurde "deferred" — Spec-Bruch.** Pre-Flight ist atomar, kein Punkt darf deferred werden.

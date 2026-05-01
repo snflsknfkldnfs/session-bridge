@@ -529,4 +529,124 @@ Annex C dokumentiert dies explizit: Schema-Erweiterung erlaubt theoretische Tief
 - expertise-profiles/adorno-halbbildung-kritik/konstellations-anker.md (Reference-Implementation File-Alias)
 - expertise-profiles/klafki-didaktik/workflows.md (Backward-Compat-Beispiel single-pass)
 
+---
+
+## Annex D — Pre-Flight Auto-Resolution Pattern (NEU v0.1.8, 2026-05-01)
+
+**Status:** LOCKED 2026-05-01 als Teil v0.1.8 UX-Reduction-Release
+**Trigger:** User-Wunsch nach reibungslosem Bridge-Pair-Setup für Live-Pilot. Aktuelles manuelles 8-Schritt-Setup (shared-path mkdir + 2× Folder-Mount + Session-ID-Lookup + Profile-Pfad-Mount + /bridge-init mit allen Flags + pair-id-Copy + /bridge-attach) ist hochreibungs und blockiert spontane Plugin-Nutzung.
+
+### D.1 Problem
+
+Plugin v0.1.7 verlangt vor /bridge-init:
+1. shared-path manuell ausdenken + per Terminal mkdir
+2. shared-path Folder-Mount in advisor-Cowork-Session anfordern
+3. shared-path Folder-Mount in worker-Cowork-Session anfordern
+4. Worker-Session-ID irgendwo finden + abtippen
+5. Profile-Pfad ausdenken + Mount anfordern
+6. /bridge-init mit allen Flags
+7. pair-id kopieren
+8. /bridge-attach in Worker mit pair-id
+
+8 manuelle Schritte. User-Reibung verhindert Plugin-Adoption + spontane Nutzung. Plus: shared-path-Mount ist häufige Fehlerquelle (User vergisst, Sandbox-Lookup scheitert).
+
+### D.2 Decision
+
+**Pre-Flight Phase A** vor existing Pre-Flight (1-5) in /bridge-init und /bridge-attach. Phase A nutzt vorhandene Cowork-MCPs für Auto-Resolution + Mount-Request.
+
+**Verfügbare MCPs (alle bereits Cowork-built-in):**
+
+| MCP | Zweck |
+|---|---|
+| `mcp__cowork__request_cowork_directory` | Folder-Mount-Request mit User-Approval-Dialog |
+| `mcp__session_info__list_sessions` | Aktive Cowork-Sessions auflisten |
+| `mcp__session_info__read_transcript` | Session-Transcript lesen (bereits von advisor genutzt) |
+
+### D.3 bridge-init Pre-Flight Phase A
+
+**Phase A.1: shared-path Auto-Generation + Mount**
+
+Wenn `--shared-path` NICHT übergeben:
+1. Default via `tools/bridge_state.py:resolve_shared_path_default(topic)`:
+   - Pattern: `~/session-bridge/pilot-runs/p<auto-id>-<topic-slug>/`
+   - auto-id = nächste freie p-Nummer
+   - topic-slug = lowercased, dashes, max 30 chars
+2. User-Confirmation: "Default-Pfad: `<path>`. Verwenden?"
+3. Folder anlegen + Mount-Request via `request_cowork_directory`
+
+**Phase A.2: profile-path Mount-Request**
+
+Wenn `--expertise-profile=<arg>`:
+1. Resolution via `tools/bridge_state.py:resolve_profile_path(arg)`:
+   - Absolut → as-is
+   - Kurz-Name (klafki/adorno/foucault/luhmann/process-consulting) → Lookup via PROFILE_SHORT_NAMES + PROFILE_SEARCH_DIRS
+   - Glob-Match für partial names
+2. Mount-Request falls nicht in Cowork-Mounts
+
+**Phase A.3: worker-session-id Auto-Resolution (advisor-only)**
+
+Wenn weder `--worker-session-id` noch `--worker-session-title`:
+1. `mcp__session_info__list_sessions()` aufrufen
+2. Filter: aktive Sessions ≠ this_session_id
+3. Auswahl-Logik: 0 = ABBRUCH / 1 = Auto-Wahl mit Confirmation / N = User-Auswahl-Liste
+
+### D.4 bridge-attach Pre-Flight Phase A
+
+**Phase A.1: shared-path-Resolution** (typisch aus paste)
+**Phase A.2: Mount-Request** falls nicht in Cowork-Mounts
+**Phase A.3: own-session-id Auto-Detect** via Skill-Context
+
+### D.5 Skip-Klausel (Backward-Compatibility)
+
+Wenn alle Pflicht-Args explizit übergeben + alle Pfade bereits gemountet → Phase A komplett übersprungen. v0.1.7-Manual-Mode unverändert.
+
+### D.6 PROFILE_SHORT_NAMES-Mapping
+
+`tools/bridge_state.py:PROFILE_SHORT_NAMES` definiert User-friendly Aliases:
+
+```python
+PROFILE_SHORT_NAMES = {
+    "klafki": "klafki-didaktik",
+    "adorno": "adorno-halbbildung-kritik",
+    "foucault": "foucault-genealogie",
+    "luhmann": "luhmann-erziehungssystem",
+    "process-consulting": "process-consulting",
+    "process": "process-consulting",
+}
+```
+
+Erweiterung-Pattern: pro neuem Profile + Alias hinzufügen.
+
+### D.7 PROFILE_SEARCH_DIRS
+
+Standard-Lookup:
+1. `~/session-bridge/private-notes/expertise-profiles/` (private)
+2. `~/session-bridge/expertise-profiles/` (public, falls Migration)
+
+User kann via `search_dirs`-Parameter override.
+
+### D.8 User-Reibung-Reduktion
+
+Vorher: 8 manuelle Schritte
+Nachher: 3 Approve-Klicks (shared-path-Mount, profile-Mount, worker-shared-Mount) + 1 Auswahl-Klick (Worker-Session-Wahl) = **~70% Reduktion**
+
+### D.9 Voraussetzung für PB-004 (Auto-Trigger-Hooks)
+
+Pre-Flight-Auto-Resolution ist methodische Voraussetzung für PB-004 (DEFERRED-Phase-2). Wenn Bridge-Pair-Setup ein-Klick wird, werden Auto-Trigger-Hooks (z.B. nach jeder Worker-Output-Round automatisch advisor-Notify) realistischer adoptierbar.
+
+### D.10 Profile-Schema-Version unverändert
+
+Schema bleibt bei v1.1.0. Pre-Flight-Auto-Resolution ist reine Skill-/Command-Erweiterung, kein Schema-Change.
+
+### D.11 Cross-Refs
+
+- `commands/bridge-init.md` §Pre-Flight Phase A
+- `commands/bridge-attach.md` §Pre-Flight Phase A
+- `tools/bridge_state.py` neue Funktionen: `resolve_shared_path_default`, `resolve_profile_path`, `_slugify_topic`, `_next_pilot_id`
+- `tools/bridge_state.py` neue Konstanten: `PROFILE_SHORT_NAMES`, `PROFILE_SEARCH_DIRS`
+- `mcp__cowork__request_cowork_directory` (Cowork-built-in)
+- `mcp__session_info__list_sessions` (Cowork-built-in)
+- BACKLOG.md PB-004 (Auto-Trigger-Hooks) — D.9 verlinkt
+
+
 

@@ -5,6 +5,92 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.8] — 2026-05-01 — Pre-Flight Auto-Resolution + Profile-Short-Names + UX-Reibung-Reduktion
+
+### Source: User-Wunsch nach reibungslosem Bridge-Pair-Setup für Live-Pilot
+
+Plugin v0.1.7-Setup verlangte 8 manuelle Schritte (mkdir + 2× Folder-Mount + Session-ID-Lookup + Profile-Pfad-Mount + /bridge-init mit allen Flags + pair-id-Copy + /bridge-attach). Hochreibungs-Workflow blockiert spontane Plugin-Nutzung. v0.1.8 reduziert auf 3 Approve-Klicks + 1 Auswahl-Klick (~70% Reduktion).
+
+### Added
+
+- **commands/bridge-init.md** §Pre-Flight Phase A (NEU):
+  - A.1 shared-path Auto-Generation via `resolve_shared_path_default(topic)` + `request_cowork_directory`-Mount
+  - A.2 profile-path Mount-Request via `resolve_profile_path(arg)` + Short-Name-Lookup
+  - A.3 worker-session-id Auto-Resolution via `mcp__session_info__list_sessions`
+  - A.4 Vereinfachter Worker-Notification-Block (Auto-Resolved Path)
+- **commands/bridge-attach.md** §Pre-Flight Phase A (NEU):
+  - A.1 shared-path-Resolution aus paste
+  - A.2 Mount-Request via `request_cowork_directory`
+  - A.3 own-session-id Auto-Detect via Skill-Context
+- **tools/bridge_state.py** v0.1.8 Pre-Flight-Helpers:
+  - `resolve_shared_path_default(topic)` — Default-Pfad-Generator mit p<N>-<slug>-Pattern
+  - `resolve_profile_path(arg)` — Short-Name + Glob + Absolute-Resolution
+  - `_slugify_topic(topic)` — URL-safe Slug für Pfad-Namen
+  - `_next_pilot_id(base_dir)` — Scan vorhandener p<N>-Folder
+  - `PROFILE_SHORT_NAMES` Konstante: klafki/adorno/foucault/luhmann/process-consulting/process Aliases
+  - `PROFILE_SEARCH_DIRS` Konstante: ~/session-bridge/private-notes/expertise-profiles + ~/session-bridge/expertise-profiles
+- **docs/adr/ADR_0030_Expertise_Profile_Pattern.md Annex D** (NEU 2026-05-01) Pre-Flight-Auto-Resolution-Pattern
+- **tests/smoke_self_test.py** T62-T67 NEU:
+  - T62: bridge_state Pre-Flight-Helpers verfügbar + __all__-Export
+  - T63: slugify + next_pilot_id + resolve_shared_path_default Logik
+  - T64: resolve_profile_path Short-Names + Absolute + Not-Found
+  - T65: bridge-init.md Pre-Flight Phase A dokumentiert
+  - T66: bridge-attach.md Pre-Flight Phase A dokumentiert
+  - T67: ADR_0030 Annex D dokumentiert
+
+### Changed
+
+- **tests/smoke_self_test.py** sys.path setup für tools/-Modul-Import
+- **bridge-advisor SKILL.md** Cross-Refs erweitert (siehe v0.1.8-Patch-Hinweis)
+
+### Verification
+
+- Self-Test 70/70 PASS (T1-T61 + T62-T67 NEU)
+- Backward-Compatibility: Wenn alle Args explizit + Mounts vorhanden → Phase A übersprungen, v0.1.7-Manual-Mode unverändert
+- Profile-Schema-Version unverändert v1.1.0 (reine Skill-/Command-Erweiterung)
+
+### Profile-Short-Names verfügbar
+
+```
+--expertise-profile=klafki   → klafki-didaktik
+--expertise-profile=adorno   → adorno-halbbildung-kritik
+--expertise-profile=foucault → foucault-genealogie
+--expertise-profile=luhmann  → luhmann-erziehungssystem
+--expertise-profile=process  → process-consulting
+```
+
+### User-Reibung-Reduktion
+
+Vorher (v0.1.7, manuell):
+1. shared-path-Pfad ausdenken + per Terminal mkdir
+2. shared-path Folder-Mount in advisor-Session
+3. shared-path Folder-Mount in worker-Session
+4. Worker-Session-ID finden + abtippen
+5. Profile-Pfad ausdenken + Mount
+6. /bridge-init mit allen Flags
+7. pair-id kopieren
+8. /bridge-attach in Worker
+
+Nachher (v0.1.8, Auto-Resolution):
+1. /bridge-init --topic="..." --expertise-profile=klafki
+   → 3× Approve-Dialog (shared-path-Mount, profile-Mount, list_sessions-Auto-Wahl)
+2. /bridge-attach <pair-id> in Worker
+   → 1× Approve-Dialog (shared-path-Mount)
+
+### Voraussetzung für PB-004 (Auto-Trigger-Hooks)
+
+Pre-Flight-Auto-Resolution ist Voraussetzung für PB-004 (DEFERRED-Phase-2). Wenn Bridge-Pair-Setup ein-Klick wird, werden Auto-Trigger-Hooks adoptierbar.
+
+### Deferred to v0.1.9+
+
+- PB-004 Auto-Trigger-Hooks
+- PB-005 N-Pair-Topologie
+- PB-006 Cross-Pair-Memory
+- PB-008 4-Layer-Meta-Architecture
+- Multi-Profile-Loading v0.2.0+
+
+---
+
 ## [0.1.7] — 2026-04-30 — Multi-Pass-Workflow-Pattern + File-Aliase + Selbstkritik-Klausel-Enforcement
 
 ### Source: adorno-halbbildung-kritik-Profile-Aufbau (theoretisch-tiefe Profile-Klasse)

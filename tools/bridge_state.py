@@ -321,10 +321,136 @@ def check_ratio_threshold(state: dict, ratio: Optional[float] = None) -> dict:
         ) if status == "WARN" else "ratio in expected range"
     }
 
+# --- v0.1.8 Pre-Flight Auto-Resolution Helpers ---
+
+# Profile-Kurz-Name-Mapping (NEU v0.1.8) — User-friendly Aliases
+PROFILE_SHORT_NAMES = {
+    "klafki": "klafki-didaktik",
+    "adorno": "adorno-halbbildung-kritik",
+    "foucault": "foucault-genealogie",
+    "luhmann": "luhmann-erziehungssystem",
+    "process-consulting": "process-consulting",
+    "process": "process-consulting",
+}
+
+# Standard-Lookup-Verzeichnisse für Profile
+PROFILE_SEARCH_DIRS = [
+    Path.home() / "session-bridge" / "private-notes" / "expertise-profiles",
+    Path.home() / "session-bridge" / "expertise-profiles",
+]
+
+
+def _slugify_topic(topic: str, max_len: int = 30) -> str:
+    """Topic → URL-safe slug (lowercase, dashes, no special chars, max_len)."""
+    slug = re.sub(r"[^a-z0-9]+", "-", topic.lower()).strip("-")
+    return slug[:max_len].rstrip("-")
+
+
+def _next_pilot_id(base_dir: Path) -> int:
+    """Scan pilot-runs/ for highest p<N>-* folder, return N+1."""
+    if not base_dir.exists():
+        return 1
+    max_n = 0
+    pattern = re.compile(r"^p(\d+)-")
+    for entry in base_dir.iterdir():
+        if entry.is_dir():
+            m = pattern.match(entry.name)
+            if m:
+                max_n = max(max_n, int(m.group(1)))
+    return max_n + 1
+
+
+def resolve_shared_path_default(
+    topic: str,
+    base_dir: Optional[Path] = None,
+) -> Path:
+    """
+    Generate default shared-path for new bridge-pair (v0.1.8 Pre-Flight A.1).
+
+    Pattern: <base_dir>/p<auto-id>-<topic-slug>/
+
+    Args:
+        topic: Bridge-Topic für slug-Generation
+        base_dir: pilot-runs/ Verzeichnis (default: ~/session-bridge/pilot-runs/)
+
+    Returns:
+        Path object für vorgeschlagenen shared-path (NICHT erstellt)
+    """
+    if base_dir is None:
+        base_dir = Path.home() / "session-bridge" / "pilot-runs"
+    base_dir.mkdir(parents=True, exist_ok=True)
+    next_n = _next_pilot_id(base_dir)
+    slug = _slugify_topic(topic)
+    return base_dir / f"p{next_n}-{slug}"
+
+
+def resolve_profile_path(
+    profile_arg: str,
+    search_dirs: Optional[list] = None,
+) -> Path:
+    """
+    Resolve profile argument to absolute path (v0.1.8 Pre-Flight A.2).
+
+    Resolution order:
+    1. Absolute path → as-is (verify exists)
+    2. Short-name (in PROFILE_SHORT_NAMES) → expand + lookup
+    3. Relative or partial-name → glob-match in search_dirs
+
+    Args:
+        profile_arg: User-Eingabe (absolut / kurz-name / relativ / partial)
+        search_dirs: Lookup-Verzeichnisse (default: PROFILE_SEARCH_DIRS)
+
+    Returns:
+        Absoluter Path zum Profile-Verzeichnis
+
+    Raises:
+        FileNotFoundError: wenn nicht eindeutig auflösbar
+        ValueError: wenn multi-match
+    """
+    if search_dirs is None:
+        search_dirs = PROFILE_SEARCH_DIRS
+
+    # Case 1: Absolute path
+    p = Path(profile_arg).expanduser()
+    if p.is_absolute():
+        if p.exists():
+            return p
+        raise FileNotFoundError(f"Profile-Pfad existiert nicht: {p}")
+
+    # Case 2: Short-name lookup
+    expanded = PROFILE_SHORT_NAMES.get(profile_arg, profile_arg)
+
+    # Case 3: Direct + glob lookup in search_dirs
+    candidates = []
+    for d in search_dirs:
+        if not d.exists():
+            continue
+        # Exact match
+        exact = d / expanded
+        if exact.exists():
+            return exact
+        # Glob match (e.g. "klafki" → "klafki-didaktik")
+        for match in d.glob(f"{expanded}*"):
+            if match.is_dir():
+                candidates.append(match)
+
+    if len(candidates) == 0:
+        raise FileNotFoundError(
+            f"Profile '{profile_arg}' (expanded: '{expanded}') nicht gefunden in {search_dirs}"
+        )
+    if len(candidates) > 1:
+        raise ValueError(
+            f"Profile '{profile_arg}' multi-match: {[str(c) for c in candidates]}"
+        )
+    return candidates[0]
+
+
 __all__ = [
     "SENTINEL_PENDING_ATTACH",
     "DRIFT_RANGES",
     "RATIO_THRESHOLDS",
+    "PROFILE_SHORT_NAMES",
+    "PROFILE_SEARCH_DIRS",
     "read_state",
     "write_atomic_cas",
     "validate_against_schema",
@@ -336,4 +462,6 @@ __all__ = [
     "check_drift_plausibility",
     "compute_reflection_action_ratio",
     "check_ratio_threshold",
+    "resolve_shared_path_default",
+    "resolve_profile_path",
 ]

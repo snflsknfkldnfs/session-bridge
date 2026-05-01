@@ -36,6 +36,9 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 SCHEMAS_DIR = PLUGIN_ROOT / "schemas"
+
+# v0.1.8: tools/ als Modul importierbar machen
+sys.path.insert(0, str(PLUGIN_ROOT))
 STATE_SCHEMA_PATH = SCHEMAS_DIR / "bridge_state_v1.json"
 HANDOVER_SCHEMA_PATH = SCHEMAS_DIR / "handover_frontmatter_v1.json"
 
@@ -1137,6 +1140,129 @@ def main(verbose: bool = False) -> int:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", True)
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
+
+    # T62: v0.1.8 tools.bridge_state Pre-Flight-Helpers verfügbar
+    try:
+        from tools import bridge_state
+        for fn in ["resolve_shared_path_default", "resolve_profile_path",
+                   "_slugify_topic", "_next_pilot_id"]:
+            assert hasattr(bridge_state, fn), f"missing function: {fn}"
+        for const in ["PROFILE_SHORT_NAMES", "PROFILE_SEARCH_DIRS"]:
+            assert hasattr(bridge_state, const), f"missing constant: {const}"
+        # PROFILE_SHORT_NAMES enthält alle 5 Profile
+        for short in ["klafki", "adorno", "foucault", "luhmann", "process-consulting"]:
+            assert short in bridge_state.PROFILE_SHORT_NAMES, f"missing short-name: {short}"
+        # __all__ erweitert
+        assert "resolve_shared_path_default" in bridge_state.__all__
+        assert "resolve_profile_path" in bridge_state.__all__
+        assert "PROFILE_SHORT_NAMES" in bridge_state.__all__
+        results.record("T62 v0.1.8 tools.bridge_state Pre-Flight-Helpers", True)
+    except Exception as e:
+        results.record("T62 v0.1.8 tools.bridge_state Pre-Flight-Helpers", False, str(e))
+
+    # T63: v0.1.8 _slugify_topic + _next_pilot_id Logik
+    try:
+        from tools.bridge_state import _slugify_topic, _next_pilot_id, resolve_shared_path_default
+        import tempfile
+
+        # Slugify-Tests
+        assert _slugify_topic("Klafki UE-Beratung") == "klafki-ue-beratung"
+        assert _slugify_topic("A B!@# C") == "a-b-c"
+        assert _slugify_topic("ÄÖÜ Test") == "test", f'umlaut-strip: got "{_slugify_topic("ÄÖÜ Test")}"'
+        long_topic = "x" * 100
+        assert len(_slugify_topic(long_topic)) <= 30
+
+        # _next_pilot_id mit tmpdir
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            assert _next_pilot_id(base) == 1, "leerer dir -> 1"
+            (base / "p1-test").mkdir()
+            (base / "p3-test").mkdir()
+            (base / "p7-test").mkdir()
+            assert _next_pilot_id(base) == 8, "max+1 statt count"
+
+        # resolve_shared_path_default
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            p = resolve_shared_path_default("Test Topic", base_dir=base)
+            assert p.parent == base
+            assert p.name == "p1-test-topic"
+
+        results.record("T63 v0.1.8 slugify + next_pilot_id Logik", True)
+    except Exception as e:
+        results.record("T63 v0.1.8 slugify + next_pilot_id Logik", False, str(e))
+
+    # T64: v0.1.8 resolve_profile_path mit Short-Names + Glob (skip-if-private)
+    try:
+        from tools.bridge_state import resolve_profile_path, PROFILE_SHORT_NAMES
+        import tempfile
+        # Setup Mock-Profile-Verzeichnis
+        with tempfile.TemporaryDirectory() as td:
+            search_dir = Path(td)
+            (search_dir / "klafki-didaktik").mkdir()
+            (search_dir / "adorno-halbbildung-kritik").mkdir()
+            (search_dir / "foucault-genealogie").mkdir()
+            (search_dir / "luhmann-erziehungssystem").mkdir()
+            (search_dir / "process-consulting").mkdir()
+
+            # Short-name resolution
+            assert resolve_profile_path("klafki", search_dirs=[search_dir]).name == "klafki-didaktik"
+            assert resolve_profile_path("adorno", search_dirs=[search_dir]).name == "adorno-halbbildung-kritik"
+            assert resolve_profile_path("foucault", search_dirs=[search_dir]).name == "foucault-genealogie"
+            assert resolve_profile_path("luhmann", search_dirs=[search_dir]).name == "luhmann-erziehungssystem"
+            assert resolve_profile_path("process-consulting", search_dirs=[search_dir]).name == "process-consulting"
+
+            # Absolute path
+            abs_p = search_dir / "klafki-didaktik"
+            assert resolve_profile_path(str(abs_p), search_dirs=[search_dir]) == abs_p
+
+            # Not found
+            try:
+                resolve_profile_path("nonexistent", search_dirs=[search_dir])
+                assert False, "sollte FileNotFoundError werfen"
+            except FileNotFoundError:
+                pass
+
+        results.record("T64 v0.1.8 resolve_profile_path Short-Names + Glob", True)
+    except Exception as e:
+        results.record("T64 v0.1.8 resolve_profile_path Short-Names + Glob", False, str(e))
+
+    # T65: v0.1.8 commands/bridge-init.md Pre-Flight Phase A dokumentiert
+    try:
+        bi_path = Path(__file__).parent.parent / "commands/bridge-init.md"
+        bi_content = bi_path.read_text()
+        assert "Pre-Flight Phase A" in bi_content
+        assert "Auto-Resolution" in bi_content or "auto-resolution" in bi_content.lower()
+        assert "request_cowork_directory" in bi_content
+        assert "Phase A.1" in bi_content
+        assert "Phase A.2" in bi_content
+        assert "Phase A.3" in bi_content
+        assert "PROFILE_SHORT_NAMES" in bi_content or "Kurz-Name" in bi_content
+        results.record("T65 v0.1.8 bridge-init.md Pre-Flight Phase A", True)
+    except Exception as e:
+        results.record("T65 v0.1.8 bridge-init.md Pre-Flight Phase A", False, str(e))
+
+    # T66: v0.1.8 commands/bridge-attach.md Pre-Flight Phase A dokumentiert
+    try:
+        ba_path = Path(__file__).parent.parent / "commands/bridge-attach.md"
+        ba_content = ba_path.read_text()
+        assert "Pre-Flight Phase A" in ba_content
+        assert "request_cowork_directory" in ba_content
+        results.record("T66 v0.1.8 bridge-attach.md Pre-Flight Phase A", True)
+    except Exception as e:
+        results.record("T66 v0.1.8 bridge-attach.md Pre-Flight Phase A", False, str(e))
+
+    # T67: v0.1.8 ADR_0030 Annex D
+    try:
+        adr_path = Path(__file__).parent.parent / "docs/adr/ADR_0030_Expertise_Profile_Pattern.md"
+        adr_content = adr_path.read_text()
+        assert "## Annex D" in adr_content
+        assert "Pre-Flight Auto-Resolution" in adr_content
+        assert "PROFILE_SHORT_NAMES" in adr_content
+        assert "request_cowork_directory" in adr_content
+        results.record("T67 v0.1.8 ADR_0030 Annex D Pre-Flight Pattern", True)
+    except Exception as e:
+        results.record("T67 v0.1.8 ADR_0030 Annex D Pre-Flight Pattern", False, str(e))
 
     # T61: luhmann-erziehungssystem Reference-Profile vollständig (skip-if-private)
     try:

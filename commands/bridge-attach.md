@@ -18,6 +18,31 @@ Attaches diese Session als zweite Rolle zu einem bestehenden Bridge-Pair.
 | `--expertise-source="<string>"` | wenn role=advisor | analog /bridge-init |
 | `--worker-focus="<string>"` | wenn role=worker | analog /bridge-init |
 
+## Pre-Flight Phase A (NEU v0.1.8 — shared-path Mount-Auto-Request)
+
+Vor dem existing Pre-Flight läuft Mount-Resolution. Reduziert User-Setup-Reibung.
+
+**Skip-Klausel:** Wenn shared-path bereits in Cowork-Mounts → Phase A übersprungen.
+
+### Phase A.1: shared-path-Resolution
+
+1. shared-path wird typisch aus `/bridge-init`-Output gepasted (Copy-Block enthält bereits `--shared-path=<path>`)
+2. Wenn `--shared-path` fehlt: aus state.json-Lookup oder ABBRUCH mit User-Question
+
+### Phase A.2: Mount-Check + Auto-Request
+
+3. Mount-Check: Wenn `<shared-path>` NICHT in Cowork-Session-Mounts:
+   - `mcp__cowork__request_cowork_directory(path=<shared-path>)` aufrufen
+   - User sieht Approve-Dialog in Cowork-UI
+4. Bei User-Decline: ABBRUCH "shared-path nicht erreichbar ohne Mount"
+
+### Phase A.3: own-session-id Auto-Detect
+
+5. Eigene session-id wird automatisch via Skill-Context erkannt (kein User-Input)
+6. Bei session_info MCP-Verfügbarkeit: Verifizierung gegen `mcp__session_info__list_sessions`
+
+---
+
 ## Pre-Flight
 
 1. `<shared-path>/bridge/state.json` existiert
