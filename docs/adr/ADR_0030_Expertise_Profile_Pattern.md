@@ -405,3 +405,128 @@ bridge-advisor-Skill Round-Type-Heuristik:
 - expertise-profiles/klafki-didaktik/workflows.md (Reference-Implementation)
 - expertise-profiles/process-consulting/PROFILE.md (Backward-Compat-Beispiel ohne workflows.md)
 
+---
+
+## Annex C — Multi-Pass-Workflow-Pattern + File-Aliase (NEU v0.1.7, 2026-04-30)
+
+**Status:** LOCKED 2026-04-30 als Teil v0.1.7 Schema-Erweiterung
+**Trigger:** adorno-halbbildung-kritik-Profile-Aufbau zeigte, dass theoretisch-tiefe Profile mehr-stufige Lese-Pässe brauchen (literal → konzeptuell-immanent → anti-identifikatorisch → meta-kritisch). Single-Pass-Workflows aus v0.1.6 reichen nicht für Negative-Dialektik-Methodik.
+
+Außerdem: Adorno-Profile verwendet abweichende Datei-Namen (`konstellations-anker.md` statt `diagnostic-frames.md`, `negative-diagnose-fragen.md` statt `question-bank.md`) weil die Klafki-/Luhmann-Begriffe ("Frames", "Question-Bank") methodisch nicht passen würden.
+
+### C.1 Problem (zwei Aspekte)
+
+**C.1.1 Single-Pass-Limitation:**
+v0.1.6 workflows.md-Schema hat `pflicht_schritte` als flache Liste. Adorno-Methodik erfordert mehr-stufige Pässe mit unterschiedlichen Lesarten:
+- Pass 1 (literal): Worker-Material wörtlich lesen, ohne Interpretation
+- Pass 2 (konzeptuell-immanent): Worker-Argumentation in Worker-Begriffen rekonstruieren
+- Pass 3 (anti-identifikatorische-konstellation): Konstellations-Anker als Spannungs-Linsen
+- Pass 4 (meta-kritisch): Selbstkritik der vorherigen Pässe + Profile-Selbstkritik
+
+Single-Pass-Workflow kollabiert die Pass-Logik in eine Sequenz, die methodisch defizit ist (siehe AP-A03 in adorno-halbbildung-kritik-Profile).
+
+**C.1.2 File-Naming-Konvention-Limit:**
+v0.1.6 erwartet `diagnostic-frames.md` und `question-bank.md` als Standard-Files. Adorno-Profile braucht andere Begriffe:
+- "Frames" sind Klafki-/Luhmann-typisch (systematische Diagnose-Schablonen) — Adorno-konform sind "Konstellations-Anker" (nicht-systematisch, nicht-hierarchisch)
+- "Question-Bank" ist Beratungs-Tool-Vokabel — Adorno-konform sind "Negative Diagnose-Fragen" (Fragen mit Anti-Antwort-Klauseln)
+
+### C.2 Decision (zwei Erweiterungen)
+
+**C.2.1 Multi-Pass-Workflow-Schema:**
+workflows.md-Schema erlaubt optionales `passes`-Feld pro Workflow:
+
+```markdown
+## W-NN: <workflow-id>
+
+**Trigger:** ...
+
+**Passes:**
+
+### Pass 1 — <lesart-name>
+**Pflicht-Schritte:**
+1. ...
+2. ...
+
+### Pass 2 — <lesart-name>
+**Pflicht-Schritte:**
+1. ...
+...
+```
+
+Wenn Pass-Sektionen vorhanden: Skill MUSS alle Pässe sequentiell durchlaufen, kein Pass darf übersprungen werden. Pass-Verkürzung produziert methodische Verfehlung (Profile-spezifisch dokumentiert).
+
+Backward-Compatibility: Workflows ohne `passes`-Sektionen funktionieren single-pass wie v0.1.6 (z.B. klafki-didaktik W-01..W-05 unverändert).
+
+**C.2.2 File-Aliase:**
+Profile darf alternative Dateinamen verwenden, Skill mappt auf Standard-Substruktur:
+
+| Standard-File (v0.1.6) | Alias (v0.1.7) | Profile-Substruktur |
+|---|---|---|
+| `diagnostic-frames.md` | `konstellations-anker.md` | `profile["diagnostic_frames"]` |
+| `question-bank.md` | `negative-diagnose-fragen.md` | `profile["question_bank"]` |
+| `anti-patterns.md` | (kein Alias bisher) | `profile["anti_patterns"]` |
+| `workflows.md` | (kein Alias bisher) | `profile["workflows"]` |
+
+`required_files` listet das tatsächlich vorhandene File. Skill prüft Standard-Name OR Alias-Liste.
+
+### C.3 Selbstkritik-Klausel als Pflicht-Workflow-Element
+
+Workflow-Spec kann `selbstkritik_klausel`-Sektion enthalten:
+
+```markdown
+**Selbstkritik-Klausel:** <Hinweis darauf, wie Workflow selbst in das Kritisierte kippen kann + Korrektive>
+```
+
+Wenn vorhanden: Skill MUSS diese Selbstkritik im Output-§-Sektion ausführen. Profile-Selbstreflexivität wird damit operative Pflicht.
+
+### C.4 Verweigerungs-Logik bleibt unverändert
+
+`verweigerungs_klausel`-Sektion aus v0.1.6 funktioniert weiter. Bei Multi-Pass-Workflows kann Verweigerung pass-spezifisch sein (z.B. wenn Pass 4 zeigt, dass Pässe 1-3 alle in identifizierende Subsumtion kippten → status statt initial-advice).
+
+### C.5 Profile-Schema-Version-Bump
+
+| Aspekt | Vor v0.1.7 | Ab v0.1.7 |
+|---|---|---|
+| `profile_schema_version` | 1.0.0 | 1.1.0 (additive Erweiterung, backward-compat) |
+| `passes` in workflows.md | nicht unterstützt | optional |
+| File-Aliase | nur Standard-Namen | Aliase erlaubt |
+| `selbstkritik_klausel` in workflow-spec | nicht unterstützt | optional |
+
+Profile-Schema bleibt **backward-compatible**: v0.1.6-Profile (klafki-didaktik, process-consulting) funktionieren ohne Änderung.
+
+### C.6 SKILL-Patches v0.1.7
+
+bridge-advisor-Skill SKILL.md erhält in §Schritt 0 Profile-Loading:
+- File-Aliase-Mapping
+- Multi-Pass-Workflow-Loading falls `passes` vorhanden
+- selbstkritik_klausel-Aktivierung
+
+bridge-advisor-Skill Anti-Pattern-Liste:
+- "NICHT Multi-Pass-Workflow-passes überspringen"
+- "NICHT Selbstkritik-Klauseln in Profile-Workflows ignorieren"
+
+### C.7 Reference-Implementation
+
+`expertise-profiles/adorno-halbbildung-kritik/` ist erste Profile mit:
+- Multi-Pass-Workflows (W-A-Multi, W-A-Halb, W-A-Kult, W-A-Jarg, W-A-Verd, W-A-Reflex — alle 4 passes)
+- File-Aliasen (`konstellations-anker.md` + `negative-diagnose-fragen.md`)
+- Selbstkritik-Klauseln pro Workflow
+
+klafki-didaktik (v0.1.6) bleibt single-pass + Standard-File-Names — Backward-Compat-Beispiel.
+
+### C.8 Methodische Spannung (CRITICAL)
+
+Multi-Pass-Schema erlaubt Adorno-style-Profile, aber **Profile-Pattern selbst** ist eine Identifikations-Operation (Profile = systematisches Inventar). Adorno-Profile reproduziert Strukturproblem (siehe adorno-halbbildung-kritik AP-A10 System-Schließung).
+
+Annex C dokumentiert dies explizit: Schema-Erweiterung erlaubt theoretische Tiefe, kann aber strukturelle System-Form von Profile-Pattern nicht aufheben. Adorno-Profile muss diese Spannung selbst-reflexiv halten (siehe Selbstkritik-Klauseln).
+
+### C.9 Cross-Refs
+
+- ADR_0030 §3.2 Profile-Schema (Annex C ergänzt um passes + Aliase + selbstkritik_klausel)
+- ADR_0030 Annex B (workflows.md v0.1.6 — Annex C ist additive Erweiterung)
+- bridge-advisor SKILL.md §Schritt 0 (v0.1.7 Patch)
+- expertise-profiles/adorno-halbbildung-kritik/workflows.md (Reference-Implementation Multi-Pass)
+- expertise-profiles/adorno-halbbildung-kritik/konstellations-anker.md (Reference-Implementation File-Alias)
+- expertise-profiles/klafki-didaktik/workflows.md (Backward-Compat-Beispiel single-pass)
+
+

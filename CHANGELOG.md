@@ -5,6 +5,53 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.7] — 2026-04-30 — Multi-Pass-Workflow-Pattern + File-Aliase + Selbstkritik-Klausel-Enforcement
+
+### Source: adorno-halbbildung-kritik-Profile-Aufbau (theoretisch-tiefe Profile-Klasse)
+
+Klafki-/Luhmann-Profile sind systematisch — Single-Pass-Workflows aus v0.1.6 reichen. Adorno-Linie ist anti-systematisch (Negative Dialektik) und erfordert mehr-stufige Lese-Pässe (literal → konzeptuell-immanent → anti-identifikatorische-konstellation → meta-kritisch). Außerdem: Adorno-Profile-Begriffe ("Konstellations-Anker" statt "Frames", "Negative Diagnose-Fragen" statt "Question-Bank") brauchen File-Naming-Aliase.
+
+### Added
+
+- **bridge-advisor SKILL.md** §Schritt 0:
+  - Multi-Pass-Workflow-Loading (passes optional in workflows.md)
+  - File-Aliase-Mapping (konstellations-anker.md → diagnostic_frames, negative-diagnose-fragen.md → question_bank)
+- **bridge-advisor SKILL.md** Anti-Pattern-Liste:
+  - "NICHT Multi-Pass-Workflow-passes überspringen"
+  - "NICHT Selbstkritik-Klauseln in Profile-Workflows ignorieren"
+- **docs/adr/ADR_0030_Expertise_Profile_Pattern.md Annex C** (NEU 2026-04-30) Multi-Pass-Workflow-Pattern + File-Aliase + Selbstkritik-Klausel-Enforcement
+- **tests/smoke_self_test.py** T57 + T58 + T59 NEU
+  - T57: ADR_0030 Annex C Multi-Pass + File-Aliase dokumentiert
+  - T58: SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement
+  - T59: adorno-halbbildung-kritik Reference-Profile vollständig (skip-if-private)
+
+### Changed
+
+- **profile_schema_version** 1.0.0 → 1.1.0 (additive Erweiterung, backward-compat — passes + Aliase + selbstkritik_klausel optional)
+- **bridge-advisor SKILL.md** Cross-Refs erweitert um ADR_0030 Annex C + v0.1.7 SKILL-Patch-Hinweis
+
+### Reference-Implementation
+
+- `private-notes/expertise-profiles/adorno-halbbildung-kritik/` — erstes Profile mit Multi-Pass-Workflows + File-Aliasen + Selbstkritik-Klauseln
+  - 5 Files: PROFILE.md + konstellations-anker.md (10 Anker A1-A10) + anti-patterns.md (10 APs mit Selbstanwendungs-Pflicht) + negative-diagnose-fragen.md (45 Fragen) + workflows.md (6 Multi-Pass-Workflows W-A-Multi/Halb/Kult/Jarg/Verd/Reflex je 4 passes)
+
+### Verification
+
+- Self-Test 62/62 PASS (T1-T56 + T57/T58/T59 NEU)
+- Profile-Schema bleibt backward-compatible: klafki-didaktik (v0.1.6) + process-consulting (v0.1.0) funktionieren unverändert
+- Multi-Pass-Workflow ist optional — Single-Pass-Workflows weiter unterstützt
+
+### Methodische Spannung (CRITICAL, dokumentiert in ADR_0030 Annex C §C.8)
+
+Profile-Pattern selbst ist eine Identifikations-Operation. Adorno-Profile reproduziert Strukturproblem (System-Form), kann es aber nicht aufheben. Selbstkritik-Klauseln in Profile-Workflows halten diese Spannung explizit — sie heben sie nicht auf.
+
+### Deferred to v0.1.8+
+
+- Adorno-Profile Phase 8 Live-Pilot (TC Halbbildungs-Diagnose) pending User-Aktion
+- PB-004/005/006/008 weiterhin DEFERRED-Phase-2
+
+---
+
 ## [0.1.6] — 2026-04-30 — Profile-with-workflows.md-Pattern + advisor-Skill-Patches + plugin.json-bridge-update-Eintrag
 
 ### Source: klafki-didaktik-Profile-Aufbau (Phase 7 Functional-Anchoring) → V-1/V-2 Open-Points uncovered

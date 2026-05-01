@@ -109,7 +109,36 @@ else:
 
 **File-Loading-Logik (v0.1.6):** Lade alle in `frontmatter.required_files` aufgelisteten Files. Bekannte Files: `PROFILE.md` (Frontmatter-Quelle), `diagnostic-frames.md`, `anti-patterns.md`, `question-bank.md`, `workflows.md` (NEU v0.1.6, optional). Unbekannte Files in `required_files` werden als Profile-Annex geladen und in `profile["annexes"][filename]` abgelegt — dürfen advisor-Workflow nicht blockieren.
 
+**File-Aliase (NEU v0.1.7):** Profile-Konvention erlaubt Datei-Naming-Varianten — Skill akzeptiert beide:
+- `diagnostic-frames.md` ODER `konstellations-anker.md` (Adorno-Profile-Style)
+- `question-bank.md` ODER `negative-diagnose-fragen.md` (Adorno-Profile-Style)
+
+Mapping: Aliase werden in derselben profile-Substruktur abgelegt (z.B. `profile["diagnostic_frames"]` enthält Inhalt aus `konstellations-anker.md` falls statt `diagnostic-frames.md` vorhanden).
+
 **workflows.md-Vorrang-Regel (NEU v0.1.6):** Wenn `workflows.md` geladen ist, hat es Vorrang vor `pflicht_workflows`-Frontmatter-Liste. Frontmatter listet Workflow-IDs (z.B. `perspektivenschema-vollstaendigkeits-check-pre-stundenfrage`); workflows.md enthält die operative Spec (Trigger / Pflicht-Schritte / Output-Format / Linkage / Verweigerungs-Logik). Advisor MUSS workflows.md-Specs anwenden, nicht nur frontmatter-IDs erwähnen.
+
+**Multi-Pass-Workflow-Loading (NEU v0.1.7):** Workflow-Specs in workflows.md können `passes` als geschachtelte Schritt-Liste enthalten:
+```python
+# workflows = {
+#   "W-A-Multi": {
+#     "trigger": "...",
+#     "passes": [
+#       {"pass": 1, "lesart": "literal", "pflicht_schritte": [...]},
+#       {"pass": 2, "lesart": "konzeptuell-immanent", "pflicht_schritte": [...]},
+#       {"pass": 3, "lesart": "anti-identifikatorische-konstellation", "pflicht_schritte": [...]},
+#       {"pass": 4, "lesart": "meta-kritisch", "pflicht_schritte": [...]}
+#     ],
+#     "output_format": "...",
+#     "linkage": [...],
+#     "verweigerungs_logik": "...",
+#     "selbstkritik_klausel": "..."
+#   }
+# }
+```
+
+Wenn `passes` vorhanden: advisor MUSS alle passes sequentiell durchlaufen, kein Pass darf übersprungen werden. Pass-Verkürzung produziert AP-A03 (identifizierende Subsumtion) bei Adorno-style-Profilen oder analoge Verfehlungen bei anderen Profile-Schulen.
+
+Bei `passes`-Absent: Workflow funktioniert single-pass wie v0.1.6 (Backward-Compatibility).
 
 Bei Profile-Load-FAIL: WARN, set `degraded_mode = True`, weiter ohne Profile.
 
@@ -189,6 +218,8 @@ Bei CAS-Failure: max 3 Retries, dann ABBRUCH + Nutzer informieren.
 - **NICHT** Profile-Inhalt wörtlich in Handover kopieren — Eigenformulierung mit profile-Reference (Lizenzrecht-Constraint, ADR_0030 §5 C2)
 - **NICHT** workflows.md-Output-Formate ignorieren wenn Workflow getriggert (NEU v0.1.6) — wenn workflow_specs[w_id]["output_format"] vorhanden, MUSS advisor das Format in handover §-Sektionen einbetten
 - **NICHT** Workflow-Verweigerungs-Logik skippen (NEU v0.1.6) — wenn workflow_specs[w_id]["verweigerungs_klausel"] erfüllt (z.B. W-01 N≥3 leere Perspektiven), advisor schreibt status-handover mit Klärungs-Anforderung statt fortzufahren
+- **NICHT** Multi-Pass-Workflow-passes überspringen (NEU v0.1.7) — wenn workflow_specs[w_id]["passes"] vorhanden, MUSS advisor alle Pässe sequentiell durchlaufen; Pass-Verkürzung produziert identifizierende Subsumtion oder analoge methodische Verfehlung
+- **NICHT** Selbstkritik-Klauseln in Profile-Workflows ignorieren (NEU v0.1.7) — wenn workflow_specs[w_id]["selbstkritik_klausel"] vorhanden, MUSS advisor diese Selbstkritik im Output-§ ausführen
 
 ## Output-Konvention
 
@@ -216,7 +247,9 @@ Open Blockers updated: <count>
 - ADR_0029 §13 Concurrency
 - ADR_0030 Expertise-Profile-Pattern §3.4 Profile-Loading
 - ADR_0030 Annex B (NEU v0.1.6) Profile-with-workflows.md-Pattern
+- ADR_0030 Annex C (NEU v0.1.7) Multi-Pass-Workflow-Pattern + File-Aliase
 - v0.1.3-Patch-Pipeline §Anti-Plan-Drift CRITICAL (F-RP-29)
 - v0.1.3-Patch-Pipeline §User-Translation-Konvention (D-001 Advisor-Pos)
 - v0.1.3-Patch-Pipeline F-RP-31 Patch 4 Skill-Mode-Marker
 - v0.1.6 SKILL-Patch §Schritt 0 workflows.md-Loading + §Anti-Pattern Workflow-Output-Format-Enforcement
+- v0.1.7 SKILL-Patch §Schritt 0 Multi-Pass-Loading + File-Aliase + §Anti-Pattern Pass-Skip-Verbot + Selbstkritik-Klausel-Enforcement

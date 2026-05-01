@@ -1,6 +1,6 @@
 {
   "name": "session-bridge",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Cross-Session Advisor/Worker coordination via shared filesystem (polling-based, ADR_0029).",
   "author": {
     "name": "session-bridge-Plugin-Project",

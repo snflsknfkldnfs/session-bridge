@@ -1103,6 +1103,75 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T56 v0.1.6 klafki-didaktik Reference-Profile vollständig", False, str(e))
 
+    # T57: v0.1.7 ADR_0030 Annex C Multi-Pass-Workflow-Pattern + File-Aliase
+    try:
+        adr_path = Path(__file__).parent.parent / "docs/adr/ADR_0030_Expertise_Profile_Pattern.md"
+        adr_content = adr_path.read_text()
+        assert "## Annex C" in adr_content, "Annex C fehlt"
+        assert "Multi-Pass-Workflow-Pattern" in adr_content
+        assert "File-Aliase" in adr_content or "File-Aliasen" in adr_content
+        assert "passes" in adr_content
+        assert "konstellations-anker.md" in adr_content, "Adorno-Alias nicht referenziert"
+        assert "negative-diagnose-fragen.md" in adr_content
+        assert "selbstkritik_klausel" in adr_content
+        results.record("T57 v0.1.7 ADR_0030 Annex C Multi-Pass + File-Aliase dokumentiert", True)
+    except Exception as e:
+        results.record("T57 v0.1.7 ADR_0030 Annex C Multi-Pass + File-Aliase dokumentiert", False, str(e))
+
+    # T58: v0.1.7 bridge-advisor SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement
+    try:
+        skill_path = Path(__file__).parent.parent / "skills/bridge-advisor/SKILL.md"
+        skill_content = skill_path.read_text()
+        # File-Aliase
+        assert "File-Aliase" in skill_content, "File-Aliase nicht in SKILL.md"
+        assert "konstellations-anker.md" in skill_content
+        assert "negative-diagnose-fragen.md" in skill_content
+        # Multi-Pass-Workflow-Loading
+        assert "Multi-Pass-Workflow-Loading" in skill_content, "Multi-Pass-Loading nicht in SKILL.md"
+        assert "passes" in skill_content
+        assert "lesart" in skill_content, "Pass-Lesart-Konvention nicht erwaehnt"
+        # Anti-Pattern Pass-Skip-Verbot
+        assert "Multi-Pass-Workflow-passes überspringen" in skill_content
+        # Anti-Pattern Selbstkritik-Klausel
+        assert "Selbstkritik-Klauseln" in skill_content
+        results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", True)
+    except Exception as e:
+        results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
+
+    # T59: v0.1.7 adorno-halbbildung-kritik Reference-Profile vollständig
+    try:
+        adorno_dir = Path("/Users/paulad/session-bridge/private-notes/expertise-profiles/adorno-halbbildung-kritik")
+        if not adorno_dir.exists():
+            results.record("T59 v0.1.7 adorno-halbbildung-kritik Reference-Profile (skip-if-private)", True, "skipped: private-notes not present")
+        else:
+            # Adorno verwendet File-Aliase
+            for f in ["PROFILE.md", "konstellations-anker.md", "anti-patterns.md", "negative-diagnose-fragen.md", "workflows.md"]:
+                assert (adorno_dir / f).exists(), f"adorno missing {f}"
+            # workflows.md hat W-A-Multi mit passes
+            wf_text = (adorno_dir / "workflows.md").read_text()
+            assert "W-A-Multi" in wf_text
+            assert "Pass 1" in wf_text and "Pass 2" in wf_text and "Pass 3" in wf_text and "Pass 4" in wf_text
+            assert "literal" in wf_text and "konzeptuell-immanent" in wf_text and "anti-identifikatorische-konstellation" in wf_text and "meta-kritisch" in wf_text
+            # Selbstkritik-Klausel pro Workflow
+            assert "Selbstkritik-Klausel" in wf_text
+            # PROFILE.md required_files enthält Aliase
+            profile_text = (adorno_dir / "PROFILE.md").read_text()
+            assert "konstellations-anker.md" in profile_text
+            assert "negative-diagnose-fragen.md" in profile_text
+            # 10 Konstellations-Anker
+            anker_text = (adorno_dir / "konstellations-anker.md").read_text()
+            anker_ids = re.findall(r"## A(\d+)", anker_text)
+            assert len(anker_ids) == 10, f"adorno anker count {len(anker_ids)} != 10"
+            # 10 APs
+            ap_text = (adorno_dir / "anti-patterns.md").read_text()
+            ap_ids = re.findall(r"## (AP-A\d+):", ap_text)
+            assert len(ap_ids) == 10, f"adorno AP count {len(ap_ids)} != 10"
+            # Selbstanwendungs-Sektion in jedem AP
+            assert ap_text.count("**SELBSTANWENDUNG:**") >= 10, f"AP-Selbstanwendung-Pflicht nicht erfüllt"
+            results.record("T59 v0.1.7 adorno-halbbildung-kritik Reference-Profile vollständig", True)
+    except Exception as e:
+        results.record("T59 v0.1.7 adorno-halbbildung-kritik Reference-Profile vollständig", False, str(e))
+
     if verbose:
         print("Passed:", results.passed)
 
