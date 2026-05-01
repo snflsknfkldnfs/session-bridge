@@ -1138,6 +1138,41 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
 
+    # T60: foucault-genealogie Reference-Profile vollständig (skip-if-private)
+    try:
+        foucault_dir = Path("/Users/paulad/session-bridge/private-notes/expertise-profiles/foucault-genealogie")
+        if not foucault_dir.exists():
+            results.record("T60 foucault-genealogie Reference-Profile (skip-if-private)", True, "skipped: private-notes not present")
+        else:
+            for f in ["PROFILE.md", "diagnostic-frames.md", "anti-patterns.md", "question-bank.md", "workflows.md"]:
+                assert (foucault_dir / f).exists(), f"foucault missing {f}"
+            # workflows.md hat 6 Workflows
+            wf_text = (foucault_dir / "workflows.md").read_text()
+            wf_ids = re.findall(r"## (W-F-\w+):", wf_text)
+            assert len(wf_ids) == 6, f"foucault workflows count {len(wf_ids)} != 6"
+            # W-F-Genea + W-F-Reflex haben 4 Passes
+            for wid in ["W-F-Genea", "W-F-Reflex"]:
+                block_match = re.search(rf"## {re.escape(wid)}:.*?(?=## W-F-|## Workflow|---\Z)", wf_text, re.DOTALL)
+                assert block_match, f"{wid} block not found"
+                for p in [1, 2, 3, 4]:
+                    assert f"### Pass {p}" in block_match.group(0), f"{wid} pass {p} fehlt"
+            # 10 Frames
+            frames_text = (foucault_dir / "diagnostic-frames.md").read_text()
+            frame_ids = re.findall(r"### Frame (F\d+\.\d+)", frames_text)
+            assert len(frame_ids) == 10, f"foucault frames count {len(frame_ids)} != 10"
+            # 10 APs mit Selbstanwendungs-Pflicht
+            ap_text = (foucault_dir / "anti-patterns.md").read_text()
+            ap_ids = re.findall(r"## (AP-F\d+):", ap_text)
+            assert len(ap_ids) == 10, f"foucault APs count {len(ap_ids)} != 10"
+            assert ap_text.count("**SELBSTANWENDUNG:**") >= 10, "Selbstanwendungs-Pflicht nicht erfüllt"
+            # Foucault-spezifische Methodik-Marker
+            all_text = (foucault_dir / "PROFILE.md").read_text() + frames_text + ap_text + wf_text
+            for marker in ["Genealogie", "Macht-Wissen", "Disziplinargesellschaft", "Dispositiv", "Subjektivierung"]:
+                assert marker in all_text, f"Methodik-Marker fehlt: {marker}"
+            results.record("T60 foucault-genealogie Reference-Profile vollständig", True)
+    except Exception as e:
+        results.record("T60 foucault-genealogie Reference-Profile vollständig", False, str(e))
+
     # T59: v0.1.7 adorno-halbbildung-kritik Reference-Profile vollständig
     try:
         adorno_dir = Path("/Users/paulad/session-bridge/private-notes/expertise-profiles/adorno-halbbildung-kritik")
