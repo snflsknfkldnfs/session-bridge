@@ -5,6 +5,87 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.9] — 2026-05-05 — Empirie-driven Patches: Phase-Gate-Audit + Cowork-Mode-Composition + DRIFT-Update + ADR_0029 Annex C
+
+### Source: 5 Bridge-Pairs seit v0.1.7 (p6/p7-praxis/p7-klafki/p8/p9) — Cross-Pair-Empirie-Konsolidierung
+
+p7-upp-praxis-validation lieferte 26 Findings + 14 Patterns + 16 NEU-Tracks. Davon 5 Patterns mit direkter Bridge-Plugin-Implikation: #76+#77+#80 (Cowork-Mode-Reading-Pattern), #82 (Lehrkraft-Realbedingungen-Validation, deferred), #88 (Phase-Gate-Audit), #89 (User-Veto-Authority). p7-klafki-validation produzierte empirische Validation der Profile-Pin-Mechanik (9 DLs in 8 Rounds, alle 6 Klafki-Frame-Cluster aktiviert). p8-self-sustained-ux drift 0.05 als Best-Performer mit L-p8-01-Pattern (Pre-Flight-Vorlage-Vollständigkeit) — methodische Validation von v0.1.8 Phase A.
+
+### Added
+
+- **bridge-advisor SKILL.md §Cowork-Mode-Composition-Pattern** (NEU v0.1.9 / Pattern-#76+#77+#80):
+  - Reading-Pattern-Skill-Klärung: Skills sind Anleitungen, nicht Auto-Pipeline
+  - Composition-Reihenfolge mit Phase-Gate-Audit-Schritt
+- **bridge-advisor SKILL.md §Phase-Gate-Audit-Pflicht** (NEU v0.1.9 / Pattern-#88, CRITICAL):
+  - Pflicht bei jedem handover (außer initial-advice + status)
+  - 4-stufiger Phase-Gate-Audit: Phase-ID + Output-Inventar + Gate-Kriterien-Check + Audit-Verdikt
+  - Output-Format-Pflicht: §Phase-Gate-Audit-Sektion mit Verdikt PASS/WARN/FAIL
+  - Konsequenz: PASS → Beratung / WARN → Audit-Hinweis / FAIL → Klärungs-Anforderung statt Beratung
+- **bridge-worker SKILL.md §Cowork-Mode-Composition-Pattern** (NEU v0.1.9):
+  - Reading-Pattern-Skill-Klärung
+  - Composition-Reihenfolge mit Phase-Gate-Pflicht + User-Veto-Anerkennung
+- **bridge-worker SKILL.md §Phase-Gate-Pflicht-Spiegel-Klausel** (NEU v0.1.9):
+  - Spiegel zu advisor §Phase-Gate-Audit-Pflicht
+  - Worker MUSS Phase-Gate-Self-Audit vor Phase-Transition durchführen
+- **bridge-worker SKILL.md §User-Veto-Authority** (NEU v0.1.9 / Pattern-#89):
+  - User-Direktive ist Final-Authority über Worker-Iteration
+  - Worker akzeptiert Verwurf ohne Diskurs-Schleife
+  - Veto-Dokumentation im nächsten handover §User-Veto-Befund
+- **tools/bridge_state.py DRIFT_RANGES["use-case"] empirisch updated** (v0.1.9):
+  - Vorher: min=0.4/max=2.0/stddev=0.5 (Hypothese p4+p5+p6)
+  - Nachher: min=0.05/max=2.0/stddev=0.4 (n=4 Empirie p4 0.10 + p5 0.21 + p7-praxis 0.23 + p8 0.05)
+  - NEU `use-case-with-profile`-Range explizit (vorher nur in RATIO_THRESHOLDS)
+  - default min=0.05 statt 0.5 (extreme-low aus p8 berücksichtigt)
+- **tools/bridge_state.py RATIO_THRESHOLDS["use-case-with-profile"]** Empirie-Status updated:
+  - Vorher: 5.0 (Hypothese, Empirie n=0)
+  - Nachher: 5.0 (empirisch validiert, p7-klafki 1.1 DL/Round + p8 0.9 AC/Round)
+- **docs/adr/ADR_0029_Session_Bridge_Pattern.md Annex C** (NEU 2026-05-05):
+  - Cross-Pair-Empirie-Konsolidierung post-v0.1.8
+  - C.1 Pair-Inventar (5 Pairs)
+  - C.2 Drift-Faktor-Empirie (4 Tooling-Effizienz-Pattern-Cycles)
+  - C.3 Profile-Pin-Empirie Klafki (alle 6 Frame-Cluster aktiviert)
+  - C.4 Patterns mit Bridge-Plugin-Implikation
+  - C.5 L-p8-01-Pattern als Validation v0.1.8 Phase A
+  - C.6 Cross-Pair-Pause/Resume-Pattern (deferred v0.2.0)
+  - C.7 v0.1.9-Patches Tabelle
+  - C.8 v0.1.10+ Deferred Patches
+- **tests/smoke_self_test.py** T68-T70 NEU:
+  - T68: bridge-advisor §Phase-Gate-Audit + §Cowork-Mode-Composition
+  - T69: bridge-worker §Phase-Gate-Spiegel + §User-Veto + §Cowork-Mode-Composition
+  - T70: DRIFT_RANGES + ADR_0029 Annex C
+
+### Changed
+
+- **tools/bridge_state.py DRIFT_RANGES** struktur erweitert + Werte empirisch kalibriert
+- **bridge-advisor + bridge-worker SKILL.md** Cross-Refs erweitert (Pattern-#76/#77/#80/#88/#89 + ADR_0029 Annex C)
+
+### Verification
+
+- Self-Test 73/73 PASS (T1-T67 + T68-T70 NEU)
+- Profile-Schema unverändert v1.1.0
+- state-Schema unverändert v1.2.0
+
+### Backward-Compatibility
+
+- v0.1.8-Pairs unverändert funktional
+- DRIFT_RANGES-Update ist additive Empirie-Kalibrierung — bestehende Pairs werden gegen neuen Range geprüft, alte Pairs nicht migriert
+
+### Empirisch-validiert
+
+- Klafki-Profile-Pin-Mechanik (ADR_0030) funktioniert
+- v0.1.8 Pre-Flight Phase A entspricht L-p8-01-Pattern (drift 0.05 Best-Performer)
+- 4 Tooling-Effizienz-Pattern-Cycles als Bridge-Best-Practice
+
+### Deferred to v0.1.10+
+
+- user_veto_log-Schema-Field (Pattern-#89, braucht Empirie-Konsolidierung)
+- Pause/Resume-state.phase-Enum (mit Multi-Pair-Topologie v0.2.0)
+- user-validation-Round-Type NEU (Pattern-#82)
+- bilanz_v1.json tooling-cycles-Field (additive Erweiterung)
+- v0.1.8 Phase A Live-Test (User-Aktion erforderlich)
+
+---
+
 ## [0.1.8] — 2026-05-01 — Pre-Flight Auto-Resolution + Profile-Short-Names + UX-Reibung-Reduktion
 
 ### Source: User-Wunsch nach reibungslosem Bridge-Pair-Setup für Live-Pilot

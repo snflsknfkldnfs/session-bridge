@@ -27,6 +27,65 @@ Jeder bridge-advisor Skill-Output beginnt mit:
 
 Dies erlaubt User klare Mode-Identifikation, verhindert Plan-vs-Execution-Drift-Confusion.
 
+## §Cowork-Mode-Composition-Pattern (NEU v0.1.9 / Pattern-#76+#77+#80 aus p7-upp-praxis-validation)
+
+**Empirisch (p7-praxis R5):** Plugin-Skills im Cowork-Mode sind **Reading-Pattern-Skills**, NICHT Auto-Pipeline-Skills. Skill-Spec gibt Anleitungen für Claude/User, ruft aber selbst keine Sub-Skills automatisch auf.
+
+**Konsequenz für bridge-advisor:**
+
+- SKILL.md §Schritt 0 (Profile-Loading) ist Anleitung an Claude, was zu lesen ist
+- Multi-Pass-Workflows aus workflows.md sind Anleitungen, was sequentiell durchzuführen ist
+- Composition-Sektion = "Empfohlene Reihenfolge", NICHT Auto-Aufruf
+
+**Anti-Pattern:** Skill-Spec als Auto-Pipeline interpretieren produziert Pseudo-Garantien. Tatsächlich wird die Komposition durch Claude-Reasoning umgesetzt — Spec muss als Reading-Pattern-Skill formuliert sein.
+
+**Cowork-Mode-Composition-Reihenfolge bridge-advisor (Empfehlung):**
+1. Schritt 0 Profile-Loading
+2. Schritt 1 Status-Snapshot via session_info
+3. Schritt 2 References sammeln (Pflicht: ≥1 reference)
+4. **Schritt 2.5 (NEU v0.1.9) Phase-Gate-Audit** (siehe §Phase-Gate-Audit-Pflicht unten)
+5. Schritt 3 Handover-File schreiben
+6. Schritt 4 State.json updaten
+
+## §Phase-Gate-Audit-Pflicht (NEU v0.1.9 / Pattern-#88 aus p7-upp-praxis-validation)
+
+**Empirisch (p7-praxis R16-Advisor-Cross-Check):** Worker-R6→R8 ohne expliziten Phase-Gate-Audit produzierte Lehrkraft-Realbedingungen-Defizit (4 CRITICAL-Findings übersehen). Phase-Transition ohne Validation der vorherigen Phase-Outputs ist methodische Lücke.
+
+**Pflicht-Klausel (CRITICAL):**
+
+bridge-advisor MUSS bei jedem handover (außer initial-advice + status) einen **Phase-Gate-Audit** der Worker-vorherigen-Phase durchführen, bevor inhaltliche Beratung erfolgt.
+
+**Phase-Gate-Audit-Schritte:**
+
+1. **Phase-Identifikation:** In welcher Phase ist Worker aktuell? (state.roles.worker.phase oder aus letztem Worker-handover)
+2. **Phase-Output-Inventar:** Welche Outputs/Artefakte hat Worker in vorheriger Phase produziert? (shared_artifacts + handover-Body)
+3. **Gate-Kriterien-Pflicht-Check:**
+   - Sind Outputs der vorherigen Phase **vollständig** (gegen Phase-spezifische Acceptance-Criteria)?
+   - Sind Outputs **validiert** (User-Authority oder methodische Pflicht-Workflows angewandt)?
+   - Liegen **CRITICAL-Findings** unbehandelt vor?
+4. **Audit-Verdikt:** PASS / WARN / FAIL
+   - PASS → fortsetzen mit inhaltlicher Beratung
+   - WARN → Beratung mit explizitem Audit-Hinweis im handover-§
+   - FAIL → STOP-handover mit Klärungs-Anforderung an Worker (status-handover statt inhaltlich)
+
+**Output-Format-Pflicht:**
+
+```
+§Phase-Gate-Audit (v0.1.9-Pflicht):
+- Worker-Phase aktuell: <phase-name>
+- Output-Inventar vorherige Phase: <Liste>
+- Gate-Kriterien-Check:
+  - Vollständigkeit: [PASS/WARN/FAIL] — <Begründung>
+  - Validation: [PASS/WARN/FAIL] — <Begründung>
+  - CRITICAL-Findings: [keine / <Liste>]
+- Audit-Verdikt: [PASS/WARN/FAIL]
+- Konsequenz: [Beratung-fortgesetzt / Audit-Warning-eingebaut / Klärungs-Anforderung]
+```
+
+**Anti-Pattern:** Phase-Gate-Audit-Skip produziert das p7-R16-Pattern (Worker-Bilanz-Defizit unentdeckt). Skip ist nur akzeptabel bei initial-advice (keine vorherige Phase) und status (Diagnose-only, keine Beratung).
+
+**Cross-Ref:** Pattern-#88 in `pilot-runs/p7-upp-praxis-validation/bridge/artifacts/praxis_validation_befunde.md §9.7`.
+
 ## §Anti-Plan-Drift (NEU v0.1.3, CRITICAL — F-RP-29 / D-001 Advisor-Pos)
 
 bridge-advisor Skill darf NICHT detaillierten Plan-Text als Antwort an User

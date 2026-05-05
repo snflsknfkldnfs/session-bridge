@@ -592,3 +592,89 @@ ADR_0029 §5.6 erwähnt Bilanz-Datei in close-Phase ohne Filename-Konvention ode
 - schemas/bilanz_v1.json (Schema-Spec)
 - pilot-runs/p3-real-user/bridge/bilanz_8cbeaad0.md (Reference-Implementation)
 - pilot-runs/p4-eg-dev/bridge/BILANZ.md (Migration-Kandidat)
+
+---
+
+## Annex C — Cross-Pair-Empirie-Konsolidierung post-v0.1.8 (NEU v0.1.9, 2026-05-05)
+
+**Status:** LOCKED 2026-05-05 als Teil v0.1.9 Empirie-driven-Patches
+**Trigger:** 5 Bridge-Pairs seit v0.1.7 (p6/p7-praxis/p7-klafki/p8/p9) liefern empirische Substanz für Plugin-Optimierung. Konsolidierung als ADR-Annex.
+
+### C.1 Pair-Inventar post-v0.1.7
+
+| Pair | Topic | Domain | Rounds | Status | Wichtigste Patterns |
+|---|---|---|---|---|---|
+| p6-upp-eg-advice | escape-game-generator-Beratung | use-case | aktiv | many artifacts | Tooling-Effizienz-Cycles |
+| p7-klafki-validation | Klafki-Profile-Validation | use-case-with-profile | 8 | close-prep | 9 DLs, F-Cluster F1.1+F2.1+F4.1+F4.2+F5.1+F6.1 aktiviert |
+| p7-upp-praxis-validation | UPP-Plugin-Live-Test | use-case | 16+1 | finalisiert | 26 Findings + 14 Patterns + 16 NEU-Tracks |
+| p8-self-sustained-ux | Spec-Patch v0.5.4 | use-case | 10 | close-prep | drift 0.05 (Best-Performer), Pre-Flight-Vorlage-Pattern |
+| p9-klafki-ue-eval | Klafki UE-Eval | use-case-with-profile | 3 | aktiv (kurz) | (in Bewegung) |
+
+### C.2 Drift-Faktor-Empirie für DRIFT_RANGES-Update
+
+| Pair | RT | drift_factor | Trigger-Mechanik |
+|---|---|---|---|
+| p4 RT-4 | 0.10 | 3-File-Diff-Self-Audit + jq-Aggregation Subagent-Pattern |
+| p5 RT-2 | 0.21 | Spec-Schreibung in-place-Edit-Modus |
+| p7-praxis RT-2 | 0.23 | Spec-Patch-Schreibung Pre-Vorarbeit-Reuse |
+| p8 RT-1 | 0.05 | 3-Patch-Lokationen-Sequential-Edit + Pre-Flight-Vorlage-Reuse |
+
+**4 erfolgreiche Self-Disclosure-Tooling-Effizienz-Pattern-Cycles.**
+
+**Decision:** DRIFT_RANGES["use-case"] empirisch updated zu min=0.05/max=2.0/stddev=0.4 (v0.1.9 tools/bridge_state.py). RATIO_THRESHOLDS["use-case-with-profile"] bleibt 5.0, jetzt mit n=2-Empirie statt n=0.
+
+### C.3 Profile-Pin-Empirie (Klafki-Validation p7)
+
+p7-klafki-validation produzierte 9 Decision-Locks in 8 Rounds (1.1 DL/Round) mit allen 6 Klafki-Frame-Cluster aktiviert: F1.1 (DL-K03 maximal), F2.1 (DL-K03), F4.1 (DL-K02a/b/c+K04), F4.2 (DL-K04), F5.1 (DL-K06), F6.1 (DL-K06).
+
+**Empirisch:** Klafki-Profile-Pin-Mechanik (ADR_0030) funktioniert + produziert substantielle Validation-Empirie. **Profile-Adoption-Argument empirisch belegt.**
+
+### C.4 Patterns mit Bridge-Plugin-Implikation
+
+5 Patterns aus p7-upp-praxis-validation mit direkter Bridge-Plugin-Relevanz:
+
+- **Pattern-#76+#77+#80 (Cowork-Mode-Reading-Pattern):** bridge-advisor + bridge-worker SKILL.md sind Reading-Pattern-Skills, NICHT Auto-Pipeline → §Cowork-Mode-Composition-Header in beiden SKILL-Files (v0.1.9)
+- **Pattern-#82 (Lehrkraft-Realbedingungen-Validation-Pflicht):** Worker-Bilanz allein reicht nicht → user_validation_required-Marker (deferred v0.1.10)
+- **Pattern-#88 (Phase-Gate-Audit-vor-Phase-Transition):** p7-R6→R8 ohne Gate-Audit produzierte 4 CRITICAL-Findings unentdeckt → §Phase-Gate-Audit-Pflicht in advisor + Spiegel in worker SKILL.md (v0.1.9)
+- **Pattern-#89 (User-Methodik-Veto-Authority):** p7-R10→R11 Worker-Patches durch User-Veto verworfen → §User-Veto-Authority-Sektion in worker SKILL.md (v0.1.9), Schema-Update deferred v0.1.10
+
+### C.5 L-p8-01-Pattern (Pre-Flight-Vorlage-Vollständigkeit)
+
+p8 erreichte drift 0.05 durch: Pre-Flight-Patch-Plan-Vorlage in Round 3+4 (3 Edit-Lokationen + 9 ACs + Inhalt-Skelette vollständig vor execute) → Round 5 execute war reine Edit-Sequenz.
+
+**Empirisch:** v0.1.8 Pre-Flight Phase A entspricht diesem Pattern für /bridge-init + /bridge-attach. L-p8-01 ist methodische Validierung von v0.1.8.
+
+### C.6 Cross-Pair-Pause/Resume-Pattern (deferred v0.2.0)
+
+p6 paused-for-praxis-validation-p7 → p6 resume nach p7-Closure. **Decision:** state.phase-Enum braucht "paused"/"resumed"-Werte. v0.2.0 mit Multi-Pair-Topologie (PB-005) zusammen designen.
+
+### C.7 v0.1.9-Patches abgeleitet aus Empirie
+
+| Patch-ID | Patch | Empirie-Quelle |
+|---|---|---|
+| 9-A | bridge-advisor §Phase-Gate-Audit-Pflicht | Pattern-#88 (p7-praxis R16) |
+| 9-B | bridge-advisor + bridge-worker §Cowork-Mode-Composition-Header | Pattern-#76+#77+#80 (p7-praxis R5) |
+| 9-B' | bridge-worker §User-Veto-Authority + §Phase-Gate-Spiegel | Pattern-#89 + Pattern-#88 (Spiegel) |
+| 9-C | DRIFT_RANGES["use-case"] empirisch update | p4/5/7-praxis/8-Empirie n=4 |
+| 9-D | Diese Annex C | Konsolidierungs-Pflicht |
+| 9-E | Smoke-Tests T68-T70 | Test-Coverage |
+
+### C.8 v0.1.10+ Deferred Patches aus Empirie
+
+| Patch | Empirie-Quelle | Begründung Deferred |
+|---|---|---|
+| user_veto_log-Schema-Field | Pattern-#89 | Schema-Bump, braucht mehr Empirie zu Field-Struktur |
+| Pause/Resume-state.phase-Enum | Cross-Pair p6/p7 | mit Multi-Pair-Topologie v0.2.0 |
+| user-validation-Round-Type NEU | Pattern-#82 | Use-Case-Test-Bedarf |
+| bilanz_v1.json tooling-cycles-Field | p4-p8 Drift-Pattern-Cycles | additive Erweiterung |
+
+### C.9 Cross-Refs
+
+- pilot-runs/p7-upp-praxis-validation/bridge/artifacts/praxis_validation_befunde.md (Quell-Befund §9.7+§9.8)
+- pilot-runs/p7-klafki-validation/bridge/BILANZ.md (Profile-Pin-Empirie)
+- pilot-runs/p8-self-sustained-ux/bridge/BILANZ.md (drift 0.05 Best-Performer + L-p8-01)
+- ADR_0030 Annex D (v0.1.8 Pre-Flight-Auto-Resolution = L-p8-01-Implementation)
+- ADR_0031 §3+§4 (Cross-Pair-Patterns Source-Document)
+- tools/bridge_state.py DRIFT_RANGES + RATIO_THRESHOLDS (v0.1.9 update)
+- skills/bridge-advisor/SKILL.md §Phase-Gate-Audit-Pflicht + §Cowork-Mode-Composition (v0.1.9 NEU)
+- skills/bridge-worker/SKILL.md §Phase-Gate-Spiegel + §User-Veto-Authority + §Cowork-Mode-Composition (v0.1.9 NEU)

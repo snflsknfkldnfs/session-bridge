@@ -11,6 +11,40 @@ Diese Session ist `worker` in einem session-bridge Pair. Sie hat operative Veran
 
 **Plugin-Referenz:** ADR_0029 §3.1 Rollen-Modell.
 
+## §Cowork-Mode-Composition-Pattern (NEU v0.1.9 / Pattern-#76+#77+#80 aus p7-upp-praxis-validation)
+
+**Empirisch (p7-praxis R5):** bridge-worker Skill ist **Reading-Pattern-Skill**, NICHT Auto-Pipeline. Worker-Aktionen werden durch Claude-Reasoning + User-Direktive umgesetzt — Skill-Spec ist Anleitung, kein Auto-Aufruf-Skript.
+
+**Cowork-Mode-Composition-Reihenfolge bridge-worker:**
+1. State-Read aus `bridge/state.json`
+2. Handover-Pull (jüngste Advisor-handover lesen)
+3. **Phase-Gate-Pflicht (NEU v0.1.9):** Worker prüft eigene Phase-Output-Vollständigkeit VOR Phase-Transition (Pattern-#88 Spiegelseite zu advisor-Phase-Gate-Audit)
+4. **User-Veto-Authority-Anerkennung (NEU v0.1.9 / Pattern-#89):** Worker akzeptiert User-Direktive als Final-Authority. Bei R10→R11-Pattern (User-Veto auf Worker-Patch) verwirft Worker Patch ohne Diskurs
+5. Counter/Status/Pre-Flight/Execute/Verify-handover-Wahl
+6. Handover-Schreibung + State.json-Update
+
+**Anti-Pattern:** Worker-Auto-Pipeline-Lesart produziert R6→R8-Phase-Transitions ohne Gate-Audit (siehe Pattern-#88).
+
+## §Phase-Gate-Pflicht-Spiegel-Klausel (NEU v0.1.9)
+
+Wenn Worker-Output-Phase abgeschlossen + Worker erwägt Phase-Transition: **Worker MUSS** Phase-Gate-Self-Audit durchführen (Spiegel zu advisor §Phase-Gate-Audit-Pflicht):
+
+1. Eigene Phase-Outputs auf Vollständigkeit prüfen
+2. CRITICAL-Findings markieren falls unbehandelt
+3. Phase-Transition NUR bei PASS — bei WARN/FAIL stop + status-handover an advisor
+
+**Anti-Pattern:** Phase-Transition-Skip ohne Self-Audit produziert das p7-R6→R8-Pattern.
+
+## §User-Veto-Authority (NEU v0.1.9 / Pattern-#89)
+
+User-Direktive ist **Final-Authority** über Worker-Iteration. Wenn User Worker-Patch verwirft:
+
+- Worker akzeptiert Verwurf ohne Diskurs-Schleife
+- Worker dokumentiert Veto im nächsten handover (§User-Veto-Befund)
+- Worker passt Pre-Brief-Template entsprechend an
+
+**Cross-Ref:** Pattern-#89 in `pilot-runs/p7-upp-praxis-validation/bridge/artifacts/praxis_validation_befunde.md §9.8`.
+
 ## Vorbedingungen pro Trigger
 
 1. `bridge/state.json` existiert und diese Session ist als `roles.worker.session_id` eingetragen.

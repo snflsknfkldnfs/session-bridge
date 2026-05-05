@@ -1141,6 +1141,59 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
 
+    # T68: v0.1.9 bridge-advisor SKILL.md §Phase-Gate-Audit + §Cowork-Mode-Composition
+    try:
+        skill_path = Path(__file__).parent.parent / "skills/bridge-advisor/SKILL.md"
+        c = skill_path.read_text()
+        assert "§Phase-Gate-Audit-Pflicht" in c, "Phase-Gate-Audit fehlt"
+        assert "Pattern-#88" in c, "Pattern-#88-Ref fehlt"
+        assert "§Cowork-Mode-Composition-Pattern" in c, "Cowork-Mode-Composition fehlt"
+        assert "Reading-Pattern-Skill" in c
+        assert "Pattern-#76" in c
+        # Phase-Gate-Audit-Output-Format
+        assert "§Phase-Gate-Audit (v0.1.9-Pflicht)" in c
+        assert "Audit-Verdikt" in c
+        results.record("T68 v0.1.9 bridge-advisor Phase-Gate-Audit + Cowork-Composition", True)
+    except Exception as e:
+        results.record("T68 v0.1.9 bridge-advisor Phase-Gate-Audit + Cowork-Composition", False, str(e))
+
+    # T69: v0.1.9 bridge-worker SKILL.md §Phase-Gate-Spiegel + §User-Veto + §Cowork-Mode-Composition
+    try:
+        skill_path = Path(__file__).parent.parent / "skills/bridge-worker/SKILL.md"
+        c = skill_path.read_text()
+        assert "§Cowork-Mode-Composition-Pattern" in c
+        assert "Reading-Pattern-Skill" in c
+        assert "§Phase-Gate-Pflicht-Spiegel-Klausel" in c, "Phase-Gate-Spiegel fehlt"
+        assert "§User-Veto-Authority" in c, "User-Veto fehlt"
+        assert "Pattern-#89" in c
+        assert "Final-Authority" in c
+        results.record("T69 v0.1.9 bridge-worker Phase-Gate-Spiegel + User-Veto + Cowork-Composition", True)
+    except Exception as e:
+        results.record("T69 v0.1.9 bridge-worker Phase-Gate-Spiegel + User-Veto + Cowork-Composition", False, str(e))
+
+    # T70: v0.1.9 DRIFT_RANGES + ADR_0029 Annex C empirisch updated
+    try:
+        from tools import bridge_state as bs
+        # use-case mit min=0.05 (post-empirisch)
+        assert bs.DRIFT_RANGES["use-case"]["min"] == 0.05, f'use-case min: {bs.DRIFT_RANGES["use-case"]["min"]}'
+        assert bs.DRIFT_RANGES["use-case"]["max"] == 2.0
+        assert bs.DRIFT_RANGES["use-case"]["stddev"] == 0.4
+        # use-case-with-profile NEU in DRIFT_RANGES
+        assert "use-case-with-profile" in bs.DRIFT_RANGES, "use-case-with-profile fehlt in DRIFT_RANGES"
+        # default min=0.05 (extreme-low aus p8 0.05)
+        assert bs.DRIFT_RANGES["default"]["min"] == 0.05
+        # ADR_0029 Annex C
+        adr_path = Path(__file__).parent.parent / "docs/adr/ADR_0029_Session_Bridge_Pattern.md"
+        adr = adr_path.read_text()
+        assert "## Annex C" in adr
+        assert "Cross-Pair-Empirie-Konsolidierung" in adr
+        assert "Pattern-#88" in adr
+        assert "L-p8-01" in adr
+        assert "Klafki-Profile-Pin-Mechanik" in adr
+        results.record("T70 v0.1.9 DRIFT_RANGES + ADR_0029 Annex C", True)
+    except Exception as e:
+        results.record("T70 v0.1.9 DRIFT_RANGES + ADR_0029 Annex C", False, str(e))
+
     # T62: v0.1.8 tools.bridge_state Pre-Flight-Helpers verfügbar
     try:
         from tools import bridge_state

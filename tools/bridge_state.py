@@ -234,10 +234,13 @@ def validate_bilanz_against_schema(bilanz: dict, schema_path: Optional[Path] = N
 
 
 # Drift-Plausibility-Ranges per Domain-Klasse (ADR_0031 §3.2 Empirie)
+# v0.1.9 Update: use-case-Ranges empirisch kalibriert mit n=4 Pairs
+# (p4 RT-4 0.10 / p5 RT-2 0.21 / p7 RT-2 0.23 / p8 RT-1 0.05 — Tooling-Effizienz-Pattern-Cycles)
 DRIFT_RANGES = {
     "plugin-self-dev": {"min": 0.8, "max": 3.5, "stddev": 0.6},  # p3-Empirie 1.14-2.4
-    "use-case": {"min": 0.4, "max": 2.0, "stddev": 0.5},          # p4+p5+p6 0.67-1.67
-    "default": {"min": 0.5, "max": 2.5, "stddev": 0.6},
+    "use-case": {"min": 0.05, "max": 2.0, "stddev": 0.4},        # v0.1.9 NEU: p4-p8-Empirie n=4, drift 0.05-0.23 + p3-Range 0.4-2.0
+    "use-case-with-profile": {"min": 0.05, "max": 2.0, "stddev": 0.4},  # v0.1.9 NEU: Klafki-Profile p7 + Profile-aktiv-Pairs
+    "default": {"min": 0.05, "max": 2.5, "stddev": 0.5},
 }
 
 
@@ -267,13 +270,14 @@ def check_drift_plausibility(domain_hint: Optional[str], drift_factor: float) ->
 
 
 # Reflection-Action-Ratio Thresholds per Domain (ADR_0031 §4.1 Decision)
+# v0.1.9 Update: use-case-with-profile empirisch kalibriert (p7-klafki-validation 8 Rounds + p8-self-sustained-ux 10 Rounds)
 RATIO_THRESHOLDS = {
     "plugin-self-dev": 15.0,                  # p3-Empirie 12.5
     "use-case": 4.0,                          # p4+p5+p6 0.67-2.00, default
     "architecture-spec": 4.0,                 # Sub-Pattern p5
     "investigation-trace": 4.0,               # Sub-Pattern p4
     "methodology-improvement": 5.0,           # Sub-Pattern p6 (early-stage)
-    "use-case-with-profile": 5.0,             # Hypothese, Empirie n=0
+    "use-case-with-profile": 5.0,             # v0.1.9 EMPIRISCH validiert: p7-klafki Decision-Lock-Density 1.1/Round, p8 0.9/Round
     "default": 4.0,
 }
 
