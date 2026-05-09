@@ -235,11 +235,13 @@ def validate_bilanz_against_schema(bilanz: dict, schema_path: Optional[Path] = N
 
 # Drift-Plausibility-Ranges per Domain-Klasse (ADR_0031 §3.2 Empirie)
 # v0.1.9 Update: use-case-Ranges empirisch kalibriert mit n=4 Pairs
-# (p4 RT-4 0.10 / p5 RT-2 0.21 / p7 RT-2 0.23 / p8 RT-1 0.05 — Tooling-Effizienz-Pattern-Cycles)
+# v0.1.10 Update: cross-project-Domain NEU + architecture-spec post-p10/p11-Empirie
 DRIFT_RANGES = {
     "plugin-self-dev": {"min": 0.8, "max": 3.5, "stddev": 0.6},  # p3-Empirie 1.14-2.4
-    "use-case": {"min": 0.05, "max": 2.0, "stddev": 0.4},        # v0.1.9 NEU: p4-p8-Empirie n=4, drift 0.05-0.23 + p3-Range 0.4-2.0
-    "use-case-with-profile": {"min": 0.05, "max": 2.0, "stddev": 0.4},  # v0.1.9 NEU: Klafki-Profile p7 + Profile-aktiv-Pairs
+    "use-case": {"min": 0.05, "max": 2.0, "stddev": 0.4},        # v0.1.9: p4-p8 n=4, drift 0.05-0.23
+    "use-case-with-profile": {"min": 0.05, "max": 2.0, "stddev": 0.4},  # v0.1.9: Klafki p7 + Profile-aktiv
+    "architecture-spec": {"min": 0.04, "max": 1.5, "stddev": 0.3},  # v0.1.10 NEU: p5/p7-quellen/p8/p10/p11 n=5, drift 0.04-0.23
+    "cross-project": {"min": 0.20, "max": 0.5, "stddev": 0.1},   # v0.1.10 NEU: p11 n=1 HYPOTHESE, drift 0.27-0.41 (Aufschlag ~+50% sup-Single-Project)
     "default": {"min": 0.05, "max": 2.5, "stddev": 0.5},
 }
 
@@ -270,15 +272,28 @@ def check_drift_plausibility(domain_hint: Optional[str], drift_factor: float) ->
 
 
 # Reflection-Action-Ratio Thresholds per Domain (ADR_0031 §4.1 Decision)
-# v0.1.9 Update: use-case-with-profile empirisch kalibriert (p7-klafki-validation 8 Rounds + p8-self-sustained-ux 10 Rounds)
+# v0.1.9 Update: use-case-with-profile empirisch validiert
+# v0.1.10 Update: cross-project NEU (p11 1. Cross-Project-Bridge)
 RATIO_THRESHOLDS = {
     "plugin-self-dev": 15.0,                  # p3-Empirie 12.5
     "use-case": 4.0,                          # p4+p5+p6 0.67-2.00, default
-    "architecture-spec": 4.0,                 # Sub-Pattern p5
+    "architecture-spec": 4.0,                 # Sub-Pattern p5/p7/p10/p11
     "investigation-trace": 4.0,               # Sub-Pattern p4
     "methodology-improvement": 5.0,           # Sub-Pattern p6 (early-stage)
-    "use-case-with-profile": 5.0,             # v0.1.9 EMPIRISCH validiert: p7-klafki Decision-Lock-Density 1.1/Round, p8 0.9/Round
+    "use-case-with-profile": 5.0,             # v0.1.9: p7-klafki DL-Density 1.1/Round, p8 0.9/Round
+    "cross-project": 6.0,                     # v0.1.10 NEU: p11-Empirie 11 Rounds (counter+counter-disposition für Cross-Project-Komplexität)
     "default": 4.0,
+}
+
+# Track-Type-Empirie für Pattern-#109 HYPOTHESE-Validation (NEU v0.1.10)
+# Empirie aus p10 R4: Schema/Doku/Validator-Tracks deutlich-unter-Korridor 0.6-1.4
+# Re-Klassifikations-Trigger HYPOTHESE → VALIDE: ≥3 diverse Empirie-Datenpunkte pro Track-Typ
+TRACK_TYPE_DRIFT_EMPIRIE = {
+    "schema": {"empirie_n": 1, "drift_observed": [0.04, 0.06], "korridor_default": [0.6, 1.4], "status": "HYPOTHESE"},
+    "doku": {"empirie_n": 1, "drift_observed": [0.04, 0.06], "korridor_default": [0.6, 1.4], "status": "HYPOTHESE"},
+    "validator": {"empirie_n": 1, "drift_observed": [0.04, 0.06], "korridor_default": [0.6, 1.4], "status": "HYPOTHESE"},
+    "spec-patch": {"empirie_n": 4, "drift_observed": [0.05, 0.09, 0.21, 0.23], "korridor_default": [0.05, 0.5], "status": "VALIDE"},  # p4/p5/p7/p8/p9
+    "code": {"empirie_n": 0, "drift_observed": [], "korridor_default": [0.5, 2.0], "status": "UNGETESTET"},
 }
 
 
@@ -453,6 +468,7 @@ __all__ = [
     "SENTINEL_PENDING_ATTACH",
     "DRIFT_RANGES",
     "RATIO_THRESHOLDS",
+    "TRACK_TYPE_DRIFT_EMPIRIE",
     "PROFILE_SHORT_NAMES",
     "PROFILE_SEARCH_DIRS",
     "read_state",

@@ -56,6 +56,11 @@ if args.archive_orphans:
 bilanz = generate_bilanz_markdown(state)
 write(f"bridge/{args.bilanz}", bilanz)
 
+# 4.5 NEU v0.1.10: Memory-Symmetrie-Plan generieren (Pattern-#103)
+memory_plan = generate_memory_symmetry_plan(state)
+state["memory_symmetry_status"] = "pending"  # pending|partial|complete
+prompt_user_for_memory_persist(memory_plan)
+
 # 5. State final
 state.phase = "close"
 state.updated_at = now_iso()
@@ -136,6 +141,115 @@ if errors:
 - pre-v0.1.5 Bilanz-Files bleiben ohne Schema-Enforcement
 
 **Empirie-Anker:** pilot-runs/p3-real-user/bridge/bilanz_8cbeaad0.md als Reference-Implementation (12-Sektionen-konform, Stufe-7-Konsolidierung).
+
+## §Memory-Symmetrie-Pflicht-Workflow (NEU v0.1.10 / Pattern-#103, CRITICAL)
+
+**Empirie:** 4 Pairs (p6/p7-klafki/p10/p11) hatten alle Memory-Symmetrie als Out-of-Bridge-Task. Aktuell ist Memory-Persistierung User-Selbst-Disziplin → asymmetrische Wissens-Lücken bei Cross-Pair-Coordination.
+
+### Memory-Plan-Generierung (Schritt 4.5)
+
+bridge-close generiert vor `phase=close` einen **Memory-Symmetrie-Plan** für beide Sessions:
+
+**Quelle für Memory-Items:**
+- §Pattern-Inventar-Updates aus BILANZ
+- §Decision-Log-Items mit hoher Tragweite (>= "hoch")
+- §Out-of-Bridge-Tasks
+- §Lessons-Learned-Items
+- §Cross-Pair-Anker
+
+**Item-Klassifikation:**
+
+| Type | advisor-Memory | worker-Memory |
+|---|---|---|
+| **feedback** (Methodik, Lehren) | Cross-Session-Beratungs-Pattern, Audit-Methodik, Profile-Anwendung | Operative-Patterns, Drift-Empirie, Workflow-Erfahrung |
+| **project** (was-getan, was-locked) | Snapshot-Anker (was wurde wann locked) | DONE-State, Backlog-Inventar |
+| **reference** (Cross-Pair-Anker) | Cross-Pair-Pointer auf Predecessor-/Successor-Pairs | Pattern-Inventar-Pointer |
+| **user** (User-Profile) | User-Vorlieben aus Pair-Verlauf | (selten worker-side) |
+
+**Symmetrie ≠ identische Items.** Komplementär:
+- advisor speichert **wie man berät** (Methodik)
+- worker speichert **was funktioniert hat** (Operative-Empirie)
+- Beide speichern **was wurde gemacht** (Project-Snapshot) + **Cross-Pair-Pointer**
+
+**Typische Item-Anzahl:** 2-4 advisor-Items + 2-4 worker-Items.
+
+### Memory-Plan-Block in BILANZ.md
+
+bridge-close schreibt §Memory-Symmetrie-Plan-Sektion in die generierte BILANZ:
+
+```markdown
+## §Memory-Symmetrie-Plan (Pattern-#103, v0.1.10-Pflicht)
+
+### Advisor-Memory (Pflicht post-Closure in advisor-Session):
+
+- **Item:** <name>.md
+  - **Type:** feedback | project | reference | user
+  - **Description:** <one-liner>
+  - **Body-Skizze:** <was wird gespeichert>
+
+- **Item:** ...
+
+### Worker-Memory (Pflicht post-Closure parallel in worker-Session):
+
+- **Item:** <name>.md
+  - **Type:** ...
+  - **Description:** ...
+  - **Body-Skizze:** ...
+
+### Persistierungs-Aktion (User in beiden Sessions):
+
+1. In dieser <role>-Session: Memory-Items akzeptieren
+2. In <other-role>-Session (Title <X>): parallel Memory-Items akzeptieren
+3. Memory-Symmetrie-Status: pending → complete
+
+### Cross-Project-Memory-Marker (NEU bei domain-hint=cross-project)
+
+Bei Cross-Project-Bridges: Memory-Items in beiden Sessions tragen Cross-Project-Coordination-Marker:
+- Source-Project: <name>
+- Target-Project: <name>
+- Cross-Bridge-Pair-ID: <pair_id>
+```
+
+### state.json Tracking
+
+bridge-close setzt `state.memory_symmetry_status`:
+- `pending`: Plan generiert, noch nicht persistiert
+- `partial`: nur eine Session hat Memory persistiert
+- `complete`: beide Sessions haben persistiert (User-bestätigt im next /bridge-init oder via /bridge-status)
+
+**Nicht hard-erzwingbar** — Plugin operiert nur in einer Session zur Zeit. Schema-Field hilft beim Tracking + Pre-Init-WARN.
+
+### Pre-Init-WARN bei nächstem Pair (NEU v0.1.10)
+
+Wenn /bridge-init startet während ein vorheriger Pair (gleiche advisor- oder worker-Session) `memory_symmetry_status != complete` hatte:
+
+```
+WARN: Vorheriger Pair <pair_id_old> hat memory_symmetry_status=<status>.
+Memory-Items aus letztem Pair sind nicht in beiden Sessions persistiert.
+Empfehlung: Memory-Items aus bridge/bilanz_<pair_id_old>.md §Memory-Symmetrie-Plan akzeptieren VOR dem neuen Pair-Init.
+```
+
+WARN nicht hard-blockierend — User kann override.
+
+### Bilanz-Schema-Erweiterung (additive)
+
+`schemas/bilanz_v1.json` bekommt optional `memory_symmetry_plan`-Field:
+
+```yaml
+memory_symmetry_plan:
+  advisor_items:
+    - {name: "...", type: "feedback|project|reference|user", description: "..."}
+  worker_items:
+    - {name: "...", type: "...", description: "..."}
+  persistence_status: pending|partial|complete
+  cross_project_marker: {source_project: "...", target_project: "..."}  # nur bei domain-hint=cross-project
+```
+
+### Cross-Refs
+
+- Pattern-#103 in p6-BILANZ.md §3.4 + p7-klafki BILANZ §13 + p10-BILANZ §10 + p11-BILANZ §5
+- ADR_0029 Annex D Cross-Pair-Empirie-Konsolidierung (NEU v0.1.10)
+- ADR_0030 §3.4 Profile-Loading (Memory-Items mit Profile-Pin-Tracking)
 
 ## Anti-Pattern
 

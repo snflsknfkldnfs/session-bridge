@@ -764,9 +764,12 @@ def main(verbose: bool = False) -> int:
         tm = state_schema["properties"].get("topic_metadata", {})
         assert tm.get("type") == "object", "topic_metadata fehlt oder nicht object"
         dh = tm.get("properties", {}).get("domain_hint", {})
-        expected_enum = {"plugin-self-dev", "use-case", "architecture-spec",
-                        "investigation-trace", "methodology-improvement", "other"}
-        assert set(dh.get("enum", [])) == expected_enum, f"domain_hint enum mismatch"
+        # v0.1.10 update: subset-check (forward-compat fuer v0.1.10+ enum-Erweiterungen)
+        v15_required_subset = {"plugin-self-dev", "use-case", "architecture-spec",
+                              "investigation-trace", "methodology-improvement", "other"}
+        actual_enum = set(dh.get("enum", []))
+        missing = v15_required_subset - actual_enum
+        assert not missing, f"v0.1.5 Pflicht-enum-Werte fehlen: {missing}"
 
         # Positive: state mit topic_metadata.domain_hint validate PASS
         state = synth_valid_state()
@@ -1140,6 +1143,94 @@ def main(verbose: bool = False) -> int:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", True)
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
+
+    # T71: v0.1.10 bridge-close.md §Memory-Symmetrie-Pflicht-Workflow
+    try:
+        bc_path = Path(__file__).parent.parent / "commands/bridge-close.md"
+        c = bc_path.read_text()
+        assert "§Memory-Symmetrie-Pflicht-Workflow" in c, "Memory-Symmetrie-Section fehlt"
+        assert "Pattern-#103" in c, "Pattern-#103-Ref fehlt"
+        assert "memory_symmetry_status" in c
+        assert "advisor_items" in c or "Advisor-Memory" in c
+        assert "worker_items" in c or "Worker-Memory" in c
+        assert "Pre-Init-WARN" in c
+        results.record("T71 v0.1.10 bridge-close §Memory-Symmetrie-Pflicht-Workflow", True)
+    except Exception as e:
+        results.record("T71 v0.1.10 bridge-close §Memory-Symmetrie-Pflicht-Workflow", False, str(e))
+
+    # T72: v0.1.10 schemas/bridge_state_v1 domain_hint cross-project + memory_symmetry_status
+    try:
+        s_path = Path(__file__).parent.parent / "schemas/bridge_state_v1.json"
+        schema = json.loads(s_path.read_text())
+        domain_enum = schema["properties"]["topic_metadata"]["properties"]["domain_hint"]["enum"]
+        for v in ["plugin-self-dev", "use-case", "use-case-with-profile",
+                  "architecture-spec", "architecture-spec-patch",
+                  "cross-project", "investigation-trace", "methodology-improvement", "other"]:
+            assert v in domain_enum, f"missing domain_hint enum: {v}"
+        # memory_symmetry_status field
+        assert "memory_symmetry_status" in schema["properties"]
+        mss = schema["properties"]["memory_symmetry_status"]
+        for s in ["pending", "partial", "complete", "skipped"]:
+            assert s in mss["enum"], f"missing status: {s}"
+        results.record("T72 v0.1.10 bridge_state_v1 cross-project + memory_symmetry_status", True)
+    except Exception as e:
+        results.record("T72 v0.1.10 bridge_state_v1 cross-project + memory_symmetry_status", False, str(e))
+
+    # T73: v0.1.10 handover_frontmatter_v1 source_of_truth_locked-Field
+    try:
+        h_path = Path(__file__).parent.parent / "schemas/handover_frontmatter_v1.json"
+        hschema = json.loads(h_path.read_text())
+        assert "source_of_truth_locked" in hschema["properties"]
+        sot = hschema["properties"]["source_of_truth_locked"]
+        assert sot["type"] == "array"
+        assert "ref" in sot["items"]["required"]
+        assert "at_round" in sot["items"]["required"]
+        assert "drift_against" in sot["items"]["properties"]
+        results.record("T73 v0.1.10 handover_frontmatter source_of_truth_locked", True)
+    except Exception as e:
+        results.record("T73 v0.1.10 handover_frontmatter source_of_truth_locked", False, str(e))
+
+    # T74: v0.1.10 tools/bridge_state DRIFT_RANGES cross-project + TRACK_TYPE_DRIFT_EMPIRIE
+    try:
+        from tools import bridge_state as bs
+        # cross-project in DRIFT_RANGES
+        assert "cross-project" in bs.DRIFT_RANGES
+        cp = bs.DRIFT_RANGES["cross-project"]
+        assert cp["min"] == 0.20
+        assert cp["max"] == 0.5
+        # architecture-spec NEU
+        assert "architecture-spec" in bs.DRIFT_RANGES
+        # cross-project in RATIO_THRESHOLDS
+        assert bs.RATIO_THRESHOLDS["cross-project"] == 6.0
+        # TRACK_TYPE_DRIFT_EMPIRIE
+        assert hasattr(bs, "TRACK_TYPE_DRIFT_EMPIRIE")
+        for tt in ["schema", "doku", "validator", "spec-patch", "code"]:
+            assert tt in bs.TRACK_TYPE_DRIFT_EMPIRIE
+        # spec-patch ist VALIDE (n=4)
+        assert bs.TRACK_TYPE_DRIFT_EMPIRIE["spec-patch"]["status"] == "VALIDE"
+        # schema/doku/validator sind HYPOTHESE
+        assert bs.TRACK_TYPE_DRIFT_EMPIRIE["schema"]["status"] == "HYPOTHESE"
+        # __all__ exports
+        assert "TRACK_TYPE_DRIFT_EMPIRIE" in bs.__all__
+        results.record("T74 v0.1.10 DRIFT_RANGES cross-project + TRACK_TYPE_DRIFT_EMPIRIE", True)
+    except Exception as e:
+        results.record("T74 v0.1.10 DRIFT_RANGES cross-project + TRACK_TYPE_DRIFT_EMPIRIE", False, str(e))
+
+    # T75: v0.1.10 ADR_0029 Annex D Cross-Pair-Empirie post-v0.1.9
+    try:
+        adr_path = Path(__file__).parent.parent / "docs/adr/ADR_0029_Session_Bridge_Pattern.md"
+        c = adr_path.read_text()
+        assert "## Annex D" in c
+        assert "Cross-Pair-Empirie-Konsolidierung post-v0.1.9" in c
+        assert "Pattern-#103" in c
+        assert "Pattern-#109" in c
+        assert "p10-phase1a-foundation-audit" in c
+        assert "p11-eg-schsch-architektur-import" in c
+        assert "Source-of-Truth-Lock" in c
+        assert "Iteration-Cycle-4-Round-Pattern" in c
+        results.record("T75 v0.1.10 ADR_0029 Annex D Cross-Pair-Empirie", True)
+    except Exception as e:
+        results.record("T75 v0.1.10 ADR_0029 Annex D Cross-Pair-Empirie", False, str(e))
 
     # T68: v0.1.9 bridge-advisor SKILL.md §Phase-Gate-Audit + §Cowork-Mode-Composition
     try:

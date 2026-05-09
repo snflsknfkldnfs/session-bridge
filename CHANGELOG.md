@@ -5,6 +5,92 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.10] — 2026-05-09 — Empirie-driven Patches Round 2: Memory-Symmetrie + Cross-Project-Domain + Source-of-Truth-Lock + Track-Type-Tracking
+
+### Source: 3 neue Pairs seit v0.1.9 (p10/p11/p12) + p6-BILANZ ausgewertet — Cross-Pair-Empirie-Konsolidierung Round 2
+
+p10-phase1a-foundation-audit lieferte Pattern-#109 HYPOTHESE Drift-Korridor-Track-Typ + Iteration-Cycle-4-Round-Pattern. p11-eg-schsch-architektur-import als 1. Cross-Project-Bridge mit Source-of-Truth-Lock-Pattern + Anti-Drift-#6. p6-upp-eg-advice (56 Rounds, Long-Pair) konsolidiert Pattern-#103 Memory-Symmetrie als Pflicht-Workflow (n=4 mit p7-klafki/p10/p11).
+
+### Added
+
+- **commands/bridge-close.md §Memory-Symmetrie-Pflicht-Workflow** (NEU v0.1.10 / Pattern-#103, CRITICAL):
+  - Memory-Plan-Generierung aus BILANZ-Substanz (2-4 Items pro Session)
+  - §Memory-Symmetrie-Plan-Block in BILANZ.md (advisor + worker, komplementär)
+  - state.json memory_symmetry_status-Tracking (pending|partial|complete|skipped)
+  - Pre-Init-WARN bei nächstem Pair wenn vorheriger != complete
+  - Cross-Project-Memory-Marker bei domain-hint=cross-project
+  - Item-Klassifikation: feedback (Methodik) / project (Snapshot) / reference (Cross-Pair) / user
+- **schemas/bridge_state_v1.json domain_hint-Enum erweitert** (v0.1.10):
+  - NEU `cross-project` (Empirie p11)
+  - NEU `architecture-spec-patch` (Empirie p8/p12)
+  - NEU `use-case-with-profile` (jetzt explizit, vorher nur in DRIFT_RANGES)
+- **schemas/bridge_state_v1.json memory_symmetry_status-Field** NEU
+- **schemas/handover_frontmatter_v1.json source_of_truth_locked-Array** (NEU v0.1.10 / p11-R4-02):
+  - Pflicht-Felder: ref + at_round
+  - Optional: reason + drift_against
+  - Anti-Drift-#6 Cross-Project-Konsistenz strukturell sichtbar
+- **tools/bridge_state.py DRIFT_RANGES erweitert** (v0.1.10):
+  - NEU `cross-project` {min:0.20, max:0.5, stddev:0.1} (p11 n=1, drift 0.27-0.41)
+  - NEU `architecture-spec` {min:0.04, max:1.5, stddev:0.3} (p5/p7-quellen/p8/p10/p11 n=5)
+- **tools/bridge_state.py RATIO_THRESHOLDS erweitert** (v0.1.10):
+  - NEU `cross-project: 6.0` (p11-Empirie 11 Rounds für Cross-Project-Komplexität)
+- **tools/bridge_state.py TRACK_TYPE_DRIFT_EMPIRIE-Konstante** (NEU v0.1.10 / Pattern-#109):
+  - schema/doku/validator: HYPOTHESE n=1 mit Korridor [0.6, 1.4]
+  - spec-patch: VALIDE n=4 (p4/p5/p7/p8/p9) mit Range [0.05, 0.5]
+  - code: UNGETESTET n=0
+  - Re-Klassifikations-Trigger HYPOTHESE→VALIDE: ≥3 diverse Datenpunkte pro Track-Typ
+- **docs/adr/ADR_0029_Session_Bridge_Pattern.md Annex D** (NEU 2026-05-09):
+  - D.1 Pair-Inventar p10/p11/p12
+  - D.2 Pattern-#103 Memory-Symmetrie als Pflicht-Workflow
+  - D.3 Cross-Project-Bridge als domain-Subtype
+  - D.4 Source-of-Truth-Lock-Field-Justification
+  - D.5 Pattern-#109 Track-Type-Differenzierung
+  - D.6 Iteration-Cycle-4-Round-Pattern
+  - D.7 Long-Pair-Pattern (deferred)
+  - D.8 5. Tooling-Effizienz-Cycle
+  - D.9 v0.1.10-Patches Tabelle
+  - D.10 v0.1.11+ Deferred Patches
+- **tests/smoke_self_test.py** T71-T75 NEU:
+  - T71: bridge-close §Memory-Symmetrie-Pflicht-Workflow
+  - T72: bridge_state_v1 cross-project + memory_symmetry_status
+  - T73: handover_frontmatter source_of_truth_locked
+  - T74: DRIFT_RANGES cross-project + TRACK_TYPE_DRIFT_EMPIRIE
+  - T75: ADR_0029 Annex D
+
+### Changed
+
+- **DRIFT_RANGES["use-case-with-profile"]** Empirie-Markierung empirisch validiert (war v0.1.9 Hypothese, jetzt mit p7-klafki + p11 cross-validated)
+- **schemas/bridge_state_v1.json** domain_hint-Enum-Erweiterung (additive, backward-compat — alte Pairs ohne neue Werte funktionieren weiter)
+
+### Verification
+
+- Self-Test 78/78 PASS (T1-T70 + T71-T75 NEU)
+- schema_version unverändert v1.2.0 (additive Erweiterung im topic_metadata-Subschema + neues optional Field memory_symmetry_status)
+
+### Backward-Compatibility
+
+- v0.1.9-Pairs unverändert funktional
+- Alte `domain_hint`-Werte (use-case, architecture-spec, etc.) bleiben gültig
+- `memory_symmetry_status`-Field optional — alte state.json bleiben valid
+- `source_of_truth_locked`-Field optional in handover-Frontmatter
+
+### Empirisch-validiert
+
+- Pattern-#103 Memory-Cross-Session-Symmetrie n=4 (p6/p7-klafki/p10/p11)
+- Cross-Project-Bridge-Drift-Aufschlag ~+50% sup-Single (p11 vs p4-p10-Single-Project-Pairs)
+- Iteration-Cycle-4-Round-Pattern (counter→decision-lock→iteration-cycle→verify) als Bridge-Best-Practice
+- 5 Tooling-Effizienz-Pattern-Cycles (p4-p11) — methodisch verfestigt
+
+### Deferred to v0.1.11+
+
+- Long-Pair-WARN bei Round-Counter > 30 (p6 n=1)
+- Mid-Pair-Memory-Snapshot-Pattern (Long-Pair-Folge)
+- bilanz_v1.json cross_project_metadata-Field
+- Konsensus-Lock vs Decision-Lock-Differenzierung
+- AD.1A-Konstanten als Profile-Style-Header
+
+---
+
 ## [0.1.9] — 2026-05-05 — Empirie-driven Patches: Phase-Gate-Audit + Cowork-Mode-Composition + DRIFT-Update + ADR_0029 Annex C
 
 ### Source: 5 Bridge-Pairs seit v0.1.7 (p6/p7-praxis/p7-klafki/p8/p9) — Cross-Pair-Empirie-Konsolidierung

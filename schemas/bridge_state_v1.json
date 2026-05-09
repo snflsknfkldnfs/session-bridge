@@ -511,14 +511,22 @@
           "enum": [
             "plugin-self-dev",
             "use-case",
+            "use-case-with-profile",
             "architecture-spec",
+            "architecture-spec-patch",
             "investigation-trace",
             "methodology-improvement",
+            "cross-project",
             "other"
           ],
-          "description": "Domain-Klassifikation. plugin-self-dev = Plugin-Self-Dev (z.B. p3); use-case = generic Use-Case (z.B. p4 escape-game); architecture-spec = Architektur-Spec (z.B. p5); investigation-trace = Empirie-Trace (z.B. p4 sub-pattern); methodology-improvement = Cross-Pair-Methode (z.B. p6)."
+          "description": "Domain-Klassifikation. plugin-self-dev = Plugin-Self-Dev (z.B. p3); use-case = generic Use-Case (z.B. p4); use-case-with-profile = Profile-aktiviert (z.B. p7-klafki); architecture-spec = Architektur-Spec (z.B. p5/p10/p11); architecture-spec-patch = Spec-Inkrement-Patch (z.B. p8/p12); investigation-trace = Empirie-Trace (z.B. p4 sub-pattern); methodology-improvement = Cross-Pair-Methode (z.B. p6); cross-project = Cross-Project-Bridge UPP↔EG (NEU v0.1.10 / p11 n=1, drift-Aufschlag ~+50% sup-Single)."
         }
       }
+    },
+    "memory_symmetry_status": {
+      "type": "string",
+      "enum": ["pending", "partial", "complete", "skipped"],
+      "description": "NEU v0.1.10 (Pattern-#103 Memory-Cross-Session-Symmetrie): Status der Pflicht-Memory-Persistierung beider Sessions post-Closure. pending = Plan generiert, noch nicht persistiert; partial = nur eine Session persistiert; complete = beide Sessions persistiert; skipped = User explizit übersprungen. Field nur bei phase=close oder post-close gesetzt."
     }
   },
   "additionalProperties": false

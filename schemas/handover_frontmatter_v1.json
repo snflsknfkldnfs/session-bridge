@@ -176,6 +176,35 @@
           }
         }
       }
+    },
+    "source_of_truth_locked": {
+      "type": "array",
+      "description": "NEU v0.1.10 (Pattern aus p11-R4-02 Cross-Project-Empirie): Bei versions-driftete Definitionen in Predecessor-Empirie Lock-Pflicht. Anti-Drift-#6 Cross-Project-Konsistenz. Pro Item: ref (Source-File/ADR/Definition), at_round (Lock-Round), reason (warum Lock).",
+      "items": {
+        "type": "object",
+        "required": ["ref", "at_round"],
+        "properties": {
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Source-of-Truth-Pointer (z.B. 'r_rl_sketch v3 §2.3' oder 'ADR_0046 K-Komponenten-Definition' oder absolute file path)."
+          },
+          "at_round": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Round-Counter, in dem Lock erfolgt ist."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Optional: Warum Lock erforderlich war (z.B. 'UGG-Skizze K-Index-Drift gegenueber operativer ADR_0046-Definition')."
+          },
+          "drift_against": {
+            "type": "string",
+            "description": "Optional: Pointer auf die abweichende Definition, gegen die Lock setzt (z.B. 'UGG-Skizze §2.3 K3+K4 vertauscht')."
+          }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "additionalProperties": false,

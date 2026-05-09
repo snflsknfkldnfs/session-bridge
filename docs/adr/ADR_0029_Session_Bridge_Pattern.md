@@ -678,3 +678,132 @@ p6 paused-for-praxis-validation-p7 → p6 resume nach p7-Closure. **Decision:** 
 - tools/bridge_state.py DRIFT_RANGES + RATIO_THRESHOLDS (v0.1.9 update)
 - skills/bridge-advisor/SKILL.md §Phase-Gate-Audit-Pflicht + §Cowork-Mode-Composition (v0.1.9 NEU)
 - skills/bridge-worker/SKILL.md §Phase-Gate-Spiegel + §User-Veto-Authority + §Cowork-Mode-Composition (v0.1.9 NEU)
+
+---
+
+## Annex D — Cross-Pair-Empirie-Konsolidierung post-v0.1.9 (NEU v0.1.10, 2026-05-09)
+
+**Status:** LOCKED 2026-05-09 als Teil v0.1.10 Empirie-driven-Patches Round 2
+**Trigger:** 3 neue Pairs seit v0.1.9 (p10/p11/p12) + p6-BILANZ ausgewertet liefern weitere empirische Substanz. Pattern-#103 Memory-Symmetrie etabliert sich als Pflicht-Workflow (n=4). Cross-Project-Bridge p11 als 1. Empirie-Datenpunkt für neue Domain-Klasse.
+
+### D.1 Pair-Inventar post-v0.1.9
+
+| Pair | Topic | Domain | Rounds | Status | Wichtigste Patterns |
+|---|---|---|---|---|---|
+| p10-phase1a-foundation-audit | Phase-1A Foundation-Audit (process-consulting Profile aktiv) | architecture-spec | 6 | closed | Pattern-#109 HYPOTHESE Drift-Korridor-Track-Typ + Iteration-Cycle-4-Round-Pattern + Memory-Symmetrie |
+| p11-eg-schsch-architektur-import | Cross-Project-Persona-Pipeline-Import UPP→EG | architecture-spec (cross-project) | 11 | closed | **1. Cross-Project-Bridge** + Source-of-Truth-Lock + Anti-Drift-#6 + drift 0.27-0.41 |
+| p12-eg-r5-spec-patch | EG-R5-Spec-Patch P0-Implementation-Substanz | architecture-spec-patch | 0 | active (init) | (in Bewegung, kein Pattern noch) |
+
+### D.2 Pattern-#103 Memory-Cross-Session-Symmetrie als Pflicht-Workflow
+
+**Empirie:** 4 von 5 closed-Pairs haben Memory-Symmetrie als Out-of-Bridge-Task (p6/p7-klafki/p10/p11). Pattern empirisch konsolidiert n=4 — Pflicht-Workflow gerechtfertigt.
+
+**Decision:** v0.1.10 erweitert bridge-close.md §Memory-Symmetrie-Pflicht-Workflow:
+- Memory-Plan-Generierung aus BILANZ-Substanz (2-4 Items pro Session)
+- §Memory-Symmetrie-Plan-Block in BILANZ.md
+- state.json `memory_symmetry_status`-Field (pending/partial/complete/skipped)
+- Pre-Init-WARN bei nächstem Pair wenn vorheriger Pair `!= complete`
+
+**Symmetrie-Definition:**
+- Komplementär (nicht identisch): advisor speichert Methodik, worker speichert Operative-Empirie
+- Beide speichern Project-Snapshot + Cross-Pair-Pointer
+- Asynchron persistiert (kein gleichzeitiges Locking)
+- Plugin kann nicht hard-erzwingen — nur dokumentieren + erinnern
+
+### D.3 Cross-Project-Bridge als domain-Subtype
+
+**Empirie p11 (n=1, HYPOTHESE):** Cross-Project-Bridges haben strukturell andere Drift-Range (~+50% Aufschlag sup-Single-Project).
+
+**Decision v0.1.10:**
+- bridge_state_v1.json topic_metadata.domain_hint-Enum erweitert um `cross-project`
+- DRIFT_RANGES["cross-project"] = {min:0.20, max:0.5, stddev:0.1}
+- RATIO_THRESHOLDS["cross-project"] = 6.0 (höher wegen counter+counter-disposition für Cross-Project-Komplexität)
+- Plus: `architecture-spec-patch` als Subtype (p8/p12 Empirie)
+- Plus: `use-case-with-profile` jetzt explizit als enum-Wert (vorher nur in DRIFT_RANGES)
+
+### D.4 Source-of-Truth-Lock-Field im handover-Schema
+
+**Empirie p11-R4-02:** UGG-Skizze hatte K-Index-Drift gegenüber operativer r_rl_sketch+ADR_0046-Definition. Source-of-Truth-Lock in Round-4-counter-disposition verhinderte Spec-Patch-Korruption.
+
+**Decision v0.1.10:** handover_frontmatter_v1.json optional `source_of_truth_locked`-Array:
+```yaml
+source_of_truth_locked:
+  - ref: "ADR_0046 K-Komponenten-Definition"
+    at_round: 4
+    reason: "UGG-Skizze K-Index-Drift gegenueber operativer Definition"
+    drift_against: "UGG-Skizze §2.3 K3+K4 vertauscht"
+```
+
+Anti-Drift-#6 Cross-Project-Konsistenz wird via dieses Field strukturell sichtbar.
+
+### D.5 Pattern-#109 Track-Type-Differenzierung (Re-Klassifikations-Vorbereitung)
+
+**Empirie p10 (n=2, HYPOTHESE):** Schema/Doku/Validator-Tracks deutlich-unter-Korridor 0.6-1.4 (drift 0.04-0.06). Re-Klassifikations-Trigger HYPOTHESE→VALIDE: ≥3 diverse Empirie-Datenpunkte pro Track-Typ.
+
+**Decision v0.1.10:** tools/bridge_state.py neue Konstante `TRACK_TYPE_DRIFT_EMPIRIE`:
+- schema/doku/validator: HYPOTHESE n=1 mit Korridor [0.6, 1.4]
+- spec-patch: VALIDE n=4 (p4/p5/p7/p8/p9) mit Range [0.05, 0.5]
+- code: UNGETESTET n=0
+- Empirie-Sammlung weiter pro Pair-DONE → Re-Klassifikations-Trigger bei n≥3 pro Track-Typ
+
+### D.6 Iteration-Cycle-4-Round-Pattern (p10-Empirie)
+
+**Pattern (etabliert in p10):** counter → decision-lock → iteration-cycle → verify (4 Rounds für Audit-Cycle).
+
+p10 Round-Sequenz: R1 initial-advice → R2 counter-mit-acknowledge-und-iteration-plan → R3 decision-lock → R4 worker iteration-cycle (9/9 Items DONE) → R5 advisor verify → R6 close.
+
+**Empirie:** Iteration-Cycle 9/9 Items DONE in 1.4h Wallclock vs Forecast 4.4d → Drift 0.04-0.06. Pattern-#82-Realbedingungen-Validation erfüllt + AD.1A.12-Pflicht-Self-Audit.
+
+**Status:** Bridge-Best-Practice. Nicht hard-codiert in Skill, aber als Reference-Implementation in ADR-Annex dokumentiert.
+
+### D.7 Long-Pair-Pattern (p6 mit 56 Rounds)
+
+p6-upp-eg-advice mit 56 Rounds + 24 Konsensus-Locks differenziert von Decision-Locks. Empirie n=1 — kein hard-WARN-Pattern, aber Vermerk: bei sehr langen Pairs könnte Memory-Symmetrie multi-step erfolgen (Mid-Pair-Memory-Snapshots).
+
+**Deferred v0.1.11+:** Mid-Pair-Memory-Snapshot-Pattern wenn n≥2 Long-Pairs.
+
+### D.8 5. Tooling-Effizienz-Pattern-Cycle bestätigt
+
+| Pair | RT | Drift | Trigger-Mechanik |
+|---|---|---|---|
+| p4 RT-4 | 0.10 | 3-File-Diff-Self-Audit + jq-Aggregation Subagent-Pattern |
+| p5 RT-2 | 0.21 | Spec-Schreibung in-place-Edit-Modus |
+| p7-praxis RT-2 | 0.23 | Spec-Patch-Schreibung Pre-Vorarbeit-Reuse |
+| p8 RT-1 | 0.05 | Pre-Flight-Vorlage-Reuse + Briefing-Inhalt-Vorlage |
+| p9 (=p11) RT-1 | 0.09 | Cross-Project-Pattern-Konsolidierung + Pre-Flight-Vorlage-Reuse + Klafki-Synthese-Volltext-Inline-Reuse |
+
+**5 erfolgreiche Self-Disclosure-Cycles** = stable empirie. Methodologie verfestigt.
+
+### D.9 v0.1.10-Patches abgeleitet aus Empirie
+
+| Patch-ID | Patch | Empirie-Quelle |
+|---|---|---|
+| 10-A | bridge-close §Memory-Symmetrie-Pflicht-Workflow (Pattern-#103) + state.memory_symmetry_status | p6+p7-klafki+p10+p11 (n=4) |
+| 10-B | bridge_state_v1 domain_hint cross-project + architecture-spec-patch + use-case-with-profile | p11 (n=1) + p8/p12 + Klafki-Pairs |
+| 10-B' | DRIFT_RANGES["cross-project"] + ["architecture-spec"] + RATIO_THRESHOLDS["cross-project"] | p4-p11-Empirie |
+| 10-C | handover_frontmatter_v1 source_of_truth_locked-Field | p11-R4-02 (n=1) |
+| 10-D | tools/bridge_state TRACK_TYPE_DRIFT_EMPIRIE-Konstante (Pattern-#109 Tracking) | p10 (n=2 HYPOTHESE) |
+| 10-E | Diese Annex D | Konsolidierungs-Pflicht |
+
+### D.10 v0.1.11+ Deferred Patches
+
+| Patch | Empirie-Quelle | Begründung Deferred |
+|---|---|---|
+| Long-Pair-WARN bei Round-Counter > 30 | p6 (n=1) | mehr Long-Pair-Empirie nötig |
+| Mid-Pair-Memory-Snapshot-Pattern | p6 (n=1) | mit Long-Pair-Pattern zusammen |
+| bilanz_v1 cross_project_metadata-Field | p11 (n=1) | additive Erweiterung, low-Priorität |
+| Konsensus-Lock vs Decision-Lock-Differenzierung | p6 (n=1) | n=1 Empirie zu schwach |
+| AD.1A-Konstanten als Profile-Style-Header | p10 process-consulting | v0.2.0 |
+
+### D.11 Cross-Refs
+
+- pilot-runs/p10-phase1a-foundation-audit/bridge/BILANZ.md (Iteration-Cycle-Pattern + Pattern-#109 + Memory-Symmetrie §10)
+- pilot-runs/p11-eg-schsch-architektur-import/bridge/BILANZ.md (Cross-Project-Bridge + Source-of-Truth-Lock + Anti-Drift-#6)
+- pilot-runs/p6-upp-eg-advice/bridge/BILANZ.md (Long-Pair + 56 Rounds + Pattern-#103-Memory)
+- ADR_0029 Annex C v0.1.9 (Pre-Patch-Empirie post-v0.1.8)
+- ADR_0030 Annex D v0.1.8 (Pre-Flight-Auto-Resolution = L-p8-01-Implementation)
+- ADR_0031 §3+§4 (Cross-Pair-Patterns Source-Document)
+- tools/bridge_state.py DRIFT_RANGES + RATIO_THRESHOLDS + TRACK_TYPE_DRIFT_EMPIRIE (v0.1.10 update)
+- commands/bridge-close.md §Memory-Symmetrie-Pflicht-Workflow (v0.1.10 NEU)
+- schemas/bridge_state_v1.json domain_hint-Enum erweitert + memory_symmetry_status (v0.1.10 NEU)
+- schemas/handover_frontmatter_v1.json source_of_truth_locked (v0.1.10 NEU)
