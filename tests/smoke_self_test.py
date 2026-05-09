@@ -1144,6 +1144,45 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
 
+    # T76: architecture-archaeology Reference-Profile (skip-if-private)
+    try:
+        arch_dir = Path("/Users/paulad/session-bridge/private-notes/expertise-profiles/architecture-archaeology")
+        if not arch_dir.exists():
+            results.record("T76 architecture-archaeology Reference-Profile (skip-if-private)", True, "skipped")
+        else:
+            for f in ["PROFILE.md", "diagnostic-frames.md", "anti-patterns.md",
+                      "question-bank.md", "workflows.md", "token-efficiency-patterns.md"]:
+                assert (arch_dir / f).exists(), f"arch missing {f}"
+            wf_text = (arch_dir / "workflows.md").read_text()
+            wf_ids = re.findall(r"## (W-A-[\w-]+):", wf_text)
+            assert len(wf_ids) >= 6, f"arch workflows count {len(wf_ids)}"
+            for wid in ["W-A-Triangulate", "W-A-Drift-Diagnose", "W-A-Token-Forensik",
+                        "W-A-Inflation-Detektion", "W-A-Approximations-Test", "W-A-Reflex"]:
+                assert wid in wf_ids, f"missing workflow: {wid}"
+            # Multi-Pass Triangulate + Approximations + Reflex
+            for wid in ["W-A-Triangulate", "W-A-Approximations-Test", "W-A-Reflex"]:
+                bm = re.search(rf"## {re.escape(wid)}:.*?(?=## W-A-|## Workflow|---\Z)", wf_text, re.DOTALL)
+                assert bm
+                for p in [1, 2, 3, 4]:
+                    assert f"### Pass {p}" in bm.group(0), f"{wid} pass {p} fehlt"
+            # 10 APs mit Selbstanwendung
+            ap_text = (arch_dir / "anti-patterns.md").read_text()
+            ap_ids = re.findall(r"## (AP-T\d+):", ap_text)
+            assert len(ap_ids) == 10
+            assert ap_text.count("**SELBSTANWENDUNG:**") >= 10
+            assert "Anti-Kosmetik" in ap_text
+            # token-efficiency-patterns: 8 IP + 8 OP
+            tep = (arch_dir / "token-efficiency-patterns.md").read_text()
+            ip_ids = re.findall(r"### IP-(\d+)", tep)
+            assert len(set(ip_ids)) == 8
+            op_ids = re.findall(r"### OP-(\d+)", tep)
+            assert len(set(op_ids)) == 8
+            # Anti-Kosmetik in workflows
+            assert "W-A-Anti-Kosmetik" in wf_text
+            results.record("T76 architecture-archaeology Reference-Profile (6 Files + 8 IP/OP + Anti-Kosmetik)", True)
+    except Exception as e:
+        results.record("T76 architecture-archaeology Reference-Profile", False, str(e))
+
     # T71: v0.1.10 bridge-close.md §Memory-Symmetrie-Pflicht-Workflow
     try:
         bc_path = Path(__file__).parent.parent / "commands/bridge-close.md"
