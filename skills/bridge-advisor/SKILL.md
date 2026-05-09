@@ -47,6 +47,60 @@ Dies erlaubt User klare Mode-Identifikation, verhindert Plan-vs-Execution-Drift-
 5. Schritt 3 Handover-File schreiben
 6. Schritt 4 State.json updaten
 
+## §Profile-Frame-Dispatch-Pattern (NEU v0.1.11, Option B-Plus)
+
+**Empirie:** 6 Profile-Familie produziert. User-Use-Cases wechseln Domain häufig (z.B. architecture-archaeology-Pair will Adorno-AP für Marketing-Text-Diagnose). Aktuell: Profile-Wechsel via neuer Pair = ~36000 Tokens (Pair-Setup + Profile-Loading × 2). Punktuelle Lookup ist Token-effizient.
+
+**Pattern (Option B-Plus aus ADR_0030 Annex E):**
+- Single-Primär-Profile bleibt aktiv (methodische Kohärenz, ADR_0030 D5 Single-Profile-Pinning erhalten)
+- Sekundär-Profile-Elemente (Frames / APs / Questions / Workflow-Passes) können punktuell abgerufen werden via `tools/profile_frame_lookup.py`
+- Token-Cost: ~500-1500 Tokens pro Lookup statt ~18000 für Profile-Aktivierung
+- Methodische-Konsistenz-Marker im Output Pflicht: User sieht "punktuelle Anwendung, nicht voll-Methodik"
+
+**API:**
+
+```python
+from tools.profile_frame_lookup import (
+    lookup_frame,           # lookup_frame("adorno", "F5.1") → AP-Frame mit body
+    lookup_ap,              # lookup_ap("adorno", "AP-A05") → AP mit Selbstanwendung
+    lookup_question,        # lookup_question("klafki", frame_id="F2.1", round_type="counter")
+    lookup_workflow_pass,   # lookup_workflow_pass("adorno", "W-A-Multi", pass_n=3)
+    list_available_profiles,
+    list_frames,
+    list_aps,
+    lookup_token_cost_estimate,
+)
+```
+
+**Wann Lookup verwenden (advisor-Skill-Anweisung):**
+
+| Anliegen-Typ | Aktion |
+|---|---|
+| Domain-fremde Aspekt-Diagnose innerhalb laufender Pair | Frame-/AP-Lookup statt Profile-Wechsel |
+| Cross-Profile-Cross-Reference im handover | Lookup + Methodische-Konsistenz-Marker |
+| Methodische Tiefe für Sekundär-Aspekt erforderlich | Lookup + bei Bedarf separater Pair mit Sekundär-Profile (User-Decision) |
+| Worker fragt explizit nach Cross-Profile-Lesart | Lookup-Output mit Marker, dass volle Methodik nicht aktiv |
+
+**Output-Format-Pflicht bei Cross-Profile-Lookup:**
+
+```
+§Cross-Profile-Lookup (B-Plus, v0.1.11):
+- Primär-Profile: <name>
+- Lookup-Profile: <name>
+- Lookup-Element: <frame-id / ap-id / workflow-pass>
+- Token-Cost: <estimate> (vs voll-Profile ~18000)
+- Anwendungs-Diagnose: <Befund>
+- Methodische-Konsistenz-Hinweis: Punktuelle Anwendung von <element>. Voll-Methodik (Selbstanwendung / Multi-Pass / Reflexivität) NICHT aktiv. Bei Bedarf separater Pair mit <profile> empfohlen.
+```
+
+**Anti-Pattern (CRITICAL):**
+
+- **NICHT** Cross-Profile-Lookup als Ersatz für vollständige Methodik präsentieren — Marker-Pflicht
+- **NICHT** mehrere Profile-Lookups akkumulieren ohne Methodik-Konsistenz-Reflexion
+- **NICHT** Cross-Profile-Lookup ohne Triangulation in Architektur-Audit-Anliegen (Anti-Kosmetik AP-T10 aus arch-Profile)
+
+**Cross-Refs:** ADR_0030 Annex E (v0.1.11), tools/profile_frame_lookup.py, expertise-profiles/architecture-archaeology/token-efficiency-patterns.md OP-1.
+
 ## §Phase-Gate-Audit-Pflicht (NEU v0.1.9 / Pattern-#88 aus p7-upp-praxis-validation)
 
 **Empirisch (p7-praxis R16-Advisor-Cross-Check):** Worker-R6→R8 ohne expliziten Phase-Gate-Audit produzierte Lehrkraft-Realbedingungen-Defizit (4 CRITICAL-Findings übersehen). Phase-Transition ohne Validation der vorherigen Phase-Outputs ist methodische Lücke.

@@ -5,6 +5,98 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.11] — 2026-05-09 — Profile-Frame-Dispatch (Option B-Plus): Multi-Profile-Access via Lookup-Tool
+
+### Source: User-Vorschlag Multi-Profile-Access innerhalb laufender advisor-Sessions
+
+6-Profile-Familie produziert (klafki/adorno/foucault/luhmann/process/arch). User-Use-Cases sind häufig multi-domain — z.B. architecture-archaeology-Pair will Adorno-AP-A05 für Plugin-Marketing-Text-Diagnose. Aktueller Workflow: Profile-Wechsel via neuer Pair = ~36000 Tokens. Punktuelle Cross-Profile-Lookup ist Token-effizient (~500-1500 Tokens vs ~18000, 95%+ Einsparung).
+
+### Decision: Option B-Plus (Profile-Frame-Dispatch)
+
+3 Alternativen bewertet:
+- A: Sub-Agent via Agent-Tool (verworfen: subagent_types fest, Skill-Inflation)
+- **B-Plus: Frame-Dispatch (gewählt)** — Token-effizient + ADR_0030 D5-erhaltend
+- C: Multi-Profile-Pair (deferred v0.2.0 — Schema-Bump)
+- D: Cross-Pair-Bridge-of-Bridges (deferred PB-006)
+
+### Added
+
+- **tools/profile_frame_lookup.py** (NEU v0.1.11):
+  - `lookup_frame(profile, frame_id)` — Frame ohne voll-Profile-Aktivierung
+  - `lookup_ap(profile, ap_id)` — AP punktuell
+  - `lookup_question(profile, frame_id, round_type)` — Fragen mit Filter
+  - `lookup_workflow_pass(profile, workflow_id, pass_n)` — Workflow oder Pass
+  - `list_available_profiles()` / `list_frames()` / `list_aps()` — Discovery
+  - `lookup_token_cost_estimate()` — Cost-Aggregation
+  - LRU-Cache (maxsize=64) per-Session
+  - PROFILE_SHORT_NAMES + FILE_ALIASES (geteilt mit tools/bridge_state.py + ADR_0030 Annex C)
+- **bridge-advisor SKILL.md §Profile-Frame-Dispatch-Pattern** (NEU v0.1.11):
+  - Wann-Lookup-Tabelle (4 Anliegen-Typen)
+  - Output-Format-Pflicht: §Cross-Profile-Lookup mit Methodische-Konsistenz-Hinweis
+  - Anti-Pattern-Liste: Lookup-Akkumulation / Lookup-Ersatz-Methodik / Lookup-Anti-Kosmetik
+- **docs/adr/ADR_0030 Annex E** (NEU 2026-05-09):
+  - E.1 Problem-Beschreibung
+  - E.2 Decision (B-Plus mit Optionen-Vergleich)
+  - E.3 Lookup-API
+  - E.4 D5-Konstanz erhalten
+  - E.5 Methodische-Konsistenz-Marker (Pflicht)
+  - E.6 Anti-Pattern für Cross-Profile-Lookup
+  - E.7 Cynefin-Klassifikation (Complicated, konsistent zu Original-Architektur)
+  - E.8 Schema-Auswirkungen (KEINE)
+  - E.9 Forschungs-Bezüge (MRKL/ReAct/Voyager/Toolformer)
+  - E.10 Future Work (deferred)
+- **tests/smoke_self_test.py** T77-T79 NEU:
+  - T77: profile_frame_lookup API + Konstanten + Aliase
+  - T78: lookup-Funktionen mit Mock-Profile
+  - T79: SKILL.md §Dispatch + ADR_0030 Annex E
+
+### Changed
+
+- **bridge-advisor SKILL.md** Cross-Refs erweitert (ADR_0030 Annex E + tools/profile_frame_lookup.py)
+
+### Verification
+
+- Self-Test 82/82 PASS (T1-T76 + T77-T79 NEU)
+- Profile-Schema unverändert v1.1.0
+- state-Schema unverändert v1.2.0
+- ADR_0030 D5 Single-Profile-Pinning UNVERÄNDERT (Backward-Compat 100%)
+
+### Empirie-Validation (Mock-Test)
+
+- 2 Lookups (Klafki F1.1 + Adorno AP-A05) = 777 Tokens
+- vs voll-Profile-Aktivierung ~18000 Tokens
+- Einsparung: 95.7%
+
+### Token-Efficiency-Patterns OP-1 / OP-4 manifestiert
+
+Lookup-Tool ist konkrete Implementation der Optimierungs-Patterns aus architecture-archaeology/token-efficiency-patterns.md:
+- OP-1 (Skill-Trigger-Phrase-Filter): Frame/AP-Lookup statt Profile-Eager-Loading
+- OP-4 (Cross-Reference-als-Pointer): Lookup ist on-demand-Pointer-Resolution
+
+### Backward-Compatibility
+
+- ADR_0030 D5 Single-Profile-Pinning vollständig erhalten
+- v0.1.10-Pairs unverändert funktional
+- Lookup-Tool ist additive Erweiterung (opt-in via advisor-Skill-Anweisung)
+- Kein Schema-Bump
+
+### Forschungs-Bezüge
+
+- MRKL (Karpas et al. 2022) — Modular Reasoning + Knowledge + Language Multi-Module-Composition
+- ReAct (Yao et al. 2022) — Reasoning-then-Acting mit Tool-Selection
+- Voyager (Wang et al. 2023) — Skill-Library mit task-relevant Skill-Loading
+- Toolformer (Schick et al. 2023) — Self-Supervised Tool-Use
+- Anthropic Multi-Agent-Pattern (B-Plus = abgeschwächte Variante: Lead-Agent + Lookup-Tool statt Sub-Agent-Spawn)
+
+### Deferred to v0.2.0+
+
+- Option C Multi-Profile-Pair (Trigger: 3-5 Pairs B-Plus-Empirie + User-Bedarf für vollständige Sekundär-Methodik)
+- Option D Cross-Pair-Bridge-of-Bridges (PB-006: n≥10 Pairs Empirie)
+- Auto-Lookup-Trigger via Pattern-Erkennung
+- Cross-Profile-Konsistenz-Audit-Workflow
+
+---
+
 ## [0.1.10] — 2026-05-09 — Empirie-driven Patches Round 2: Memory-Symmetrie + Cross-Project-Domain + Source-of-Truth-Lock + Track-Type-Tracking
 
 ### Source: 3 neue Pairs seit v0.1.9 (p10/p11/p12) + p6-BILANZ ausgewertet — Cross-Pair-Empirie-Konsolidierung Round 2

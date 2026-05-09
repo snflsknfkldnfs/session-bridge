@@ -531,6 +531,141 @@ Annex C dokumentiert dies explizit: Schema-Erweiterung erlaubt theoretische Tief
 
 ---
 
+## Annex E — Profile-Frame-Dispatch-Pattern (NEU v0.1.11, 2026-05-09)
+
+**Status:** LOCKED 2026-05-09 als Teil v0.1.11 Multi-Profile-Access-Erweiterung
+**Trigger:** 6-Profile-Familie produziert (klafki/adorno/foucault/luhmann/process/arch). User-Use-Cases wechseln Domain häufig — z.B. architecture-archaeology-Pair will Adorno-AP-A05-Diagnose für Plugin-Marketing-Text. Aktueller Workflow: Profile-Wechsel via neuer Pair = ~36000 Tokens (Pair-Setup + Profile-Loading × 2). Ineffizient für punktuelle Cross-Profile-Anwendung.
+
+### E.1 Problem
+
+ADR_0030 §3.4 D5: "Profile ist init-time-gepinnt — kein per-handover-switching." Designed für Single-Domain-Use-Cases. Empirie zeigt:
+- 6 Profile in 6 verschiedenen Domains
+- User-Anliegen sind häufig multi-domain (architecture-archaeology-Audit + adorno-Kulturkritik + klafki-Bildung)
+- Pair-Wechsel pro Cross-Profile-Aspekt ist hochreibungs
+
+### E.2 Decision
+
+**Profile-Frame-Dispatch-Pattern (Option B-Plus aus Plugin-Dev-Diskussion 2026-05-09):**
+
+- Single-Primär-Profile bleibt aktiv (D5-Konstanz erhalten)
+- Sekundär-Profile-Elemente (Frames / APs / Questions / Workflow-Passes) abrufbar via `tools/profile_frame_lookup.py` ohne voll-Profile-Aktivierung
+- Token-Cost: ~500-1500 Tokens pro Lookup vs ~18000 für Profile-Aktivierung (95%+ Einsparung bei punktuellen Lookups)
+- Methodische-Konsistenz-Marker im Output: User sieht "punktuelle Anwendung, nicht voll-Methodik"
+
+**Drei alternative Optionen wurden bewertet:**
+
+| Option | Beschreibung | Verworfen weil |
+|---|---|---|
+| A: Sub-Agent via Agent-Tool | Adorno-Profile als Sub-Agent spawn | subagent_types fest, Skill-Inflation |
+| **B-Plus: Frame-Dispatch (gewählt)** | Lookup-Tool ohne voll-Profile | Token-effizient + D5-erhaltend |
+| C: Multi-Profile-Pair | Profile-Array mit Hierarchie | v0.2.0 deferred — Schema-Bump |
+| D: Cross-Pair-Bridge-of-Bridges | Multi-Pair-Topologie | PB-006 deferred |
+
+### E.3 Lookup-API (tools/profile_frame_lookup.py)
+
+```python
+# Frame-Lookup
+lookup_frame(profile_name, frame_id) -> dict
+
+# AP-Lookup
+lookup_ap(profile_name, ap_id) -> dict
+
+# Question-Lookup mit Filtern
+lookup_question(profile_name, frame_id=None, round_type=None) -> list
+
+# Workflow-Pass-Lookup
+lookup_workflow_pass(profile_name, workflow_id, pass_n=None) -> dict
+
+# Discovery
+list_available_profiles() -> list
+list_frames(profile_name) -> list
+list_aps(profile_name) -> list
+
+# Cost-Estimate
+lookup_token_cost_estimate(lookup_results) -> dict
+```
+
+**Cache-Strategie:** per-Session LRU-Cache (lru_cache maxsize=64) — Lookup einmal pro Session, dann verfügbar.
+
+**Profile-Short-Names** (analog tools/bridge_state.py PROFILE_SHORT_NAMES):
+- klafki / adorno / foucault / luhmann / process / arch / architecture
+
+**File-Aliase** (analog ADR_0030 Annex C):
+- diagnostic-frames.md / konstellations-anker.md
+- question-bank.md / negative-diagnose-fragen.md
+
+### E.4 D5-Konstanz erhalten
+
+ADR_0030 D5 Single-Profile-Pinning bleibt **vollständig erhalten**:
+- `state.roles.advisor.expertise_profile` ist weiterhin Single-Path (kein Array)
+- Profile-Loading bei Bridge-Init unverändert
+- Sekundär-Lookup ist **opt-in via advisor-Skill-Anweisung**, kein Schema-Pflicht-Element
+
+Konsequenz: Backward-Compat zu allen v0.1.x-Profile-Mechaniken.
+
+### E.5 Methodische-Konsistenz-Marker (Pflicht)
+
+advisor-Output bei Cross-Profile-Lookup MUSS Marker enthalten:
+
+```markdown
+§Cross-Profile-Lookup (B-Plus, v0.1.11):
+- Primär-Profile: architecture-archaeology
+- Lookup-Profile: adorno-halbbildung-kritik
+- Lookup-Element: AP-A05 (Authentizitäts-Jargon)
+- Token-Cost: ~800 (vs voll-Profile ~18000, 95.5% Einsparung)
+- Anwendungs-Diagnose: <Befund>
+- Methodische-Konsistenz-Hinweis: Punktuelle AP-A05-Anwendung. Voll-Adorno-Methodik (Multi-Pass / Selbstanwendung / Reflexivität) NICHT aktiv. Bei Bedarf separater Pair mit adorno-halbbildung-kritik empfohlen.
+```
+
+User sieht: das ist Punkt-Anwendung, kein Profile-Wechsel.
+
+### E.6 Anti-Pattern für Cross-Profile-Lookup
+
+- **AP-Lookup-Akkumulation:** Mehrere Lookups verschiedener Profile ohne Konsistenz-Reflexion → Methodik-Inkonsistenz-Risiko
+- **AP-Lookup-Ersatz-Methodik:** Cross-Profile-Lookup als Ersatz für vollständige Methodik präsentieren ohne Marker → User-Verschleierung
+- **AP-Lookup-Anti-Kosmetik:** Cross-Profile-Lookup in Architektur-Audit-Anliegen ohne Triangulation (architecture-archaeology AP-T10)
+
+### E.7 Cynefin-Klassifikation
+
+- Single-Profile-Architektur (D5 Original) = **Complicated** (strukturierte Single-Domain-Beratung)
+- Profile-Frame-Dispatch (Option B-Plus) = **Complicated** (Lookup-Tool ist strukturierte Operation, kein Emergenz-Pattern)
+- Multi-Profile-Pair (Option C v0.2.0) = **Complex** (Hierarchie-Emergenz)
+
+→ B-Plus ist Cynefin-konsistent zur aktuellen Architektur.
+
+### E.8 Schema-Auswirkungen
+
+**KEINE Schema-Bumps erforderlich** — Lookup-Tool ist additive Skill-Erweiterung. Profile-Schema bleibt v1.1.0, state-Schema bleibt v1.2.0.
+
+### E.9 Forschungs-/Pattern-Bezüge
+
+- **MRKL** (Karpas et al. 2022) — Modular Reasoning + Knowledge + Language: Multi-Module-Composition exakt dieses Pattern
+- **ReAct** (Yao et al. 2022) — Reasoning-then-Acting mit Tool-Selection
+- **Voyager** (Wang et al. 2023) — Skill-Library mit task-relevant Skill-Loading
+- **Toolformer** (Schick et al. 2023) — Self-Supervised Tool-Use
+- **Anthropic Multi-Agent-Pattern** — Lead-Agent + Sub-Agents für spezialisierte Tasks (B-Plus ist abgeschwächte Variante: Lead-Agent + Lookup-Tool statt Sub-Agent-Spawn)
+
+### E.10 Future Work (deferred)
+
+| Item | Trigger |
+|---|---|
+| Option C Multi-Profile-Pair (v0.2.0) | wenn 3-5 Pairs B-Plus-Empirie zeigen + User-Bedarf für vollständige Sekundär-Methodik |
+| Option D Cross-Pair-Bridge-of-Bridges (PB-006) | n≥10 Pairs Empirie |
+| Auto-Lookup-Trigger via Pattern-#103-Erweiterung | wenn advisor-Skill auto-detect kann, dass Cross-Profile-Aspekt vorliegt |
+| Cross-Profile-Konsistenz-Audit-Workflow | wenn Lookup-Akkumulations-Pattern empirisch erkennbar |
+
+### E.11 Cross-Refs
+
+- ADR_0030 §3.4 Profile-Loading (D5 Single-Profile-Pinning erhalten)
+- ADR_0030 Annex C Multi-Pass + File-Aliase (FILE_ALIASES geteilt)
+- tools/profile_frame_lookup.py (NEU v0.1.11 Implementation)
+- tools/bridge_state.py (PROFILE_SHORT_NAMES + PROFILE_SEARCH_DIRS geteilt)
+- skills/bridge-advisor/SKILL.md §Profile-Frame-Dispatch-Pattern (NEU v0.1.11)
+- expertise-profiles/architecture-archaeology/token-efficiency-patterns.md OP-1 (Skill-Trigger-Phrase-Filter — Lookup-Pattern als Spezialfall)
+- BACKLOG.md PB-005/006/008 (Multi-Pair-Topologie deferred)
+
+---
+
 ## Annex D — Pre-Flight Auto-Resolution Pattern (NEU v0.1.8, 2026-05-01)
 
 **Status:** LOCKED 2026-05-01 als Teil v0.1.8 UX-Reduction-Release

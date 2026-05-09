@@ -1144,6 +1144,116 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
 
+    # T77: v0.1.11 tools/profile_frame_lookup.py API + Cache + Discovery
+    try:
+        from tools import profile_frame_lookup as pfl
+        # API verfügbar
+        for fn in ["lookup_frame", "lookup_ap", "lookup_question", "lookup_workflow_pass",
+                   "list_available_profiles", "list_frames", "list_aps", "lookup_token_cost_estimate"]:
+            assert hasattr(pfl, fn), f"missing fn: {fn}"
+        # Konstanten
+        for c in ["PROFILE_SEARCH_DIRS", "PROFILE_SHORT_NAMES", "FILE_ALIASES"]:
+            assert hasattr(pfl, c), f"missing const: {c}"
+        # Short-Names enthalten arch-Aliase
+        assert "arch" in pfl.PROFILE_SHORT_NAMES
+        assert "architecture" in pfl.PROFILE_SHORT_NAMES
+        # FILE_ALIASES enthält Adorno-Aliases
+        assert "konstellations-anker.md" in pfl.FILE_ALIASES["diagnostic_frames"]
+        assert "negative-diagnose-fragen.md" in pfl.FILE_ALIASES["question_bank"]
+        # __all__ exports
+        for export in ["lookup_frame", "lookup_ap", "PROFILE_SHORT_NAMES"]:
+            assert export in pfl.__all__
+        results.record("T77 v0.1.11 profile_frame_lookup API + Konstanten + Aliase", True)
+    except Exception as e:
+        results.record("T77 v0.1.11 profile_frame_lookup API + Konstanten + Aliase", False, str(e))
+
+    # T78: v0.1.11 lookup-Funktionen mit Mock-Profile (skip-if-private)
+    try:
+        from tools import profile_frame_lookup as pfl
+        import tempfile
+
+        # Mock-Profile-Verzeichnis aufbauen
+        with tempfile.TemporaryDirectory() as td:
+            profile_dir = Path(td) / "test-profile"
+            profile_dir.mkdir()
+
+            # Mock-Files
+            (profile_dir / "PROFILE.md").write_text("---\nprofile_name: test-profile\n---\n# Test\n")
+            (profile_dir / "diagnostic-frames.md").write_text(
+                "# Frames\n\n### Frame F1.1 — test-frame\n\n**Aussage:** Test-Aussage.\n\n### Frame F1.2 — other\n\n**Aussage:** Other.\n"
+            )
+            (profile_dir / "anti-patterns.md").write_text(
+                "# APs\n\n## AP-T01: Test-AP\n\n**Beobachtbarkeit:** Test.\n\n## AP-T02: Other AP\n\n**Beobachtbarkeit:** Other.\n"
+            )
+            (profile_dir / "question-bank.md").write_text(
+                "# Q-Bank\n\n## Frame F1.1 test\n\n1. **Test-Frage?**\n   *Round:* counter\n"
+            )
+            (profile_dir / "workflows.md").write_text(
+                "# WF\n\n## W-Test: Test-Workflow\n\n### Pass 1 — first\n\n**Pflicht-Schritte:**\n1. Schritt\n\n### Pass 2 — second\n\n**Pflicht-Schritte:**\n1. Step\n"
+            )
+
+            # Override search-dirs für Test
+            old_dirs = pfl.PROFILE_SEARCH_DIRS
+            pfl.PROFILE_SEARCH_DIRS = [Path(td)]
+            pfl._load_profile_section.cache_clear()
+
+            try:
+                # lookup_frame
+                r = pfl.lookup_frame("test-profile", "F1.1")
+                assert "Test-Aussage" in r["body"]
+                assert r["lookup_type"] == "frame"
+
+                # lookup_ap
+                r = pfl.lookup_ap("test-profile", "AP-T01")
+                assert "Test-AP" in r["body"]
+
+                # lookup_workflow_pass
+                r = pfl.lookup_workflow_pass("test-profile", "W-Test", pass_n=1)
+                assert "Pass 1" in r["body"]
+                assert r["pass_n"] == 1
+
+                # list_frames
+                frames = pfl.list_frames("test-profile")
+                assert "F1.1" in frames and "F1.2" in frames
+
+                # list_aps
+                aps = pfl.list_aps("test-profile")
+                assert "AP-T01" in aps and "AP-T02" in aps
+
+                # token_cost_estimate
+                cost = pfl.lookup_token_cost_estimate([{"token_estimate": 500}, {"token_estimate": 800}])
+                assert cost["total_lookup_tokens"] == 1300
+                assert cost["savings_pct"] > 90  # vs 18000 default
+
+            finally:
+                pfl.PROFILE_SEARCH_DIRS = old_dirs
+                pfl._load_profile_section.cache_clear()
+
+        results.record("T78 v0.1.11 lookup-Funktionen mit Mock-Profile", True)
+    except Exception as e:
+        results.record("T78 v0.1.11 lookup-Funktionen mit Mock-Profile", False, str(e))
+
+    # T79: v0.1.11 SKILL.md §Profile-Frame-Dispatch + ADR_0030 Annex E
+    try:
+        skill_path = Path(__file__).parent.parent / "skills/bridge-advisor/SKILL.md"
+        skill = skill_path.read_text()
+        assert "§Profile-Frame-Dispatch-Pattern" in skill
+        assert "v0.1.11" in skill or "Option B-Plus" in skill
+        assert "Methodische-Konsistenz-Hinweis" in skill or "Methodische-Konsistenz-Marker" in skill
+        assert "lookup_frame" in skill
+        assert "lookup_ap" in skill
+
+        adr_path = Path(__file__).parent.parent / "docs/adr/ADR_0030_Expertise_Profile_Pattern.md"
+        adr = adr_path.read_text()
+        assert "## Annex E" in adr
+        assert "Profile-Frame-Dispatch-Pattern" in adr
+        assert "B-Plus" in adr
+        assert "MRKL" in adr or "Voyager" in adr
+        assert "D5-Konstanz erhalten" in adr or "D5-Konstanz" in adr
+        results.record("T79 v0.1.11 SKILL.md §Dispatch + ADR_0030 Annex E", True)
+    except Exception as e:
+        results.record("T79 v0.1.11 SKILL.md §Dispatch + ADR_0030 Annex E", False, str(e))
+
     # T76: architecture-archaeology Reference-Profile (skip-if-private)
     try:
         arch_dir = Path("/Users/paulad/session-bridge/private-notes/expertise-profiles/architecture-archaeology")
