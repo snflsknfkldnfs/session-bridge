@@ -82,6 +82,57 @@ Profile-Aktivierung erwägen?
 
 **Architecture-Patch-Selbst-Diagnose:** Spec-Patch-Pairs (p8/p9/p10/p12) sind drift-effizient (0.05-0.13) auch ohne Profile. Profile würde Token-Overhead ohne methodischen Mehrwert produzieren.
 
+## §Sub-Agent-Dispatch-Pattern (NEU v0.1.13, Option C Pilot)
+
+**Empirie:** v0.1.11 B-Plus Lookup wurde in p12/p13/p14 nicht aktiv genutzt (passive Text-Retrieval). User-Bedarf nach **aktiver Sub-Agent-Beratung** mit präzisen Fragen + integrierten Antworten.
+
+**Pattern (Option C Pilot aus ADR_0030 Annex F):**
+- advisor kann während laufender Bridge-Pair Sub-Agent **dispatchen** via `Agent(subagent_type="session-bridge:<agent-name>", prompt=...)`
+- Sub-Agent operiert in eigenem Context-Window (Token-effizient gegenüber Profile-Pin-Wechsel)
+- Sub-Agent antwortet methodisch-konsistent (eigene Profile-Methodik aktiv)
+- advisor integriert Antwort in eigenen Beratungs-Prozess + Output-Marker im handover
+
+**Verfügbare Sub-Agents v0.1.13 (Pilot):**
+
+| Sub-Agent | subagent_type | Use-Case |
+|---|---|---|
+| Klafki-Advisor | `session-bridge:klafki-advisor` | bildungstheoretische Punkt-Frage in laufender Pair (z.B. Klafki-Einschätzung zu Bildungsgehalt) |
+| Projektentwicklungs-Advisor | `session-bridge:projektentwicklungs-advisor` | operative Punkt-Frage (Track-Decomposition / Sprint-Priorisierung / Acceptance-Criteria) — primär Worker-Use-Case |
+
+**Decision-Tree: Lookup (B-Plus v0.1.11) vs Sub-Agent-Dispatch (v0.1.13):**
+
+| Anliegen | Mechanik |
+|---|---|
+| Punktuelle Frame-Text-Anwendung (z.B. "was sagt Klafki-F1.1 wörtlich?") | **B-Plus Lookup** (`lookup_frame("klafki", "F1.1")`) — passive Text-Retrieval ~500-1500 Tokens |
+| Aktive methodische Beratung (z.B. "wie würde Klafki Worker-Material X bewerten?") | **Sub-Agent-Dispatch** (`Agent(subagent_type="session-bridge:klafki-advisor", prompt=...)`) — aktive Beratung ~1-2k Tokens Antwort |
+| Cross-Profile-Vergleich (z.B. "Klafki vs Adorno zu Y") | **Sub-Agent-Dispatch beide Profile separat**, advisor synthetisiert |
+| Operative Worker-Frage (Track-Plan / Sprint-Priorisierung) | **Sub-Agent-Dispatch projektentwicklungs-advisor** (Worker-typisch) |
+| Voll-Methodik-Beratung über kompletten Pair-Lifecycle | **Profile-Pin via /bridge-init --expertise-profile=** (kein Sub-Agent) |
+
+**Sub-Agent-Dispatch-Pflicht-Output im handover:**
+
+```markdown
+§Sub-Agent-Dispatch (v0.1.13)
+
+**Dispatched Agent:** session-bridge:<agent-name>
+**Original-Prompt:** <wortlautes Prompt-Zitat aus advisor-Decision>
+**Antwort-Substanz:** <Kern-Befund aus Sub-Agent-Antwort, max 200 Tokens>
+**Integration in advisor-Beratung:** <wie wird Sub-Agent-Antwort in handover-Body verwendet>
+**Methodische-Konsistenz-Hinweis:** Punktuelle <profile>-Anwendung via Sub-Agent. Voll-<profile>-Methodik (alle Workflows + Selbst-Reflexivität) NICHT aktiv. Bei substanziellem <profile>-Use-Case separater Bridge-Pair mit `--expertise-profile=<profile-name>` empfohlen.
+```
+
+**Anti-Pattern:**
+
+- **NICHT** Sub-Agent-Dispatch für punktuelle Text-Retrieval — B-Plus Lookup ist Token-effizienter
+- **NICHT** Sub-Agent-Antwort ungekürzt in handover kopieren — Synthese mit primärer Methodik Pflicht
+- **NICHT** Methodische-Konsistenz-Hinweis weglassen — User sieht: Sub-Agent ≠ Profile-Pin
+- **NICHT** mehrere Sub-Agents akkumulieren ohne Konsistenz-Reflexion — Multi-Agent-Coordination-Risiko (Cynefin-Verschiebung Complicated → Complex)
+
+**Cross-Refs:**
+- ADR_0030 Annex F (Sub-Agent-Pattern v0.1.13)
+- ADR_0030 Annex E (B-Plus Lookup v0.1.11, komplementär)
+- agents/klafki-advisor.md + agents/projektentwicklungs-advisor.md
+
 ## §Profile-Frame-Dispatch-Pattern (NEU v0.1.11, Option B-Plus)
 
 **Empirie:** 6 Profile-Familie produziert. User-Use-Cases wechseln Domain häufig (z.B. architecture-archaeology-Pair will Adorno-AP für Marketing-Text-Diagnose). Aktuell: Profile-Wechsel via neuer Pair = ~36000 Tokens (Pair-Setup + Profile-Loading × 2). Punktuelle Lookup ist Token-effizient.

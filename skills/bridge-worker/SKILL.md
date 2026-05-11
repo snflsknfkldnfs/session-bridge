@@ -11,6 +11,54 @@ Diese Session ist `worker` in einem session-bridge Pair. Sie hat operative Veran
 
 **Plugin-Referenz:** ADR_0029 §3.1 Rollen-Modell.
 
+## §Worker-Sub-Agent-Pattern (NEU v0.1.13, Option C Pilot)
+
+**Empirie:** Worker-Sessions in p7-praxis/p11/p12/p13 produzierten operative Anliegen (Track-Decomposition / Acceptance-Criteria / Implementation-Priorisierung / Risk-Mitigation) — typische Worker-Use-Cases für operative Sub-Agent-Beratung.
+
+**Worker-Sub-Agent-Dispatch (Pattern):**
+
+Worker kann während Bridge-Pair Sub-Agent dispatchen via `Agent(subagent_type="session-bridge:<agent-name>", prompt=...)` für punktuelle operative Beratung VOR handover-Schreibung.
+
+**Primärer Worker-Use-Case:**
+
+```
+projektentwicklungs-advisor (subagent_type=session-bridge:projektentwicklungs-advisor)
+```
+
+**Wann Worker dispatched:**
+- Track-Decomposition (z.B. "Track-β in 8 Sub-Tracks aufteilen, Critical-Path identifizieren")
+- Sprint-/Phase-Priorisierung (z.B. "WSJF für 16 NEU-Tracks aus p7-praxis")
+- Acceptance-Criteria-Formulierung (z.B. "INVEST-ACs für R5-Spec-Patch 15 P0-Items")
+- Dependency-Analyse (z.B. "welche Items sind voneinander abhängig, welche parallel-arbeitbar")
+- Risk-Mitigation-Spec (z.B. "Top-5-Risiken aus 33 Audit-Befunden + Mitigation pro Risk")
+
+**Worker-Bias (empirisch):**
+- Worker tendiert zu **operativen** Sub-Agents (projektentwicklungs-advisor)
+- Advisor tendiert zu **theoretischen** Sub-Agents (klafki-advisor, weitere Profile-Agents)
+- Beide Bias-Patterns sind methodisch konsistent zur Rollen-Differenzierung (operativ vs evaluativ)
+
+**Worker-Sub-Agent-Dispatch-Output im handover:**
+
+```markdown
+§Worker-Sub-Agent-Dispatch (v0.1.13)
+
+**Dispatched Agent:** session-bridge:<agent-name>
+**Original-Prompt:** <wortlautes Prompt-Zitat>
+**Antwort-Substanz:** <Kern-Befund>
+**Integration in worker-Antwort:** <wie wird Sub-Agent-Antwort in worker-handover-Body verwendet>
+**Methodische-Konsistenz-Hinweis:** Punktuelle operative Beratung via Sub-Agent. Worker-Entscheidung final.
+```
+
+**Anti-Pattern:**
+- **NICHT** Sub-Agent-Antwort als Worker-Entscheidung präsentieren — Worker-Authority bleibt final
+- **NICHT** mehrere operative Sub-Agents parallel ohne Konsistenz-Reflexion
+- **NICHT** Sub-Agent-Dispatch für triviale Worker-Operationen — Overhead unnötig
+
+**Cross-Refs:**
+- ADR_0030 Annex F (Sub-Agent-Pattern v0.1.13)
+- agents/projektentwicklungs-advisor.md (Worker-typischer Sub-Agent)
+- bridge-advisor SKILL.md §Sub-Agent-Dispatch-Pattern (Advisor-Spiegel)
+
 ## §Cowork-Mode-Composition-Pattern (NEU v0.1.9 / Pattern-#76+#77+#80 aus p7-upp-praxis-validation)
 
 **Empirisch (p7-praxis R5):** bridge-worker Skill ist **Reading-Pattern-Skill**, NICHT Auto-Pipeline. Worker-Aktionen werden durch Claude-Reasoning + User-Direktive umgesetzt — Skill-Spec ist Anleitung, kein Auto-Aufruf-Skript.

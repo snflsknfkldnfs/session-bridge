@@ -666,6 +666,161 @@ User sieht: das ist Punkt-Anwendung, kein Profile-Wechsel.
 
 ---
 
+## Annex F — Profile-Sub-Agent-Pattern + Decision-Tree (NEU v0.1.13, 2026-05-12)
+
+**Status:** LOCKED 2026-05-12 als Teil v0.1.13 Sub-Agent-Pilot
+**Trigger:** v0.1.11 B-Plus Lookup wurde in p12/p13/p14 nicht aktiv genutzt (passive Text-Retrieval). User-Bedarf nach aktiver Sub-Agent-Beratung mit präzisen Fragen + integrierten Antworten. p13 macht Cross-Profile-Bildungs-Audits (Klafki/Adorno/Freire/Foucault) manuell — direkter Sub-Agent-Use-Case.
+
+### F.1 Problem
+
+ADR_0030 Annex E (v0.1.11) Profile-Frame-Dispatch ist **passive Lookup** — Frame-/AP-Text wird in Hauptsession-Context geladen, advisor muss selbst methodisch anwenden. Empirie zeigt: in komplexen Cross-Profile-Anliegen (p13) wird Lookup nicht genutzt, advisor macht Cross-Profile-Audit manuell ohne methodische Tiefe.
+
+Was fehlt: **aktive Sub-Agent-Beratung** mit eigenem Context-Window + methodisch-konsistenter Antwort.
+
+### F.2 Decision
+
+**Profile-Sub-Agent-Pattern (Option C Pilot aus v0.1.11-Diskussion, jetzt umgesetzt):**
+
+- Plugin definiert `agents/` Verzeichnis mit Profile-spezifischen Sub-Agents
+- Sub-Agents werden via plugin.json `agents`-Array registriert
+- Worker/Advisor können `Agent(subagent_type="session-bridge:<agent-name>", prompt=...)` aufrufen
+- Sub-Agent operiert in eigenem Context-Window (Profile-Methodik aktiv)
+- Sub-Agent antwortet methodisch-konsistent, Hauptsession integriert
+
+**v0.1.13 Pilot mit 2 Agents:**
+
+| Agent | Use-Case | Bias |
+|---|---|---|
+| `session-bridge:klafki-advisor` | bildungstheoretische Punkt-Frage | Advisor-typisch |
+| `session-bridge:projektentwicklungs-advisor` | operative Punkt-Frage (Track-Decomposition / Sprint-Priorisierung / Acceptance-Criteria / Risk-Mitigation) | Worker-typisch |
+
+### F.3 Decision-Tree: Lookup vs Sub-Agent-Dispatch
+
+| Anliegen | Mechanik | Begründung |
+|---|---|---|
+| Punktuelle Frame-Text-Anwendung | **B-Plus Lookup** (v0.1.11) | passive Text-Retrieval, ~500-1500 Tokens |
+| Aktive methodische Beratung | **Sub-Agent-Dispatch** (v0.1.13) | aktiver Reasoning-Prozess, ~1-2k Tokens Antwort |
+| Cross-Profile-Vergleich | **Sub-Agent-Dispatch beide separat** | advisor synthetisiert nach beiden Antworten |
+| Operative Worker-Frage | **Sub-Agent-Dispatch projektentwicklungs-advisor** | Worker-typisch |
+| Voll-Methodik über Pair-Lifecycle | **Profile-Pin via /bridge-init --expertise-profile=** | kein Sub-Agent |
+
+### F.4 Agent-Markdown-Format
+
+Sub-Agent-Files folgen Anthropic-Convention:
+
+```yaml
+---
+name: <agent-name>
+description: <wann triggern + Methodik-Sockel + Eingabe/Ausgabe-Format>
+tools: Read, Glob, Grep [, Bash]
+---
+
+# <Agent-Name> Sub-Agent
+
+## Zweck
+<Wann ich aktiviert werde>
+
+## Pflicht-Profile-Pre-Read (ATOMAR)
+<Welche Profile-Files Sub-Agent lädt>
+
+## Antwort-Methodik
+<5-7 methodische Säulen>
+
+## Antwort-Output-Format (Pflicht)
+<Markdown-Template mit Methodische-Konsistenz-Hinweis-Pflicht>
+
+## Anti-Pattern
+<NICHT-Liste>
+
+## Cross-Refs
+<ADR + Profile-Files + andere Sub-Agents>
+```
+
+### F.5 Worker- vs Advisor-Sub-Agent-Bias
+
+**Empirie p7-praxis/p11/p12/p13:**
+
+| Session-Rolle | Bias | Use-Case-Pattern |
+|---|---|---|
+| **Worker** | operative Sub-Agents | Track-Decomposition / Sprint-Priorisierung / Acceptance-Criteria / Dependency-Analyse / Risk-Mitigation |
+| **Advisor** | theoretische Sub-Agents | Klafki/Adorno/Foucault/Luhmann/process/arch — methodische Distanz-Beratung |
+
+**Methodisch konsistent:** Worker operiert konkret → operative Sub-Agents; Advisor evaluiert kritisch → theoretische Distanz-Mittel.
+
+### F.6 Methodische-Konsistenz-Marker (Pflicht)
+
+Output bei Sub-Agent-Dispatch MUSS Marker enthalten:
+
+```markdown
+§Sub-Agent-Dispatch (v0.1.13)
+
+**Dispatched Agent:** session-bridge:<name>
+**Original-Prompt:** <wortlautes Prompt>
+**Antwort-Substanz:** <Kern-Befund max 200 Tokens>
+**Integration:** <wie verwendet in Hauptsession-Output>
+**Methodische-Konsistenz-Hinweis:** Punktuelle Sub-Agent-Anwendung. Voll-Profile-Methodik NICHT aktiv. Bei substanziellem Use-Case Profile-Pin via /bridge-init empfohlen.
+```
+
+User sieht klar: Sub-Agent ≠ Profile-Pin.
+
+### F.7 Anti-Pattern für Sub-Agent-Dispatch
+
+- **Sub-Agent-Ersatz-Methodik:** Sub-Agent-Antwort als voll-Profile-Methodik präsentieren ohne Marker → User-Verschleierung
+- **Sub-Agent-Akkumulation:** Mehrere Sub-Agents parallel ohne Konsistenz-Reflexion → Multi-Agent-Coordination-Risiko (Cynefin-Verschiebung Complicated → Complex)
+- **Sub-Agent-Overhead:** Sub-Agent-Dispatch für triviale Operationen → Token-Verschwendung
+- **Sub-Agent-Anti-Kosmetik:** Sub-Agent-Dispatch in Architektur-Audit-Anliegen ohne Triangulation (architecture-archaeology AP-T10)
+
+### F.8 Cynefin-Klassifikation
+
+- **B-Plus Lookup** (v0.1.11) = Complicated (strukturierte Retrieval-Operation)
+- **Sub-Agent-Dispatch** (v0.1.13) = Complicated-bis-Complex (Multi-Agent-Coordination kann emergent werden)
+- Mitigation: Pilot-Mode (nur 2 Agents) + Decision-Tree (explizite Mechanik-Wahl) + Output-Marker (Reflexions-Pflicht)
+
+Bei Live-Empirie 3-5 Pairs positiv → voll-Roll-out v0.2.0 (alle 6 Profile + 2-4 Worker-Agents).
+
+### F.9 Schema-Auswirkungen
+
+**KEINE Schema-Bumps erforderlich:**
+- agents/ via plugin.json `agents`-Array registriert
+- Sub-Agent-Dispatch ist Cowork-built-in Agent-Tool, kein neues Schema
+- state-Schema unverändert
+- handover-Schema kann optional §Sub-Agent-Dispatch-Block enthalten (Markdown-Convention, kein Schema-Pflicht)
+
+### F.10 Forschungs-/Pattern-Bezüge
+
+Standard-Multi-Agent-Pattern aus aktueller LLM-Research:
+
+- **MRKL** (Karpas et al. 2022) — Modular Reasoning + Knowledge + Language: Multi-Module-Routing
+- **ReAct** (Yao et al. 2022) — Reasoning-then-Acting mit Tool-Dispatch
+- **AutoGen** (Microsoft 2023) — Multi-Agent-Conversation-Framework
+- **CrewAI** (2023+) — Role-based Agent-Composition
+- **LangGraph** (LangChain 2024) — Stateful Multi-Agent-Workflows
+- **Voyager** (Wang et al. 2023) — Auto-Curriculum mit Skill-Library
+- **Anthropic Multi-Agent-Research** (2024) — Lead-Agent + Worker-Agents
+
+User-Vorschlag = etabliertes Multi-Agent-Pattern, in Plugin-Architektur verankert.
+
+### F.11 v0.2.0 Roll-out-Plan (deferred)
+
+| Trigger | Aktion |
+|---|---|
+| 3-5 Pairs B-Plus + Sub-Agent-Pilot-Empirie | Voll-Roll-out: alle 6 Profile als Sub-Agents (klafki/adorno/foucault/luhmann/process/arch) |
+| Worker-Use-Case-Empirie 5+ Pairs | 2-4 weitere Worker-Sub-Agents (implementation-pattern-advisor / workflow-design-advisor / empirie-validation-advisor) |
+| Multi-Sub-Agent-Coordination-Pattern empirisch | Sub-Agent-Coordination-Skill (Lead-Agent + Worker-Agents Pattern) |
+
+### F.12 Cross-Refs
+
+- ADR_0030 Annex E (B-Plus Lookup v0.1.11, komplementär)
+- ADR_0030 §3.4 Profile-Loading (Sub-Agents lesen Profile-Files, kein Profile-Pin-Wechsel)
+- agents/klafki-advisor.md (Theoretiker-Pilot)
+- agents/projektentwicklungs-advisor.md (Worker-Pilot)
+- bridge-advisor SKILL.md §Sub-Agent-Dispatch-Pattern (v0.1.13)
+- bridge-worker SKILL.md §Worker-Sub-Agent-Pattern (v0.1.13)
+- plugin.json `agents`-Array
+- BACKLOG.md PB-004 Auto-Trigger-Hooks (v0.2.0+: auto-detect wann Sub-Agent vs manual-Dispatch)
+
+---
+
 ## Annex D — Pre-Flight Auto-Resolution Pattern (NEU v0.1.8, 2026-05-01)
 
 **Status:** LOCKED 2026-05-01 als Teil v0.1.8 UX-Reduction-Release

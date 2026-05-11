@@ -1144,6 +1144,73 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
 
+    # T84: v0.1.13 agents/ Verzeichnis + plugin.json agents-Array
+    try:
+        agents_dir = Path(__file__).parent.parent / "agents"
+        assert agents_dir.exists(), "agents/ Verzeichnis fehlt"
+        assert (agents_dir / "klafki-advisor.md").exists()
+        assert (agents_dir / "projektentwicklungs-advisor.md").exists()
+
+        # plugin.json agents-Array
+        pj_path = Path(__file__).parent.parent / ".claude-plugin/plugin.json"
+        pj = json.loads(pj_path.read_text())
+        assert "agents" in pj, "plugin.json agents-Array fehlt"
+        assert "./agents/klafki-advisor.md" in pj["agents"]
+        assert "./agents/projektentwicklungs-advisor.md" in pj["agents"]
+        results.record("T84 v0.1.13 agents/ + plugin.json agents-Array", True)
+    except Exception as e:
+        results.record("T84 v0.1.13 agents/ + plugin.json agents-Array", False, str(e))
+
+    # T85: v0.1.13 Agent-Markdown Frontmatter + Methodische-Konsistenz-Marker
+    try:
+        for agent in ["klafki-advisor", "projektentwicklungs-advisor"]:
+            ap = Path(__file__).parent.parent / "agents" / f"{agent}.md"
+            c = ap.read_text()
+            # Frontmatter
+            fm = re.match(r'^---\n(.*?)\n---\n', c, re.DOTALL)
+            assert fm, f"{agent}: Frontmatter fehlt"
+            fm_text = fm.group(1)
+            assert f"name: {agent}" in fm_text, f"{agent}: name-Field fehlt"
+            assert "description:" in fm_text
+            assert "tools:" in fm_text
+            # Methodische-Konsistenz-Hinweis Pflicht
+            assert "Methodische-Konsistenz-Hinweis" in c, f"{agent}: Konsistenz-Hinweis fehlt"
+            assert "Sub-Agent-Dispatch v0.1.13" in c, f"{agent}: v0.1.13-Marker fehlt"
+            # Anti-Pattern-Sektion
+            assert "## Anti-Pattern" in c, f"{agent}: Anti-Pattern-Sektion fehlt"
+        results.record("T85 v0.1.13 Agent-Markdown Frontmatter + Konsistenz-Marker", True)
+    except Exception as e:
+        results.record("T85 v0.1.13 Agent-Markdown Frontmatter + Konsistenz-Marker", False, str(e))
+
+    # T86: v0.1.13 SKILL.md §Sub-Agent-Dispatch + ADR_0030 Annex F
+    try:
+        # bridge-advisor
+        advisor_path = Path(__file__).parent.parent / "skills/bridge-advisor/SKILL.md"
+        adv = advisor_path.read_text()
+        assert "§Sub-Agent-Dispatch-Pattern" in adv
+        assert "session-bridge:klafki-advisor" in adv
+        assert "session-bridge:projektentwicklungs-advisor" in adv
+        assert "Decision-Tree" in adv
+
+        # bridge-worker
+        worker_path = Path(__file__).parent.parent / "skills/bridge-worker/SKILL.md"
+        wkr = worker_path.read_text()
+        assert "§Worker-Sub-Agent-Pattern" in wkr
+        assert "projektentwicklungs-advisor" in wkr
+        assert "Worker-Bias" in wkr
+
+        # ADR_0030 Annex F
+        adr_path = Path(__file__).parent.parent / "docs/adr/ADR_0030_Expertise_Profile_Pattern.md"
+        adr = adr_path.read_text()
+        assert "## Annex F" in adr
+        assert "Profile-Sub-Agent-Pattern" in adr
+        assert "Decision-Tree: Lookup vs Sub-Agent-Dispatch" in adr or "Lookup vs Sub-Agent" in adr
+        assert "MRKL" in adr and "AutoGen" in adr
+        assert "Worker- vs Advisor-Sub-Agent-Bias" in adr or "Worker- vs Advisor" in adr
+        results.record("T86 v0.1.13 SKILL §Sub-Agent + ADR_0030 Annex F", True)
+    except Exception as e:
+        results.record("T86 v0.1.13 SKILL §Sub-Agent + ADR_0030 Annex F", False, str(e))
+
     # T80: v0.1.12 bridge-init.md memory_symmetry_status-Init bei Init
     try:
         bi_path = Path(__file__).parent.parent / "commands/bridge-init.md"

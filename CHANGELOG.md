@@ -5,6 +5,110 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.13] — 2026-05-12 — Profile-Sub-Agent-Pattern Pilot (Option C): 2 Sub-Agents + Decision-Tree
+
+### Source: User-Vorschlag aktive Sub-Agent-Dispatch zusätzlich zu v0.1.11 passive Lookup
+
+v0.1.11 B-Plus Lookup wurde in p12/p13/p14 nicht aktiv genutzt. p13 macht Cross-Profile-Bildungs-Audits manuell. User-Bedarf: aktive Sub-Agent-Beratung mit präzisen Fragen + integrierten Antworten. Standard-Multi-Agent-Pattern aus LLM-Research (MRKL/ReAct/AutoGen/CrewAI/LangGraph/Voyager/Anthropic-Multi-Agent).
+
+### Added
+
+- **agents/klafki-advisor.md** (NEU v0.1.13, Theoretiker-Pilot):
+  - Bildungstheoretische Sub-Agent-Antworten auf Basis Klafki 1958/1963/1985/1996
+  - Pflicht-Profile-Pre-Read (4 Klafki-Profile-Files)
+  - 5 Methodik-Säulen + 5 Frame-Cluster + Anti-Antwort-Klausel
+  - Methodische-Konsistenz-Hinweis-Pflicht im Output
+  - Tools: Read, Glob, Grep
+- **agents/projektentwicklungs-advisor.md** (NEU v0.1.13, Worker-Pilot):
+  - Operative Sub-Agent-Beratung (Track-Decomposition / Sprint-Priorisierung / Acceptance-Criteria / Risk-Mitigation)
+  - 5 Methodik-Säulen aus PMBOK + Agile/Scrum + Brooks + Lehman + Cohn INVEST
+  - Worker-Bias-Pattern empirisch dokumentiert (p7-praxis/p11/p12/p13)
+  - Tools: Read, Glob, Grep, Bash
+- **plugin.json `agents`-Array** mit 2 Pilot-Agents
+- **bridge-advisor SKILL.md §Sub-Agent-Dispatch-Pattern** (NEU v0.1.13):
+  - Decision-Tree: Lookup (B-Plus v0.1.11) vs Sub-Agent-Dispatch (v0.1.13)
+  - Output-Pflicht-Format §Sub-Agent-Dispatch im handover
+  - Anti-Pattern-Liste (Akkumulation / Antwort-ungekürzt-übernehmen / Methodische-Konsistenz-Hinweis-Skip)
+- **bridge-worker SKILL.md §Worker-Sub-Agent-Pattern** (NEU v0.1.13):
+  - Primärer Worker-Use-Case projektentwicklungs-advisor
+  - Worker-Bias-Pattern dokumentiert (operativ vs evaluativ)
+  - Worker-Authority bleibt final (Sub-Agent ist Vorschlag)
+- **docs/adr/ADR_0030 Annex F** (NEU 2026-05-12):
+  - F.1 Problem (v0.1.11 nicht aktiv genutzt)
+  - F.2 Decision (Option C Pilot mit 2 Agents)
+  - F.3 Decision-Tree Lookup vs Sub-Agent-Dispatch
+  - F.4 Agent-Markdown-Format
+  - F.5 Worker- vs Advisor-Sub-Agent-Bias-Pattern
+  - F.6 Methodische-Konsistenz-Marker (Pflicht)
+  - F.7 Anti-Pattern für Sub-Agent-Dispatch
+  - F.8 Cynefin-Klassifikation (Pilot-Mitigation Complex-Risk)
+  - F.9 Schema-Auswirkungen (KEINE)
+  - F.10 Forschungs-Bezüge (MRKL/ReAct/AutoGen/CrewAI/LangGraph/Voyager/Anthropic)
+  - F.11 v0.2.0 Roll-out-Plan (deferred bis Empirie)
+- **tests/smoke_self_test.py** T84-T86 NEU:
+  - T84: agents/ Verzeichnis + plugin.json agents-Array
+  - T85: Agent-Markdown Frontmatter + Methodische-Konsistenz-Marker
+  - T86: SKILL.md §Sub-Agent-Dispatch + §Worker-Sub-Agent + ADR_0030 Annex F
+
+### Verification
+
+- Self-Test 89/89 PASS (T1-T83 + T84-T86 NEU)
+- Schema unverändert (kein Bump)
+- Backward-Compat: v0.1.12-Pairs unverändert funktional
+
+### Use-Case-Beispiel
+
+```
+[advisor-session, architecture-archaeology primär]
+advisor benötigt Klafki-Einschätzung zu Bildungsgehalt-Frage X
+→ Agent(subagent_type="session-bridge:klafki-advisor",
+        prompt="Wie würde Klafki Bildungsgehalt-Hypothese X bewerten?")
+→ klafki-advisor lädt Klafki-Profile, antwortet methodisch-konsistent (~1-2k Tokens)
+→ advisor integriert in handover mit §Sub-Agent-Dispatch-Marker
+```
+
+```
+[worker-session]
+worker benötigt Track-Decomposition für 8 Sub-Tracks
+→ Agent(subagent_type="session-bridge:projektentwicklungs-advisor",
+        prompt="Track-β in Sub-Tracks aufteilen, Critical-Path identifizieren")
+→ projektentwicklungs-advisor antwortet mit Plan + Trade-offs + ACs + Risks
+→ worker integriert in handover mit §Worker-Sub-Agent-Dispatch-Marker
+```
+
+### Worker- vs Advisor-Bias (empirisch dokumentiert)
+
+| Session-Rolle | Bias | Use-Cases |
+|---|---|---|
+| Worker | operative Sub-Agents | Track-Decomposition / Sprint-Priorisierung / Acceptance-Criteria / Dependency-Analyse / Risk-Mitigation |
+| Advisor | theoretische Sub-Agents | Klafki / Adorno / Foucault / Luhmann / process / arch — methodische Distanz |
+
+Methodisch konsistent zur Rollen-Differenzierung (Worker operativ, Advisor evaluativ).
+
+### Decision-Tree: 3 Mechaniken komplementär
+
+| Mechanik | Wann | Token-Cost |
+|---|---|---|
+| **Profile-Pin** (`/bridge-init --expertise-profile=`) | voll-Methodik über Pair-Lifecycle | ~18000 Tokens |
+| **B-Plus Lookup** (v0.1.11) | punktuelle Frame-Text-Retrieval | ~500-1500 Tokens |
+| **Sub-Agent-Dispatch** (v0.1.13 NEU) | aktive methodische Beratung | ~1-2k Tokens Antwort |
+
+### Backward-Compatibility
+
+- v0.1.12-Pairs funktionieren unverändert
+- agents/ additive Plugin-Erweiterung
+- ADR_0030 D5 Single-Profile-Pinning vollständig erhalten
+- Kein Schema-Bump
+
+### Deferred to v0.2.0+
+
+- Voll-Roll-out alle 6 Profile als Sub-Agents (Trigger: 3-5 Pairs B-Plus + Sub-Agent-Pilot-Empirie positiv)
+- 2-4 weitere Worker-Sub-Agents (implementation-pattern / workflow-design / empirie-validation)
+- Multi-Sub-Agent-Coordination-Skill (Lead-Agent + Worker-Agents Pattern)
+- PB-004 Auto-Trigger-Hooks (auto-detect wann Sub-Agent vs manual-Dispatch)
+
+---
+
 ## [0.1.12] — 2026-05-12 — Empirie-driven Patches Round 3: memory_symmetry_status-Init + DRIFT VALIDE + audit_anker + Profile-Activation-Decision-Tree
 
 ### Source: 3 neue Pairs seit v0.1.11 (p12-eg-r5-spec-patch / p13-track-beta / p14-design-track-recon)
