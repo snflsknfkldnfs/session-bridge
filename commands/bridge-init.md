@@ -318,7 +318,7 @@ else:  # role == "worker"
 
 state = {
     "pair_id": pair_id,
-    "schema_version": "1.1.0",  # ADR_0030 Expertise-Profile-Layer
+    "schema_version": "1.2.0",  # v0.1.5 PB-007 + v0.1.10 memory_symmetry
     "created_at": now,
     "updated_at": now,
     "phase": "init",
@@ -332,7 +332,10 @@ state = {
     "file_ownership": {},
     "shared_artifacts": [],
     "wallclock_estimates": [],
-    "rollback_plan_path": None
+    "rollback_plan_path": None,
+    # v0.1.12 12-A: memory_symmetry_status-Init bei Bridge-Init (statt erst bei close)
+    # Empirisch (p12/p13/p14 n=3): Field war unset → blockierte Pattern-#103-Mechanik
+    "memory_symmetry_status": "pending"
 }
 
 # 4. Schema-Validate (M1' Akzeptanz) — sentinel-pending-attach ist String, schema-konform

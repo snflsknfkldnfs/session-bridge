@@ -47,6 +47,41 @@ Dies erlaubt User klare Mode-Identifikation, verhindert Plan-vs-Execution-Drift-
 5. Schritt 3 Handover-File schreiben
 6. Schritt 4 State.json updaten
 
+## §Profile-Activation-Decision-Tree (NEU v0.1.12 / Empirie aus p12/p13/p14 = 0 Profile-Aktivierungen)
+
+**Empirie:** p12 (architecture-spec-patch, closed) + p13 (architecture-spec, iterate) + p14 (architecture-spec, scope-lock) = 3 Pairs ohne Profile-Aktivierung. Implikation: Profile-Mechanik wird empirisch nicht für alle Use-Cases gebraucht. Spec-vs-Empirie-Drift (AP-T01 aus architecture-archaeology-Profile).
+
+**Methodische Erkenntnis:** Profile-Layer ist Use-Case-spezifisch. Architecture-Patches benötigen es nicht; Bildungs-/Org-/Kultur-Use-Cases benötigen es substantiell.
+
+**Decision-Tree für `--expertise-profile`-Flag bei /bridge-init:**
+
+| Topic-Klasse | Profile-Aktivierung | Begründung |
+|---|---|---|
+| **Plugin-/Spec-Patch / Schema-Validation / Schema-Refactor** | **NICHT empfohlen** | Architecture-Pairs sind Single-Domain, Profile-Layer ist over-engineering. Bisher empirisch alle architecture-spec-patch-Pairs erfolgreich ohne Profile (p8/p9/p10/p12). |
+| **Plugin-Audit / Recursive Self-Audit / Token-Effizienz-Diagnose** | **`architecture-archaeology` empfohlen** | Use-Case-Anker des Profile (TC-AA1). Hermeneutik + Token-Forensik substantieller Mehrwert. |
+| **Bildungs-/Curricular-Beratung (UE / Sequenz / Lehrplan)** | **`klafki-didaktik` empfohlen** | Empirisch validiert in p7-klafki-validation (8 Rounds, 9 DLs, alle 6 F-Cluster aktiviert). |
+| **Bildungs-/Kulturkritik-Diskurs** | **`adorno-halbbildung-kritik` empfohlen** | Negative Dialektik + Halbbildungs-Diagnose. Multi-Pass-Workflow methodisch geboten. |
+| **Schule-als-Disziplinarinstitution / Macht-Wissen-Analyse** | **`foucault-genealogie` empfohlen** | Use-Case-Anker (F5.2 Schule als Disziplinar-Apparat). |
+| **Erziehungssystem-Operation / Code-Programm-Diagnose** | **`luhmann-erziehungssystem` empfohlen** | Funktionssystem-Theorie operationalisiert. |
+| **Organisations-Spannung / Person-Funktion-Trennung** | **`process-consulting` empfohlen** | Systemtheoretisch-luhmannsch eng auf Org-Beratung. |
+| **Cross-Profile-Diskurs (z.B. Klafki + Adorno + Foucault)** | **Primär-Profile aktivieren + Lookup-Pattern v0.1.11 nutzen** | tools/profile_frame_lookup.py für punktuelle Sekundär-Profile-Anwendung. ADR_0030 Annex E. |
+
+**Decision-Trigger-Frage bei /bridge-init:**
+
+advisor stellt User folgende Frage, wenn `--expertise-profile` NICHT explizit gesetzt + Topic ist NICHT eindeutig architecture-patch:
+
+```
+Profile-Aktivierung erwägen?
+- Topic klassifiziert: <category>
+- Vorgeschlagenes Profile: <profile-name oder "kein Profile">
+- Begründung: <warum>
+- Akzeptieren / anpassen / ohne Profile fortsetzen?
+```
+
+**Anti-Pattern:** Profile-Aktivierung ohne Use-Case-Match produziert AP-T07 Multi-Pass-Over-Engineering (architecture-archaeology) + AP-T08 Profile-Eager-Loading. Profile-Layer ist nicht universal-anwendbar.
+
+**Architecture-Patch-Selbst-Diagnose:** Spec-Patch-Pairs (p8/p9/p10/p12) sind drift-effizient (0.05-0.13) auch ohne Profile. Profile würde Token-Overhead ohne methodischen Mehrwert produzieren.
+
 ## §Profile-Frame-Dispatch-Pattern (NEU v0.1.11, Option B-Plus)
 
 **Empirie:** 6 Profile-Familie produziert. User-Use-Cases wechseln Domain häufig (z.B. architecture-archaeology-Pair will Adorno-AP für Marketing-Text-Diagnose). Aktuell: Profile-Wechsel via neuer Pair = ~36000 Tokens (Pair-Setup + Profile-Loading × 2). Punktuelle Lookup ist Token-effizient.

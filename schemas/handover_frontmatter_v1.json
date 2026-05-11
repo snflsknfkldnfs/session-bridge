@@ -205,6 +205,36 @@
         },
         "additionalProperties": false
       }
+    },
+    "audit_anker": {
+      "type": "array",
+      "description": "NEU v0.1.12 (Pattern aus p12 Anti-Drift-#7): Audit-Befund-Carry-Over-Konsistenz. Pro Patch/Edit/Decision ein Audit-Anker mit Pointer auf Original-Audit-Recommendation. Ermoeglicht Cross-Bridge-Audit-Trace ohne Spec-Inhalt-Verlust. Format kompatibel zu HTML-Inline-Comment-Pattern: <!-- Audit-Anker: P0-X / AUDIT_RECOMMENDATION §1 -->.",
+      "items": {
+        "type": "object",
+        "required": ["anchor_id", "source_ref"],
+        "properties": {
+          "anchor_id": {
+            "type": "string",
+            "pattern": "^[A-Z][0-9]?-[A-Za-z0-9_-]+$",
+            "description": "Audit-Anker-ID. Format: <Kategorie>-<Item> (z.B. 'P0-A1', 'P1-B5', 'R5-NEU-2'). Pflicht-unique innerhalb eines handover."
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Pointer auf Original-Audit-Recommendation (z.B. 'AUDIT_RECOMMENDATION §1', 'p9-schsch-architektur-import/audit/bundle.md §3.2', absolute path)."
+          },
+          "patch_location": {
+            "type": "string",
+            "description": "Optional: Wo Anker im Output-Artefakt verankert ist (z.B. 'EG-Spec §2.X.5', 'commands/bridge-init.md §Pre-Flight')."
+          },
+          "category": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2", "P3", "RISK", "DEFERRED", "INFO"],
+            "description": "Audit-Priorität-Kategorie. P0=Critical-Block, P1=High, P2=Medium, P3=Low, RISK=Risk-Klausel, DEFERRED=Phase-Backlog, INFO=Tracking-Only."
+          }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "additionalProperties": false,

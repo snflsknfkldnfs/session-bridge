@@ -1144,6 +1144,87 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
 
+    # T80: v0.1.12 bridge-init.md memory_symmetry_status-Init bei Init
+    try:
+        bi_path = Path(__file__).parent.parent / "commands/bridge-init.md"
+        c = bi_path.read_text()
+        assert '"memory_symmetry_status": "pending"' in c, "memory_symmetry_status-Init in bridge-init fehlt"
+        assert "v0.1.12 12-A" in c or "v0.1.12" in c
+        assert '"schema_version": "1.2.0"' in c, "schema_version-Update auf 1.2.0 fehlt"
+        results.record("T80 v0.1.12 bridge-init memory_symmetry_status-Init + schema 1.2.0", True)
+    except Exception as e:
+        results.record("T80 v0.1.12 bridge-init memory_symmetry_status-Init + schema 1.2.0", False, str(e))
+
+    # T81: v0.1.12 DRIFT_RANGES architecture-spec-patch VALIDE
+    try:
+        from tools import bridge_state as bs
+        # architecture-spec-patch NEU als VALIDE
+        assert "architecture-spec-patch" in bs.DRIFT_RANGES
+        asp = bs.DRIFT_RANGES["architecture-spec-patch"]
+        assert asp["min"] == 0.05
+        assert asp["max"] == 0.30
+        assert asp["stddev"] == 0.05
+        # TRACK_TYPE_DRIFT_EMPIRIE spec-patch n=5
+        assert bs.TRACK_TYPE_DRIFT_EMPIRIE["spec-patch"]["empirie_n"] == 5
+        assert bs.TRACK_TYPE_DRIFT_EMPIRIE["spec-patch"]["status"] == "VALIDE"
+        # Drift-Datapoints enthält neue p10/p12-Werte
+        observed = bs.TRACK_TYPE_DRIFT_EMPIRIE["spec-patch"]["drift_observed"]
+        assert 0.10 in observed, "p10/p12-Empirie 0.10 fehlt"
+        results.record("T81 v0.1.12 DRIFT_RANGES architecture-spec-patch VALIDE n=5", True)
+    except Exception as e:
+        results.record("T81 v0.1.12 DRIFT_RANGES architecture-spec-patch VALIDE n=5", False, str(e))
+
+    # T82: v0.1.12 handover_frontmatter audit_anker-Field
+    try:
+        h_path = Path(__file__).parent.parent / "schemas/handover_frontmatter_v1.json"
+        hschema = json.loads(h_path.read_text())
+        assert "audit_anker" in hschema["properties"], "audit_anker-Field fehlt"
+        aa = hschema["properties"]["audit_anker"]
+        assert aa["type"] == "array"
+        assert "anchor_id" in aa["items"]["required"]
+        assert "source_ref" in aa["items"]["required"]
+        # Category-Enum
+        cat_enum = aa["items"]["properties"]["category"]["enum"]
+        for c in ["P0", "P1", "P2", "P3", "RISK", "DEFERRED", "INFO"]:
+            assert c in cat_enum, f"category enum missing: {c}"
+        # Schema-Validation gegen Beispiel
+        import jsonschema
+        # Minimal sample mit type=status (keine allOf-Pflicht-Felder)
+        sample = {
+            "pair_id": "550e8400-e29b-41d4-a716-446655440000",
+            "round": 5,
+            "from": "advisor",
+            "to": "worker",
+            "type": "status",
+            "timestamp": "2026-05-12T10:00:00Z",
+            "worker_phase": "iterate",
+            "worker_focus": "v0.1.12 audit_anker validation",
+            "status_verified_at": "2026-05-12T10:00:00Z",
+            "references": [{"type": "filesystem", "pointer": "bridge/state.json", "verified": True}],
+            "audit_anker": [
+                {"anchor_id": "P0-A1", "source_ref": "AUDIT_RECOMMENDATION §1", "category": "P0"},
+                {"anchor_id": "R5-NEU-2", "source_ref": "p9-audit/bundle.md §3", "category": "P1"}
+            ]
+        }
+        jsonschema.validate(sample, hschema)
+        results.record("T82 v0.1.12 handover_frontmatter audit_anker + Validation", True)
+    except Exception as e:
+        results.record("T82 v0.1.12 handover_frontmatter audit_anker + Validation", False, str(e))
+
+    # T83: v0.1.12 bridge-advisor SKILL.md §Profile-Activation-Decision-Tree
+    try:
+        skill_path = Path(__file__).parent.parent / "skills/bridge-advisor/SKILL.md"
+        s = skill_path.read_text()
+        assert "§Profile-Activation-Decision-Tree" in s
+        assert "p12/p13/p14" in s, "Empirie-Verweis fehlt"
+        assert "architecture-spec-patch" in s
+        assert "klafki-didaktik" in s
+        assert "architecture-archaeology" in s
+        assert "Decision-Trigger-Frage" in s
+        results.record("T83 v0.1.12 SKILL.md §Profile-Activation-Decision-Tree", True)
+    except Exception as e:
+        results.record("T83 v0.1.12 SKILL.md §Profile-Activation-Decision-Tree", False, str(e))
+
     # T77: v0.1.11 tools/profile_frame_lookup.py API + Cache + Discovery
     try:
         from tools import profile_frame_lookup as pfl

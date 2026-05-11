@@ -235,13 +235,15 @@ def validate_bilanz_against_schema(bilanz: dict, schema_path: Optional[Path] = N
 
 # Drift-Plausibility-Ranges per Domain-Klasse (ADR_0031 §3.2 Empirie)
 # v0.1.9 Update: use-case-Ranges empirisch kalibriert mit n=4 Pairs
-# v0.1.10 Update: cross-project-Domain NEU + architecture-spec post-p10/p11-Empirie
+# v0.1.10 Update: cross-project + architecture-spec post-p10/p11
+# v0.1.12 Update: architecture-spec-patch VALIDE n=4 (p8/p9/p10/p12 konsistent 0.05-0.13)
 DRIFT_RANGES = {
     "plugin-self-dev": {"min": 0.8, "max": 3.5, "stddev": 0.6},  # p3-Empirie 1.14-2.4
     "use-case": {"min": 0.05, "max": 2.0, "stddev": 0.4},        # v0.1.9: p4-p8 n=4, drift 0.05-0.23
     "use-case-with-profile": {"min": 0.05, "max": 2.0, "stddev": 0.4},  # v0.1.9: Klafki p7 + Profile-aktiv
-    "architecture-spec": {"min": 0.04, "max": 1.5, "stddev": 0.3},  # v0.1.10 NEU: p5/p7-quellen/p8/p10/p11 n=5, drift 0.04-0.23
-    "cross-project": {"min": 0.20, "max": 0.5, "stddev": 0.1},   # v0.1.10 NEU: p11 n=1 HYPOTHESE, drift 0.27-0.41 (Aufschlag ~+50% sup-Single-Project)
+    "architecture-spec": {"min": 0.04, "max": 1.5, "stddev": 0.3},  # v0.1.10: p5/p7-quellen/p8/p10/p11 n=5
+    "architecture-spec-patch": {"min": 0.05, "max": 0.30, "stddev": 0.05},  # v0.1.12 NEU VALIDE n=4: p8 0.05 + p9 0.09 + p10 0.10 + p12 0.10
+    "cross-project": {"min": 0.20, "max": 0.5, "stddev": 0.1},   # v0.1.10 NEU: p11 n=1 HYPOTHESE, drift 0.27-0.41
     "default": {"min": 0.05, "max": 2.5, "stddev": 0.5},
 }
 
@@ -286,13 +288,12 @@ RATIO_THRESHOLDS = {
 }
 
 # Track-Type-Empirie für Pattern-#109 HYPOTHESE-Validation (NEU v0.1.10)
-# Empirie aus p10 R4: Schema/Doku/Validator-Tracks deutlich-unter-Korridor 0.6-1.4
-# Re-Klassifikations-Trigger HYPOTHESE → VALIDE: ≥3 diverse Empirie-Datenpunkte pro Track-Typ
+# v0.1.12 Update: spec-patch n=5 mit p12-Empirie validiert
 TRACK_TYPE_DRIFT_EMPIRIE = {
     "schema": {"empirie_n": 1, "drift_observed": [0.04, 0.06], "korridor_default": [0.6, 1.4], "status": "HYPOTHESE"},
     "doku": {"empirie_n": 1, "drift_observed": [0.04, 0.06], "korridor_default": [0.6, 1.4], "status": "HYPOTHESE"},
     "validator": {"empirie_n": 1, "drift_observed": [0.04, 0.06], "korridor_default": [0.6, 1.4], "status": "HYPOTHESE"},
-    "spec-patch": {"empirie_n": 4, "drift_observed": [0.05, 0.09, 0.21, 0.23], "korridor_default": [0.05, 0.5], "status": "VALIDE"},  # p4/p5/p7/p8/p9
+    "spec-patch": {"empirie_n": 5, "drift_observed": [0.05, 0.09, 0.10, 0.10, 0.21, 0.23], "korridor_default": [0.05, 0.30], "status": "VALIDE"},  # v0.1.12: p4/p5/p7/p8/p9/p10/p12
     "code": {"empirie_n": 0, "drift_observed": [], "korridor_default": [0.5, 2.0], "status": "UNGETESTET"},
 }
 

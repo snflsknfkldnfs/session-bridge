@@ -5,6 +5,76 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.12] — 2026-05-12 — Empirie-driven Patches Round 3: memory_symmetry_status-Init + DRIFT VALIDE + audit_anker + Profile-Activation-Decision-Tree
+
+### Source: 3 neue Pairs seit v0.1.11 (p12-eg-r5-spec-patch / p13-track-beta / p14-design-track-recon)
+
+p12 produzierte NEU Anti-Drift-#7 HTML-Inline-Comment-Audit-Anker-Pattern. p13 läuft mid-flight mit Cross-Profile-Bildungs-Audits (Klafki/Adorno/Freire/Foucault) manuell — direkter v0.1.11-Lookup-Use-Case nicht genutzt. p14 just-init. Plus Schema-Bug: `memory_symmetry_status` blieb unset in allen 3 Pairs trotz v0.1.10-Implementation. Plus Empirie: 0 Profile-Aktivierungen in p12/p13/p14 → Profile-Activation-Decision-Tree dokumentiert.
+
+### Added
+
+- **commands/bridge-init.md** memory_symmetry_status-Init bei Bridge-Init mit Default "pending" + schema_version-Bump 1.1.0 → 1.2.0
+  - Empirie-Bug: p12/p13/p14 hatten memory_symmetry_status=unset (v0.1.10 hatte Field nur in bridge-close gesetzt)
+- **tools/bridge_state.py DRIFT_RANGES["architecture-spec-patch"]** NEU VALIDE n=4 (p8 0.05 + p9 0.09 + p10 0.10 + p12 0.10):
+  - Range {min:0.05, max:0.30, stddev:0.05}
+- **tools/bridge_state.py TRACK_TYPE_DRIFT_EMPIRIE["spec-patch"]** auf n=5 (mit p10/p12 als zusätzliche Datapoints)
+- **schemas/handover_frontmatter_v1.json audit_anker-Array-Field** (Pattern aus p12 Anti-Drift-#7):
+  - Pflicht-Felder: anchor_id (Pattern ^[A-Z][0-9]?-[A-Za-z0-9_-]+$) + source_ref
+  - Optional: patch_location + category (P0/P1/P2/P3/RISK/DEFERRED/INFO)
+  - Kompatibel zu HTML-Inline-Comment-Pattern: <!-- Audit-Anker: P0-X / AUDIT_RECOMMENDATION §1 -->
+- **bridge-advisor SKILL.md §Profile-Activation-Decision-Tree** (NEU v0.1.12):
+  - 8 Topic-Klassen mit Profile-Empfehlung
+  - Architecture-Patches: KEIN Profile (Empirie p8-p12 drift-effizient ohne Profile)
+  - Bildungs-/Org-/Kultur-Use-Cases: Profile empfohlen
+  - Plugin-Audit: architecture-archaeology empfohlen
+  - Decision-Trigger-Frage bei /bridge-init wenn Topic nicht-eindeutig
+- **tests/smoke_self_test.py** T80-T83 NEU:
+  - T80: bridge-init memory_symmetry_status-Init + schema_version 1.2.0
+  - T81: DRIFT_RANGES architecture-spec-patch VALIDE + TRACK_TYPE n=5
+  - T82: handover_frontmatter audit_anker + Validation gegen Sample
+  - T83: SKILL.md §Profile-Activation-Decision-Tree
+
+### Changed
+
+- **schema_version** in bridge-init-state-Initialisierung: 1.1.0 → 1.2.0 (v0.1.5 PB-007 hatte Schema bereits, aber bridge-init schrieb noch alten Wert)
+
+### Verification
+
+- Self-Test 86/86 PASS (T1-T79 + T80-T83 NEU)
+- handover_frontmatter v1 audit_anker-Validation gegen Sample PASS
+- DRIFT_RANGES Backward-Compat (architecture-spec-patch ist additive Erweiterung)
+
+### Empirie-Befunde aus p12/p13/p14
+
+- **0 Profile-Aktivierungen in 3 Pairs** → Profile-Layer ist Use-Case-spezifisch, nicht universal
+- **memory_symmetry_status=unset in allen 3 Pairs** → v0.1.10-Bug (Field nur in bridge-close gesetzt) jetzt gefixt
+- **HTML-Inline-Comment-Audit-Anker-Pattern** (p12 Anti-Drift-#7) → strukturierte Variante als handover-Frontmatter-Field
+- **DRIFT-Konvergenz architecture-spec-patch** n=4 konsistent 0.05-0.10 → HYPOTHESE→VALIDE Promotion
+
+### Methodische Schlüssel-Erkenntnis
+
+Profile-Layer ist **Use-Case-spezifisch erfolgreich**:
+- ✓ Bildungs-/Org-/Kultur-Diskurs (p7-klafki validiert 8 Rounds, 9 DLs)
+- ✗ Plugin-Self-Spec-Patches (p8/p9/p10/p12 alle Profile-frei drift-effizient)
+
+Plugin differenziert jetzt via Decision-Tree statt Profile als universal-anwendbar zu suggerieren.
+
+### Backward-Compatibility
+
+- v0.1.11-Pairs unverändert funktional
+- audit_anker-Field optional in handover-Frontmatter (additive)
+- DRIFT_RANGES["architecture-spec-patch"] ist NEU (kein Override existierender Werte)
+- schema_version bridge-init-Update 1.1.0 → 1.2.0 ist Bug-Fix (v0.1.5 hatte Schema bereits)
+
+### Deferred to v0.1.13+
+
+- Phase-Gate-Audit-Output-Format-Compliance-Check (klärung wie validiert: schema-pre-validation oder post-hoc check)
+- ADR_0029 Annex F Cross-Pair-Empirie post-v0.1.11 (kann mit nächstem Patch)
+- Long-Pair-WARN (p6 Empirie n=1 noch zu schwach)
+- Auto-Lookup-Trigger via Pattern-Erkennung (architecture-archaeology-Use-Cases)
+
+---
+
 ## [0.1.11] — 2026-05-09 — Profile-Frame-Dispatch (Option B-Plus): Multi-Profile-Access via Lookup-Tool
 
 ### Source: User-Vorschlag Multi-Profile-Access innerhalb laufender advisor-Sessions
