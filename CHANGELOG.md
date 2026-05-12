@@ -5,6 +5,62 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.14] — 2026-05-12 — 3. Sub-Agent: instructional-design-berater (US-ID-Tradition komplementär zu klafki-advisor)
+
+### Added
+
+- **agents/instructional-design-berater.md** (NEU v0.1.14, 3. Pilot-Agent):
+  - US-Instructional-Design-Tradition (kognitivistisch, empirisch, prozessual)
+  - 7 Methodik-Säulen: ADDIE / Mager-Quartett + Bloom Revised / CLT (Sweller) + Multimedia Principles (Mayer) / Evidenz-basiert (Hattie) / Gagné Nine Events / Iterativ-evaluativ / Tradition-bewusst
+  - Quellen-Sockel: Mager 1997, Gagné 1985, Bloom/Anderson/Krathwohl 1956/2001, Sweller 1988, Mayer 2009, Merrill 2002, Reigeluth 1979, Dick/Carey/Carey 2014, Carroll 1990, Hattie 2009
+  - **Methodik-Tradition-Differenz zu klafki-advisor explizit**: ID fragt "wie effektiv lernen?", Klafki fragt "wozu Bildung?"
+  - Komplementaritäts-Tabelle für 6 Anliegen-Typen (Lernziel/Material/Sequenzierung — operational vs bildungstheoretisch)
+  - Worker-vs-Advisor-Bias-Pattern (Worker operational, Advisor methodisch-reflektierend)
+  - Klafki-Tradition-Differenz im Output-Format Pflicht
+- **plugin.json agents-Array** erweitert auf 3 Pilot-Agents
+- **bridge-advisor SKILL.md §Sub-Agent-Dispatch-Pattern** Tabelle erweitert (3 Sub-Agents statt 2)
+- **docs/adr/ADR_0030 Annex F.2** Pilot-Agents-Tabelle erweitert
+- **tests/smoke_self_test.py** T84-T85 erweitert (3 Agents) + T87 NEU (ID-Berater Klafki-Differenz + Quellen-Sockel)
+
+### Methodische Architektur
+
+Sub-Agent-Trio bildet **methodische Familien-Differenzierung**:
+
+| Sub-Agent | Tradition | Frage-Typ | Wann |
+|---|---|---|---|
+| klafki-advisor | deutsche Didaktik (geisteswissenschaftlich, normativ, bildungstheoretisch) | "wozu Bildung?" | Bildungsgehalt / Mündigkeit / Schlüsselproblem |
+| **instructional-design-berater** | **US-ID (kognitivistisch, empirisch, operational)** | **"wie effektiv lernen?"** | **Lernziel-Operationalisierung / Material-Design / Assessment** |
+| projektentwicklungs-advisor | PM/Agile (operational, prozessual) | "wie umsetzen?" | Track-Decomposition / Sprint / Critical-Path |
+
+Beide Lehr-/Lern-Sub-Agents (Klafki + ID) sind **komplementär nicht-konkurrierend**:
+- Klafki: bildungstheoretische Reflexion über Mündigkeits-Anschluss
+- ID: operationale Spec via Mager-Quartett + Bloom + Mayer-Principles
+- advisor kann beide nacheinander dispatchen + Synthese in handover
+
+### Verification
+
+- Self-Test 91/91 PASS (T1-T86 + T87 NEU, plus erweiterte T84+T85)
+- Schema unverändert
+- Backward-Compat: v0.1.13-Pairs unverändert funktional
+
+### Cross-Use-Case Differenzierung
+
+User-Hypothese: bei Bildungs-Use-Cases werden Klafki + ID **gemeinsam** sinnvoll:
+- ID-Sub-Agent für operationale Lernziel-Spec
+- Klafki-Sub-Agent für bildungstheoretische Reflexion + Mündigkeits-Anschluss
+- advisor synthetisiert beide Antworten
+
+Empirie: Mager-Quartett ist bereits in unterrichtsplanung-core verankert (Cross-Use-Case-Anker).
+
+### Deferred to v0.2.0+
+
+- Voll-Roll-out alle 6 Profile als Sub-Agents (Trigger: 3-5 Pairs Sub-Agent-Empirie positiv)
+- 2-4 weitere Worker-Sub-Agents
+- Multi-Sub-Agent-Coordination-Skill (Lead-Agent + Worker-Agents Pattern)
+- Auto-Trigger via Pattern-Erkennung
+
+---
+
 ## [0.1.13] — 2026-05-12 — Profile-Sub-Agent-Pattern Pilot (Option C): 2 Sub-Agents + Decision-Tree
 
 ### Source: User-Vorschlag aktive Sub-Agent-Dispatch zusätzlich zu v0.1.11 passive Lookup

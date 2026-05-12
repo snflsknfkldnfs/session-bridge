@@ -1,6 +1,6 @@
 {
   "name": "session-bridge",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Cross-Session Advisor/Worker coordination via shared filesystem (polling-based, ADR_0029).",
   "author": {
     "name": "session-bridge-Plugin-Project",
@@ -21,7 +21,8 @@
   ],
   "agents": [
     "./agents/klafki-advisor.md",
-    "./agents/projektentwicklungs-advisor.md"
+    "./agents/projektentwicklungs-advisor.md",
+    "./agents/instructional-design-berater.md"
   ],
   "commands": [
     "./commands/bridge-init.md",

@@ -1144,12 +1144,13 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
 
-    # T84: v0.1.13 agents/ Verzeichnis + plugin.json agents-Array
+    # T84: v0.1.14 agents/ Verzeichnis + plugin.json agents-Array (3 Agents)
     try:
         agents_dir = Path(__file__).parent.parent / "agents"
         assert agents_dir.exists(), "agents/ Verzeichnis fehlt"
         assert (agents_dir / "klafki-advisor.md").exists()
         assert (agents_dir / "projektentwicklungs-advisor.md").exists()
+        assert (agents_dir / "instructional-design-berater.md").exists()
 
         # plugin.json agents-Array
         pj_path = Path(__file__).parent.parent / ".claude-plugin/plugin.json"
@@ -1157,13 +1158,14 @@ def main(verbose: bool = False) -> int:
         assert "agents" in pj, "plugin.json agents-Array fehlt"
         assert "./agents/klafki-advisor.md" in pj["agents"]
         assert "./agents/projektentwicklungs-advisor.md" in pj["agents"]
-        results.record("T84 v0.1.13 agents/ + plugin.json agents-Array", True)
+        assert "./agents/instructional-design-berater.md" in pj["agents"]
+        results.record("T84 v0.1.14 agents/ + plugin.json (3 Agents)", True)
     except Exception as e:
-        results.record("T84 v0.1.13 agents/ + plugin.json agents-Array", False, str(e))
+        results.record("T84 v0.1.14 agents/ + plugin.json (3 Agents)", False, str(e))
 
-    # T85: v0.1.13 Agent-Markdown Frontmatter + Methodische-Konsistenz-Marker
+    # T85: v0.1.14 Agent-Markdown Frontmatter + Methodische-Konsistenz-Marker (3 Agents)
     try:
-        for agent in ["klafki-advisor", "projektentwicklungs-advisor"]:
+        for agent in ["klafki-advisor", "projektentwicklungs-advisor", "instructional-design-berater"]:
             ap = Path(__file__).parent.parent / "agents" / f"{agent}.md"
             c = ap.read_text()
             # Frontmatter
@@ -1178,9 +1180,32 @@ def main(verbose: bool = False) -> int:
             assert "Sub-Agent-Dispatch v0.1.13" in c, f"{agent}: v0.1.13-Marker fehlt"
             # Anti-Pattern-Sektion
             assert "## Anti-Pattern" in c, f"{agent}: Anti-Pattern-Sektion fehlt"
-        results.record("T85 v0.1.13 Agent-Markdown Frontmatter + Konsistenz-Marker", True)
+        results.record("T85 v0.1.14 Agent-Markdown Frontmatter + Konsistenz-Marker (3 Agents)", True)
     except Exception as e:
-        results.record("T85 v0.1.13 Agent-Markdown Frontmatter + Konsistenz-Marker", False, str(e))
+        results.record("T85 v0.1.14 Agent-Markdown Frontmatter + Konsistenz-Marker (3 Agents)", False, str(e))
+
+    # T87: v0.1.14 ID-Berater Methodik-Tradition-Differenz + Klafki-Komplementarität
+    try:
+        ap = Path(__file__).parent.parent / "agents" / "instructional-design-berater.md"
+        c = ap.read_text()
+        # Methodik-Tradition-Differenz Pflicht
+        assert "Klafki" in c, "Klafki-Differenz fehlt"
+        assert "ADDIE" in c
+        assert "Mager" in c
+        assert "Gagné" in c or "Gagne" in c
+        assert "Bloom" in c
+        assert "Mayer" in c
+        assert "Sweller" in c
+        # Komplementaritäts-Tabelle
+        assert "Komplementarität zu klafki-advisor" in c or "komplementär zu klafki" in c.lower()
+        # Anti-Pattern
+        assert "## Anti-Pattern" in c
+        assert "Klafki-Tradition-Differenz" in c
+        # Worker-vs-Advisor-Bias
+        assert "Worker-vs-Advisor-Bias" in c or "Worker-vs-Advisor" in c
+        results.record("T87 v0.1.14 ID-Berater Klafki-Differenz + Quellen-Sockel", True)
+    except Exception as e:
+        results.record("T87 v0.1.14 ID-Berater Klafki-Differenz + Quellen-Sockel", False, str(e))
 
     # T86: v0.1.13 SKILL.md §Sub-Agent-Dispatch + ADR_0030 Annex F
     try:

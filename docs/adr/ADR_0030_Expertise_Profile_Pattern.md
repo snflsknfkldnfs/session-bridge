@@ -687,12 +687,13 @@ Was fehlt: **aktive Sub-Agent-Beratung** mit eigenem Context-Window + methodisch
 - Sub-Agent operiert in eigenem Context-Window (Profile-Methodik aktiv)
 - Sub-Agent antwortet methodisch-konsistent, Hauptsession integriert
 
-**v0.1.13 Pilot mit 2 Agents:**
+**v0.1.14 Pilot mit 3 Agents:**
 
 | Agent | Use-Case | Bias |
 |---|---|---|
-| `session-bridge:klafki-advisor` | bildungstheoretische Punkt-Frage | Advisor-typisch |
+| `session-bridge:klafki-advisor` | bildungstheoretische Punkt-Frage (deutsche Didaktik, geisteswissenschaftlich) | Advisor-typisch |
 | `session-bridge:projektentwicklungs-advisor` | operative Punkt-Frage (Track-Decomposition / Sprint-Priorisierung / Acceptance-Criteria / Risk-Mitigation) | Worker-typisch |
+| `session-bridge:instructional-design-berater` | ID-Empfehlung (US-Tradition, kognitivistisch/empirisch: ADDIE/Mager/Gagné/Bloom/Mayer/Sweller). Komplementär zu klafki-advisor | beide Rollen, methodisch operational |
 
 ### F.3 Decision-Tree: Lookup vs Sub-Agent-Dispatch
 

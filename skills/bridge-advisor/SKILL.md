@@ -92,12 +92,13 @@ Profile-Aktivierung erwägen?
 - Sub-Agent antwortet methodisch-konsistent (eigene Profile-Methodik aktiv)
 - advisor integriert Antwort in eigenen Beratungs-Prozess + Output-Marker im handover
 
-**Verfügbare Sub-Agents v0.1.13 (Pilot):**
+**Verfügbare Sub-Agents v0.1.14 (Pilot, 3 Agents):**
 
 | Sub-Agent | subagent_type | Use-Case |
 |---|---|---|
-| Klafki-Advisor | `session-bridge:klafki-advisor` | bildungstheoretische Punkt-Frage in laufender Pair (z.B. Klafki-Einschätzung zu Bildungsgehalt) |
+| Klafki-Advisor | `session-bridge:klafki-advisor` | bildungstheoretische Punkt-Frage (Klafki-Tradition, deutsche Didaktik, geisteswissenschaftlich) |
 | Projektentwicklungs-Advisor | `session-bridge:projektentwicklungs-advisor` | operative Punkt-Frage (Track-Decomposition / Sprint-Priorisierung / Acceptance-Criteria) — primär Worker-Use-Case |
+| Instructional-Design-Berater | `session-bridge:instructional-design-berater` | ID-Empfehlung (US-Tradition, kognitivistisch/empirisch: ADDIE/Mager/Gagné/Bloom/Mayer/Sweller) — komplementär zu klafki-advisor (operational vs bildungstheoretisch) |
 
 **Decision-Tree: Lookup (B-Plus v0.1.11) vs Sub-Agent-Dispatch (v0.1.13):**
 
