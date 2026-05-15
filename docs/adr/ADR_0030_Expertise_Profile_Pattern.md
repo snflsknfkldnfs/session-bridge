@@ -694,6 +694,7 @@ Was fehlt: **aktive Sub-Agent-Beratung** mit eigenem Context-Window + methodisch
 | `session-bridge:klafki-advisor` | bildungstheoretische Punkt-Frage (deutsche Didaktik, geisteswissenschaftlich) | Advisor-typisch |
 | `session-bridge:projektentwicklungs-advisor` | operative Punkt-Frage (Track-Decomposition / Sprint-Priorisierung / Acceptance-Criteria / Risk-Mitigation) | Worker-typisch |
 | `session-bridge:instructional-design-berater` | ID-Empfehlung (US-Tradition, kognitivistisch/empirisch: ADDIE/Mager/Gagné/Bloom/Mayer/Sweller). Komplementär zu klafki-advisor | beide Rollen, methodisch operational |
+| `session-bridge:claude-plugin-dev-berater` | Plugin-Dev-Empfehlung (konstruktiv-prospektiv: Skill/Command/Agent/MCP-Design, Trigger-Engineering, Token-Architektur, Schema-Versioning, Release). Twin zu architecture-archaeology. Primär für Einzelsession ohne bridge-pairing (v0.1.15) | beide Rollen, technisch-konstruktiv |
 
 ### F.3 Decision-Tree: Lookup vs Sub-Agent-Dispatch
 
@@ -815,6 +816,8 @@ User-Vorschlag = etabliertes Multi-Agent-Pattern, in Plugin-Architektur veranker
 - ADR_0030 §3.4 Profile-Loading (Sub-Agents lesen Profile-Files, kein Profile-Pin-Wechsel)
 - agents/klafki-advisor.md (Theoretiker-Pilot)
 - agents/projektentwicklungs-advisor.md (Worker-Pilot)
+- agents/instructional-design-berater.md (ID-Sub-Agent v0.1.14)
+- agents/claude-plugin-dev-berater.md (Plugin-Dev-Sub-Agent v0.1.15, Twin zu architecture-archaeology)
 - bridge-advisor SKILL.md §Sub-Agent-Dispatch-Pattern (v0.1.13)
 - bridge-worker SKILL.md §Worker-Sub-Agent-Pattern (v0.1.13)
 - plugin.json `agents`-Array
@@ -903,10 +906,14 @@ PROFILE_SHORT_NAMES = {
     "luhmann": "luhmann-erziehungssystem",
     "process-consulting": "process-consulting",
     "process": "process-consulting",
+    "arch": "architecture-archaeology",
+    "architecture": "architecture-archaeology",
+    "plugin-dev": "claude-plugin-dev",
+    "claude-plugin-dev": "claude-plugin-dev",
 }
 ```
 
-Erweiterung-Pattern: pro neuem Profile + Alias hinzufügen.
+Erweiterung-Pattern: pro neuem Profile + Alias hinzufügen. (v0.1.15: `arch` + `plugin-dev` ergänzt — vorher fehlten architecture-archaeology-Aliases in bridge_state.py trotz Existenz in profile_frame_lookup.py.)
 
 ### D.7 PROFILE_SEARCH_DIRS
 

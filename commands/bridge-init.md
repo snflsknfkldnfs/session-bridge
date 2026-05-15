@@ -119,7 +119,7 @@ Wenn `--expertise-profile=<arg>` gesetzt:
 1. Profile-Pfad-Resolution via `tools/bridge_state.py:resolve_profile_path(arg)`:
    - **Absolut-Pfad** (`/...`) → wie übergeben
    - **Relativ-Pfad** → resolve gegen Cowork-Working-Dir
-   - **Kurz-Name** (z.B. `klafki`, `adorno`, `foucault`, `luhmann`, `process-consulting`) → Lookup-Reihenfolge:
+   - **Kurz-Name** (z.B. `klafki`, `adorno`, `foucault`, `luhmann`, `process-consulting`, `arch`, `plugin-dev`) → Lookup-Reihenfolge:
      1. `~/session-bridge/private-notes/expertise-profiles/<name>*/`
      2. `~/session-bridge/expertise-profiles/<name>*/` (public)
      3. Glob-Match (z.B. `klafki` → `klafki-didaktik`); bei multi-match: User-Disambiguation
@@ -128,7 +128,9 @@ Wenn `--expertise-profile=<arg>` gesetzt:
      - `adorno` → `adorno-halbbildung-kritik`
      - `foucault` → `foucault-genealogie`
      - `luhmann` → `luhmann-erziehungssystem`
-     - `process-consulting` → `process-consulting`
+     - `process-consulting` / `process` → `process-consulting`
+     - `arch` / `architecture` → `architecture-archaeology`
+     - `plugin-dev` / `claude-plugin-dev` → `claude-plugin-dev`
 
 2. Mount-Check: Wenn Profile-Pfad NICHT in Cowork-Mounts:
    - `mcp__cowork__request_cowork_directory(path=<resolved-profile-path>)`
@@ -194,7 +196,7 @@ Output am Ende von Phase A enthält:
    - `<profile>/PROFILE.md` existiert + frontmatter parsebar
    - Frontmatter hat Pflicht-Felder: `profile_name`, `profile_version`, `profile_schema_version`, `domain`, `methodology_pillars`, `sources`, `pflicht_workflows`, `linkage_to_bridge_rounds`, `required_files`
    - Alle `required_files` aus Frontmatter existieren im Profile-Verzeichnis
-   - `profile_schema_version` ist supported (aktuell `1.0.0`)
+   - `profile_schema_version` ist supported (`1.0.0` oder `1.1.0` — v1.1.0 erlaubt 6. Profile-File, z.B. `plugin-dev-patterns.md` / `token-efficiency-patterns.md`)
    - **Bei FAIL → ABBRUCH** mit Profile-Diagnose. Empfehlung: Profile-Pfad korrigieren oder ohne `--expertise-profile` initialisieren (generic advisor).
 
    5.b **Profile-Pfad sandbox-erreichbar (NEU v0.1.3 / D-005 Sub-A F-RP-15):**

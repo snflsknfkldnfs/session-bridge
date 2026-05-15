@@ -5,6 +5,53 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) — Semver pinn
 
 ---
 
+## [0.1.15] — 2026-05-15 — 7. Expertise-Profile: claude-plugin-dev (konstruktiv-prospektiv) + 4. Sub-Agent
+
+### Added
+
+- **expertise-profiles/claude-plugin-dev/** (NEU v0.1.15, 7. Profile — privat in private-notes/):
+  - **Konstruktiv-prospektives** Plugin-Development-Profile — Twin zu architecture-archaeology (gleiche Methodik-Familie Brooks/Parnas/Conway + LLM-Forschung, gegensätzliche Zeitrichtung: BAUEN vs AUDITIEREN)
+  - 7 Methodik-Säulen: spec-first / trigger-praezision / token-budget-bewusst / empirie-driven / schema-disziplin / cowork-mode-reading-pattern-bewusst / inkrementell-versioniert
+  - 6 Files (PROFILE + diagnostic-frames + anti-patterns + question-bank + workflows + **plugin-dev-patterns.md** als 6. File, profile_schema_version 1.1.0)
+  - 10 Frames in 5 Cluster: C1 Plugin-Struktur / C2 Trigger-Engineering / C3 Token-Architektur / C4 Schema-Disziplin / C5 Empirie-Iteration — je mit session-bridge-Empirie-Sektion
+  - 10 Anti-Patterns AP-D01..D10 mit Selbstanwendungs-Pflicht (AP-D10 Empirie-Ignoranz konstitutiv enforced)
+  - ~50 Diagnose-Fragen + 5 Empirie-Pflicht-Fragen als Pre-Check vor jeder Iterations-Empfehlung
+  - 7 Workflows (6 Standard hybrid Multi-/Single-Pass + W-D-Empirie-Pflicht-Pre-Check)
+  - plugin-dev-patterns.md: PSP/TEP/TAP/SDP/RP je ≥5 Patterns + Cowork-vs-Claude-Code-Differenzen + session-bridge-Empirie-Reference (15 Versionen als Best-Practice-Case) + Anti-PDP + Recursive-Self-Audit
+  - Quellen-Sockel: Anthropic Plugin-/Agent-SDK-/MCP-/Cowork-Doku + Brooks/Parnas/Conway + ReAct/Reflexion/Toolformer/Voyager/MRKL + Semver + Keep a Changelog
+- **agents/claude-plugin-dev-berater.md** (NEU v0.1.15, 4. Sub-Agent):
+  - Sub-Agent-Dispatch-Zugriff auf claude-plugin-dev-Profile für **Einzelsession-Nutzung ohne bridge-pairing** (vom User benannter Primär-Use-Case)
+  - Twin-Differenzierung zu architecture-archaeology explizit (prospektiv-konstruktiv vs retrospektiv-diagnostisch)
+  - Empirie-Pflicht-Pre-Check (5 Fragen) im Output-Format Pflicht — AP-D10-Schutz
+  - Recursive-Self-Audit-Klausel bei Beratung über session-bridge selbst
+- **plugin.json agents-Array** erweitert auf 4 Sub-Agents
+- **bridge-advisor SKILL.md §Profile-Activation-Decision-Tree** erweitert (claude-plugin-dev-Row für prospektiv-konstruktive Plugin-Dev-Use-Cases)
+- **tools/bridge_state.py + tools/profile_frame_lookup.py** PROFILE_SHORT_NAMES erweitert: `arch`/`architecture` (zuvor in bridge_state.py fehlend) + `plugin-dev`/`claude-plugin-dev`
+- **commands/bridge-init.md** Kurz-Name-Mapping erweitert + profile_schema_version-Support-Hinweis korrigiert (1.0.0 + 1.1.0)
+- **docs/adr/ADR_0030 Annex D.6** PROFILE_SHORT_NAMES-Beispiel synchronisiert
+- **tests/smoke_self_test.py** T84-T85 erweitert (4 Agents, version-agnostischer Dispatch-Marker) + T88 NEU (claude-plugin-dev Reference-Profile skip-if-private) + T89 NEU (claude-plugin-dev-berater Sub-Agent)
+
+### Methodische Architektur
+
+Profile-Familie wächst auf **7 Profile** mit klarer Twin-Struktur:
+
+| Profile | Methodik-Familie | Zeitrichtung |
+|---|---|---|
+| **claude-plugin-dev** | Software-Engineering + LLM-Forschung | **prospektiv-konstruktiv** (Plugin BAUEN) |
+| architecture-archaeology | Software-Engineering + LLM-Forschung + Hermeneutik | retrospektiv-diagnostisch (Plugin AUDITIEREN) |
+| klafki / adorno / foucault / luhmann / process-consulting | Bildungs-/Sozial-Theorie | je nach Profile |
+
+claude-plugin-dev adressiert den vom User benannten Bedarf: Profile werden häufig in Einzelsessions ohne bridge-pairing genutzt — der Sub-Agent macht das Profile ohne Pair-Setup zugänglich (~1-2k Tokens statt ~18000 Profile-Pin).
+
+### Verification
+
+- Profile-Struktur-Self-Test 104/104 PASS
+- Plugin Smoke-Test 92/92 PASS (T1-T87 + T88 + T89 NEU, erweiterte T84+T85)
+- Schema unverändert (profile_schema_version 1.1.0 bereits seit v0.1.7 supported)
+- Backward-Compat: v0.1.14-Pairs unverändert funktional; PROFILE_SHORT_NAMES rein additiv
+
+---
+
 ## [0.1.14] — 2026-05-12 — 3. Sub-Agent: instructional-design-berater (US-ID-Tradition komplementär zu klafki-advisor)
 
 ### Added

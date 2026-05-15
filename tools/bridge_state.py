@@ -343,7 +343,7 @@ def check_ratio_threshold(state: dict, ratio: Optional[float] = None) -> dict:
 
 # --- v0.1.8 Pre-Flight Auto-Resolution Helpers ---
 
-# Profile-Kurz-Name-Mapping (NEU v0.1.8) — User-friendly Aliases
+# Profile-Kurz-Name-Mapping (NEU v0.1.8, erweitert v0.1.15) — User-friendly Aliases
 PROFILE_SHORT_NAMES = {
     "klafki": "klafki-didaktik",
     "adorno": "adorno-halbbildung-kritik",
@@ -351,6 +351,10 @@ PROFILE_SHORT_NAMES = {
     "luhmann": "luhmann-erziehungssystem",
     "process-consulting": "process-consulting",
     "process": "process-consulting",
+    "arch": "architecture-archaeology",
+    "architecture": "architecture-archaeology",
+    "plugin-dev": "claude-plugin-dev",
+    "claude-plugin-dev": "claude-plugin-dev",
 }
 
 # Standard-Lookup-Verzeichnisse für Profile

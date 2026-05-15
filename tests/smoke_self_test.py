@@ -1144,13 +1144,14 @@ def main(verbose: bool = False) -> int:
     except Exception as e:
         results.record("T58 v0.1.7 SKILL.md Multi-Pass-Loading + File-Aliase + Selbstkritik-Enforcement", False, str(e))
 
-    # T84: v0.1.14 agents/ Verzeichnis + plugin.json agents-Array (3 Agents)
+    # T84: v0.1.14/v0.1.15 agents/ Verzeichnis + plugin.json agents-Array (4 Agents)
     try:
         agents_dir = Path(__file__).parent.parent / "agents"
         assert agents_dir.exists(), "agents/ Verzeichnis fehlt"
         assert (agents_dir / "klafki-advisor.md").exists()
         assert (agents_dir / "projektentwicklungs-advisor.md").exists()
         assert (agents_dir / "instructional-design-berater.md").exists()
+        assert (agents_dir / "claude-plugin-dev-berater.md").exists()
 
         # plugin.json agents-Array
         pj_path = Path(__file__).parent.parent / ".claude-plugin/plugin.json"
@@ -1159,13 +1160,15 @@ def main(verbose: bool = False) -> int:
         assert "./agents/klafki-advisor.md" in pj["agents"]
         assert "./agents/projektentwicklungs-advisor.md" in pj["agents"]
         assert "./agents/instructional-design-berater.md" in pj["agents"]
-        results.record("T84 v0.1.14 agents/ + plugin.json (3 Agents)", True)
+        assert "./agents/claude-plugin-dev-berater.md" in pj["agents"]
+        results.record("T84 v0.1.15 agents/ + plugin.json (4 Agents)", True)
     except Exception as e:
-        results.record("T84 v0.1.14 agents/ + plugin.json (3 Agents)", False, str(e))
+        results.record("T84 v0.1.15 agents/ + plugin.json (4 Agents)", False, str(e))
 
-    # T85: v0.1.14 Agent-Markdown Frontmatter + Methodische-Konsistenz-Marker (3 Agents)
+    # T85: v0.1.14/v0.1.15 Agent-Markdown Frontmatter + Methodische-Konsistenz-Marker (4 Agents)
     try:
-        for agent in ["klafki-advisor", "projektentwicklungs-advisor", "instructional-design-berater"]:
+        for agent in ["klafki-advisor", "projektentwicklungs-advisor",
+                      "instructional-design-berater", "claude-plugin-dev-berater"]:
             ap = Path(__file__).parent.parent / "agents" / f"{agent}.md"
             c = ap.read_text()
             # Frontmatter
@@ -1177,12 +1180,38 @@ def main(verbose: bool = False) -> int:
             assert "tools:" in fm_text
             # Methodische-Konsistenz-Hinweis Pflicht
             assert "Methodische-Konsistenz-Hinweis" in c, f"{agent}: Konsistenz-Hinweis fehlt"
-            assert "Sub-Agent-Dispatch v0.1.13" in c, f"{agent}: v0.1.13-Marker fehlt"
+            assert re.search(r"Sub-Agent-Dispatch v0\.1\.\d+", c), f"{agent}: Dispatch-Version-Marker fehlt"
             # Anti-Pattern-Sektion
             assert "## Anti-Pattern" in c, f"{agent}: Anti-Pattern-Sektion fehlt"
-        results.record("T85 v0.1.14 Agent-Markdown Frontmatter + Konsistenz-Marker (3 Agents)", True)
+        results.record("T85 v0.1.15 Agent-Markdown Frontmatter + Konsistenz-Marker (4 Agents)", True)
     except Exception as e:
-        results.record("T85 v0.1.14 Agent-Markdown Frontmatter + Konsistenz-Marker (3 Agents)", False, str(e))
+        results.record("T85 v0.1.15 Agent-Markdown Frontmatter + Konsistenz-Marker (4 Agents)", False, str(e))
+
+    # T89: v0.1.15 claude-plugin-dev-berater Sub-Agent (Twin-Differenz + Empirie-Pflicht-Pre-Check)
+    try:
+        ap = Path(__file__).parent.parent / "agents" / "claude-plugin-dev-berater.md"
+        c = ap.read_text()
+        # Twin-Profile-Differenzierung zu architecture-archaeology Pflicht
+        assert "architecture-archaeology" in c, "Twin-Differenz fehlt"
+        assert "prospektiv-konstruktiv" in c and "retrospektiv-diagnostisch" in c
+        # 7 Methodik-Säulen-Marker
+        for m in ["Spec-first", "Trigger-Präzision", "Token-Budget", "Empirie-driven",
+                  "Schema-Disziplin", "Reading-Pattern"]:
+            assert m in c, f"Methodik-Säule fehlt: {m}"
+        # Empirie-Pflicht-Pre-Check im Output-Format
+        assert "Empirie-Pflicht-Pre-Check" in c
+        assert "AP-D10" in c
+        # 10 Frames referenziert
+        assert "F1.1" in c and "F5.2" in c
+        # Recursive-Self-Audit-Klausel
+        assert "Recursive-Self-Audit" in c
+        # Anti-Pattern
+        assert "## Anti-Pattern" in c
+        # Worker-vs-Advisor-Bias
+        assert "Worker-vs-Advisor-Bias" in c
+        results.record("T89 v0.1.15 claude-plugin-dev-berater Sub-Agent (Twin-Differenz + Empirie-Pre-Check)", True)
+    except Exception as e:
+        results.record("T89 v0.1.15 claude-plugin-dev-berater Sub-Agent", False, str(e))
 
     # T87: v0.1.14 ID-Berater Methodik-Tradition-Differenz + Klafki-Komplementarität
     try:
@@ -1830,6 +1859,54 @@ def main(verbose: bool = False) -> int:
             results.record("T59 v0.1.7 adorno-halbbildung-kritik Reference-Profile vollständig", True)
     except Exception as e:
         results.record("T59 v0.1.7 adorno-halbbildung-kritik Reference-Profile vollständig", False, str(e))
+
+    # T88: v0.1.15 claude-plugin-dev Reference-Profile (skip-if-private)
+    try:
+        pdev_dir = Path("/Users/paulad/session-bridge/private-notes/expertise-profiles/claude-plugin-dev")
+        if not pdev_dir.exists():
+            results.record("T88 v0.1.15 claude-plugin-dev Reference-Profile (skip-if-private)", True, "skipped: private-notes not present")
+        else:
+            for f in ["PROFILE.md", "diagnostic-frames.md", "anti-patterns.md",
+                      "question-bank.md", "workflows.md", "plugin-dev-patterns.md"]:
+                assert (pdev_dir / f).exists(), f"plugin-dev missing {f}"
+            # PROFILE.md: 7 Säulen, 6 required_files, 4 caveats
+            profile_text = (pdev_dir / "PROFILE.md").read_text()
+            assert "profile_name: claude-plugin-dev" in profile_text
+            assert "plugin-dev-patterns.md" in profile_text
+            for cv in ["konstruktiv-nicht-diagnostisch", "cowork-claude-code-differenz",
+                       "empirie-reference-recursive", "technische-tiefe-pflicht"]:
+                assert cv in profile_text, f"caveat fehlt: {cv}"
+            # diagnostic-frames: 10 Frames in 5 Cluster
+            df_text = (pdev_dir / "diagnostic-frames.md").read_text()
+            frame_ids = re.findall(r"### Frame (F\d+\.\d+)", df_text)
+            assert len(frame_ids) == 10, f"plugin-dev frames count {len(frame_ids)}"
+            assert len(re.findall(r"^## C\d ", df_text, re.MULTILINE)) == 5
+            # workflows: >=7 W-D + Multi-Pass
+            wf_text = (pdev_dir / "workflows.md").read_text()
+            wf_ids = re.findall(r"## (W-D-[\w-]+):", wf_text)
+            assert len(wf_ids) >= 7, f"plugin-dev workflows count {len(wf_ids)}"
+            for wid in ["W-D-Spec-First", "W-D-Empirie-Konsolidierung", "W-D-Reflex"]:
+                bm = re.search(rf"## {re.escape(wid)}:.*?(?=## W-D-|## Workflow|---\Z)", wf_text, re.DOTALL)
+                assert bm
+                for p in [1, 2, 3, 4]:
+                    assert f"### Pass {p}" in bm.group(0), f"{wid} pass {p} fehlt"
+            # 10 APs mit Selbstanwendung
+            ap_text = (pdev_dir / "anti-patterns.md").read_text()
+            ap_ids = re.findall(r"## (AP-D\d+):", ap_text)
+            assert len(ap_ids) == 10, f"plugin-dev AP count {len(ap_ids)}"
+            assert ap_text.count("**SELBSTANWENDUNG:**") >= 10
+            # plugin-dev-patterns: PSP/TEP/TAP/SDP/RP >=5 each
+            pp_text = (pdev_dir / "plugin-dev-patterns.md").read_text()
+            for prefix in ["PSP", "TEP", "TAP", "SDP", "RP"]:
+                assert len(set(re.findall(rf"### {prefix}-(\d+)", pp_text))) >= 5, f"{prefix} count"
+            assert "Recursive-Self-Audit" in pp_text
+            assert "session-bridge-Empirie-Reference" in pp_text
+            # question-bank: Empirie-Pflicht-Fragen
+            qb_text = (pdev_dir / "question-bank.md").read_text()
+            assert "Empirie-Pflicht-Fragen" in qb_text
+            results.record("T88 v0.1.15 claude-plugin-dev Reference-Profile (6 Files + 10 Frames + Recursive-Self-Audit)", True)
+    except Exception as e:
+        results.record("T88 v0.1.15 claude-plugin-dev Reference-Profile", False, str(e))
 
     if verbose:
         print("Passed:", results.passed)

@@ -58,7 +58,8 @@ Dies erlaubt User klare Mode-Identifikation, verhindert Plan-vs-Execution-Drift-
 | Topic-Klasse | Profile-Aktivierung | Begründung |
 |---|---|---|
 | **Plugin-/Spec-Patch / Schema-Validation / Schema-Refactor** | **NICHT empfohlen** | Architecture-Pairs sind Single-Domain, Profile-Layer ist over-engineering. Bisher empirisch alle architecture-spec-patch-Pairs erfolgreich ohne Profile (p8/p9/p10/p12). |
-| **Plugin-Audit / Recursive Self-Audit / Token-Effizienz-Diagnose** | **`architecture-archaeology` empfohlen** | Use-Case-Anker des Profile (TC-AA1). Hermeneutik + Token-Forensik substantieller Mehrwert. |
+| **Plugin-Audit / Recursive Self-Audit / Token-Effizienz-Diagnose** (retrospektiv-diagnostisch) | **`architecture-archaeology` empfohlen** | Use-Case-Anker des Profile (TC-AA1). Hermeneutik + Token-Forensik substantieller Mehrwert. |
+| **Plugin BAUEN: Skill-/Command-/Agent-/MCP-Design / Trigger-Engineering / Schema-Versioning / Release-Prozess** (prospektiv-konstruktiv) | **`claude-plugin-dev` empfohlen** | Twin-Profile zu architecture-archaeology (gleiche Methodik-Familie, gegensätzliche Zeitrichtung). Primär für Einzelsession-Nutzung via Sub-Agent-Dispatch / B-Plus-Lookup. Empirie-Schutz vor spekulativer Iteration (AP-D10). |
 | **Bildungs-/Curricular-Beratung (UE / Sequenz / Lehrplan)** | **`klafki-didaktik` empfohlen** | Empirisch validiert in p7-klafki-validation (8 Rounds, 9 DLs, alle 6 F-Cluster aktiviert). |
 | **Bildungs-/Kulturkritik-Diskurs** | **`adorno-halbbildung-kritik` empfohlen** | Negative Dialektik + Halbbildungs-Diagnose. Multi-Pass-Workflow methodisch geboten. |
 | **Schule-als-Disziplinarinstitution / Macht-Wissen-Analyse** | **`foucault-genealogie` empfohlen** | Use-Case-Anker (F5.2 Schule als Disziplinar-Apparat). |
@@ -99,6 +100,7 @@ Profile-Aktivierung erwägen?
 | Klafki-Advisor | `session-bridge:klafki-advisor` | bildungstheoretische Punkt-Frage (Klafki-Tradition, deutsche Didaktik, geisteswissenschaftlich) |
 | Projektentwicklungs-Advisor | `session-bridge:projektentwicklungs-advisor` | operative Punkt-Frage (Track-Decomposition / Sprint-Priorisierung / Acceptance-Criteria) — primär Worker-Use-Case |
 | Instructional-Design-Berater | `session-bridge:instructional-design-berater` | ID-Empfehlung (US-Tradition, kognitivistisch/empirisch: ADDIE/Mager/Gagné/Bloom/Mayer/Sweller) — komplementär zu klafki-advisor (operational vs bildungstheoretisch) |
+| Claude-Plugin-Dev-Berater | `session-bridge:claude-plugin-dev-berater` | Plugin-Dev-Empfehlung (konstruktiv-prospektiv: Skill/Command/Agent/MCP-Design, Trigger-Engineering, Token-Architektur, Schema-Versioning, Release) — Twin zu architecture-archaeology (BAUEN vs AUDITIEREN), primär für Einzelsession ohne bridge-pairing (v0.1.15) |
 
 **Decision-Tree: Lookup (B-Plus v0.1.11) vs Sub-Agent-Dispatch (v0.1.13):**
 

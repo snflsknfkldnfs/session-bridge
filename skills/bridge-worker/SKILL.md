@@ -32,9 +32,12 @@ projektentwicklungs-advisor (subagent_type=session-bridge:projektentwicklungs-ad
 - Dependency-Analyse (z.B. "welche Items sind voneinander abhängig, welche parallel-arbeitbar")
 - Risk-Mitigation-Spec (z.B. "Top-5-Risiken aus 33 Audit-Befunden + Mitigation pro Risk")
 
+**Weiterer Worker-relevanter Sub-Agent (v0.1.15):**
+- `session-bridge:claude-plugin-dev-berater` — wenn Worker Plugin-Komponenten implementiert (Trigger-Phrasen-Entwurf / Schema-Field-Hinzufügung / Komponenten-Typ-Wahl / Release-Checkliste). Technisch-konstruktiv, beide Rollen.
+
 **Worker-Bias (empirisch):**
-- Worker tendiert zu **operativen** Sub-Agents (projektentwicklungs-advisor)
-- Advisor tendiert zu **theoretischen** Sub-Agents (klafki-advisor, weitere Profile-Agents)
+- Worker tendiert zu **operativen** Sub-Agents (projektentwicklungs-advisor, claude-plugin-dev-berater bei Plugin-Implementation)
+- Advisor tendiert zu **theoretischen/methodischen** Sub-Agents (klafki-advisor, instructional-design-berater, weitere Profile-Agents)
 - Beide Bias-Patterns sind methodisch konsistent zur Rollen-Differenzierung (operativ vs evaluativ)
 
 **Worker-Sub-Agent-Dispatch-Output im handover:**
@@ -57,6 +60,7 @@ projektentwicklungs-advisor (subagent_type=session-bridge:projektentwicklungs-ad
 **Cross-Refs:**
 - ADR_0030 Annex F (Sub-Agent-Pattern v0.1.13)
 - agents/projektentwicklungs-advisor.md (Worker-typischer Sub-Agent)
+- agents/claude-plugin-dev-berater.md (Plugin-Implementation-Sub-Agent v0.1.15)
 - bridge-advisor SKILL.md §Sub-Agent-Dispatch-Pattern (Advisor-Spiegel)
 
 ## §Cowork-Mode-Composition-Pattern (NEU v0.1.9 / Pattern-#76+#77+#80 aus p7-upp-praxis-validation)

@@ -47,6 +47,8 @@ PROFILE_SHORT_NAMES = {
     "process": "process-consulting",
     "arch": "architecture-archaeology",
     "architecture": "architecture-archaeology",
+    "plugin-dev": "claude-plugin-dev",
+    "claude-plugin-dev": "claude-plugin-dev",
 }
 
 # File-Aliase (analog ADR_0030 Annex C, v0.1.7)
